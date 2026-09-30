@@ -105,7 +105,7 @@
 
 ### 变更
 
-- 公网地址更新为 `https://owns-jake-tower-catch.trycloudflare.com`，
+- 公网地址更新为 `https://county-throws-caribbean-phase.trycloudflare.com`，
   同步至 `README.md`、`docs/API.md`、`CHANGELOG.md`、`scripts/prod-probe.mjs`
 - `README.md` 线上实测数据按 `npm run probe:prod` 复采结果重写
   （每路径 10 次采样，四个端点 40/40 全部 200 且在 2000ms 阈值内）
@@ -173,7 +173,7 @@
 ### 变更
 
 - 公网环境重新部署，线上地址更新为
-  `https://owns-jake-tower-catch.trycloudflare.com`。
+  `https://county-throws-caribbean-phase.trycloudflare.com`。
 - `scripts/prod-probe.mjs` 默认探测地址同步更新。
 
 ### 验证

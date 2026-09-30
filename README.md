@@ -95,23 +95,24 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 地址 | 说明 |
 |---|---|
-| `https://owns-jake-tower-catch.trycloudflare.com/` | 应用页面 |
-| `https://owns-jake-tower-catch.trycloudflare.com/healthz` | 健康检查（JSON） |
-| `https://owns-jake-tower-catch.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
-| `https://owns-jake-tower-catch.trycloudflare.com/api/meta` | 元信息 |
+| `https://county-throws-caribbean-phase.trycloudflare.com/` | 应用页面 |
+| `https://county-throws-caribbean-phase.trycloudflare.com/healthz` | 健康检查（JSON） |
+| `https://county-throws-caribbean-phase.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
+| `https://county-throws-caribbean-phase.trycloudflare.com/api/meta` | 元信息 |
 
 实测结果（2026-09-30，v1.1.0，每路径 10 次采样，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    456ms    393ms    1422ms    10/10    0    ✅
-/api/meta   444ms    429ms     698ms    10/10    0    ✅
-/status     529ms    430ms    1384ms    10/10    0    ✅
-/          1362ms   1065ms    2479ms     9/10    1    ⚠️
+/healthz    445ms    424ms    1740ms    10/10    0    ✅
+/api/meta   450ms    423ms     847ms    10/10    0    ✅
+/status     688ms    407ms    1113ms    10/10    0    ✅
+/          1405ms    986ms    1749ms    10/10    0    ✅
 ```
 
-> 健康检查、元信息、状态页三类接口 **30/30 全部达标**，中位数稳定在 444–529ms，
-> 远优于 2000ms 阈值。首页为 474 KB 单文件正文，稳态中位 1.36s，冷访问偶有超阈值（1/10）。
+> **40/40 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
+> 健康检查中位 445ms、元信息中位 450ms，远优于阈值要求。
+> 首页为 474 KB 单文件正文，中位 1.4s，全部采样均达标。
 
 ### 双通道部署说明
 
@@ -119,7 +120,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Tunnel** | `https://owns-jake-tower-catch.trycloudflare.com` | ✅ 实测可达 | 当前验收入口，中位 471ms |
+| **Cloudflare Tunnel** | `https://county-throws-caribbean-phase.trycloudflare.com` | ✅ 实测可达 | 当前验收入口，40/40 采样达标 |
 | Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 需登录鉴权的固定边缘部署 |
 
 > **为什么以隧道地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断

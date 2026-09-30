@@ -1,0 +1,20 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 运行日志
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+
+# 历史备份
+.history/
+
+# 任务辅助目录（过程文件，不参与版本管理）
+任务_*/

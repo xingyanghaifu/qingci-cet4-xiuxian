@@ -51,10 +51,16 @@ for (const [name, token] of required) {
   console.log('   ✓ 校验 ' + name);
 }
 
-// —— 2. 注入构建元信息 ——
-const buildTime = new Date().toISOString();
-const meta = '<!-- build: qingci-cet4-xiuxian v' + pkg.version + ' @ ' + buildTime + ' -->';
-if (!html.includes('<!-- build:')) html = html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + meta);
+// —— 2. 注入构建元信息（时间戳取自上一次产物，保证重复构建产物确定一致）——
+const metaRe = /<!-- build: qingci-cet4-xiuxian v[\d.]+ @ ([0-9T:.\-Z]+) -->/;
+let stamp = null;
+if (existsSync(OUT)) {
+  const prev = readFileSync(OUT, 'utf8').match(metaRe);
+  if (prev) stamp = prev[1]; // 复用上次构建时间戳，使产物可复现
+}
+if (!stamp) stamp = new Date().toISOString(); // 首次构建才生成
+const meta = '<!-- build: qingci-cet4-xiuxian v' + pkg.version + ' @ ' + stamp + ' -->';
+html = metaRe.test(html) ? html.replace(metaRe, meta) : html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + meta);
 
 // —— 3. 输出 ——
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });

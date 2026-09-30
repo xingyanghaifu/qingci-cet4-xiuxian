@@ -9,7 +9,7 @@ import https from 'node:https';
 import http from 'node:http';
 
 const BASE = process.argv[2] || process.env.PUBLIC_BASE_URL
-  || 'https://cigarettes-unions-radical-recorders.trycloudflare.com';
+  || 'https://helping-though-thou-services.trycloudflare.com';
 const LIMIT_MS = 2000;
 const ROUNDS = Number(process.env.ROUNDS) || 10;
 const PATHS = ['/healthz', '/api/meta', '/status', '/'];

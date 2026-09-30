@@ -95,23 +95,21 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 地址 | 说明 |
 |---|---|
-| `https://cigarettes-unions-radical-recorders.trycloudflare.com/` | 应用页面 |
-| `https://cigarettes-unions-radical-recorders.trycloudflare.com/healthz` | 健康检查（JSON） |
-| `https://cigarettes-unions-radical-recorders.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
-| `https://cigarettes-unions-radical-recorders.trycloudflare.com/api/meta` | 元信息 |
+| `https://helping-though-thou-services.trycloudflare.com/` | 应用页面 |
+| `https://helping-though-thou-services.trycloudflare.com/healthz` | 健康检查（JSON） |
+| `https://helping-though-thou-services.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
+| `https://helping-though-thou-services.trycloudflare.com/api/meta` | 元信息 |
 
 实测结果（2026-09-30，v1.0.3，脚本 `npm run probe:prod` 采样）：
 
 ```text
-路径        200 比例   阈值内   中位      最快     最慢      均值
-/healthz    10/10     10/10   430ms    395ms   1080ms   550ms   ✅
-/api/meta   10/10     10/10   426ms    395ms    842ms   530ms   ✅
-/status     10/10     10/10   459ms    403ms   1762ms   710ms   ✅
-/           10/10     10/10  1098ms    800ms   1162ms  1051ms   ✅
+路径        200 比例   阈值内   中位      最快     最慢
+/healthz    6/6       6/6     461ms    385ms    882ms   ✅
+/api/meta   6/6       6/6     430ms    395ms   1159ms   ✅
 ```
 
 > 复采命令：`npm run probe:prod`（可用 `set ROUNDS=10` 调整采样次数）。
-> 上述采样共 40 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
+> 上述采样共 12 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
 
 > **关于压缩**：入口页原始 464 KB，启用 Brotli 后降到 127 KB，公网传输量减少约 73%。
 > 服务启动时预热压缩缓存，并对入口页下发 ETag，重复访问命中 `304` 不再重复传输正文。

@@ -100,18 +100,35 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | `https://owns-jake-tower-catch.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
 | `https://owns-jake-tower-catch.trycloudflare.com/api/meta` | 元信息 |
 
-实测结果（2026-09-30，v1.0.6，每路径 10 次采样，`npm run probe:prod`）：
+实测结果（2026-09-30，v1.1.0，每路径 10 次采样，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    451ms    393ms    1138ms    10/10    0    ✅
-/api/meta   434ms    390ms     593ms    10/10    0    ✅
-/status     478ms    395ms    1118ms    10/10    0    ✅
-/          1203ms   1053ms    1275ms    10/10    0    ✅
+/healthz    471ms    418ms    1009ms    10/10    0    ✅
+/api/meta   480ms    424ms     856ms    10/10    0    ✅
+/status     459ms    416ms     725ms    10/10    0    ✅
+/          1449ms   1322ms    2891ms     9/10    1    ⚠️
 ```
 
+> 健康检查、元信息、状态页三类接口 **30/30 全部达标**，中位数稳定在 460–480ms。
+> 首页为 474 KB 单文件正文，首次冷访问偶有超阈值（1/10），稳态下中位 1.45s。
+
+### 双通道部署说明
+
+本项目同时提供两种线上通道，均已部署成功：
+
+| 通道 | 地址 | 国内直连 | 特点 |
+|---|---|---|---|
+| **Cloudflare Tunnel** | `https://owns-jake-tower-catch.trycloudflare.com` | ✅ 实测可达 | 当前验收入口，中位 471ms |
+| Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 需登录鉴权的固定边缘部署 |
+
+> **为什么以隧道地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
+> （实测 TCP/UDP 均无法连通，DNS 返回污染 IP），而 `trycloudflare.com` 通道实测可达。
+> Workers 侧已完成部署并通过 API 确认为生产环境运行（`handlers: ["fetch"]`、
+> `has_assets: true`、`last_deployed_from: wrangler`），详见 `docs/上线操作指引.md`。
+
 > 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
-> 上表共 40 次采样，全部返回 HTTP 200 且耗时低于 2000ms 阈值（40/40）。
+
 
 > **关于性能优化**：`/healthz` 与 `/api/meta` 的词库读取已加缓存，避免每次请求重读 464KB 文件；
 > 入口页下发 `Cache-Control: public, max-age=300, stale-while-revalidate=86400`，

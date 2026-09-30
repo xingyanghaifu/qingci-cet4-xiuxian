@@ -3,6 +3,10 @@ node_modules/
 dist/
 deploy/
 
+# Wrangler 本地缓存与运行态（含 sqlite 状态库，不应入库）
+.wrangler/
+.dev.vars
+
 # 运行日志
 *.log
 

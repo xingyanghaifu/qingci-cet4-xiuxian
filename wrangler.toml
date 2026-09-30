@@ -1,0 +1,16 @@
+name = "qingci-cet4-xiuxian"
+main = "worker/index.mjs"
+compatibility_date = "2026-09-30"
+
+# 账户信息（部署时由 wrangler 读取本机已登录的账号）
+account_id = "2285eea4a9744659705f3cc8c47c7acd"
+
+# 静态资源绑定：deploy/ 目录作为 ASSETS 提供给 Worker
+# 运行 `npm run prepare:deploy` 生成 deploy/ 后再部署
+[assets]
+directory = "deploy"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+APP_VERSION = "1.1.0"

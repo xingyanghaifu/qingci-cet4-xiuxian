@@ -100,6 +100,22 @@ function send(res, code, body, type, req, extra) {
   res.end(payload);
 }
 
+/**
+ * 专用入口页下发：在压缩之前先判定 ETag 协商缓存。
+ * 修复点：早先版本在压缩分支内提前 return，导致 ETag 头被丢弃，
+ * 浏览器无法命中 304，每次访问都要回源传输 464KB 正文（公网约 2.5s）。
+ */
+function sendEntry(res, req, html, etag) {
+  if (req.headers['if-none-match'] === etag) {
+    res.writeHead(304, { ETag: etag, 'Cache-Control': 'public, max-age=300' });
+    return res.end();
+  }
+  return send(res, 200, html, 'text/html; charset=utf-8', req, {
+    ETag: etag,
+    'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
+  });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://' + (req.headers.host || HOST));
   const p = url.pathname;
@@ -136,15 +152,8 @@ const server = http.createServer((req, res) => {
     const { file } = appFile();
     if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
     const etag = '"' + ENTRY_SHA + '"';
-    if (req.headers['if-none-match'] === etag) {
-      res.writeHead(304, { ETag: etag, 'Cache-Control': 'public, max-age=300' });
-      return res.end();
-    }
     const html = fs.readFileSync(file, 'utf8');
-    return send(res, 200, html, 'text/html; charset=utf-8', req, {
-      ETag: etag,
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
-    });
+    return sendEntry(res, req, html, etag);
   }
 
   if (p === '/status') {

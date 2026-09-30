@@ -3,13 +3,29 @@
  * 公网健康检查采样脚本
  * 对线上地址多次采样，统计 200 响应比例与耗时分布，用于验收留痕。
  * 用法：node scripts/prod-probe.mjs [URL]
- * 默认读取环境变量 PUBLIC_BASE_URL，否则用 README 记录的公网地址。
+ * 默认读取环境变量 PUBLIC_BASE_URL，否则用 README 记录的正式 Cloudflare Workers 地址。
  */
 import https from 'node:https';
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const BASE = (process.argv[2] || process.env.PUBLIC_BASE_URL
-  || 'https://owns-jake-tower-catch.trycloudflare.com').trim().replace(/\/+$/, '');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** 从 deploy-url.txt 读取正式部署地址（由部署脚本写入） */
+function deployedUrl() {
+  try {
+    const p = path.join(ROOT, 'deploy-url.txt');
+    if (fs.existsSync(p)) {
+      const u = fs.readFileSync(p, 'utf8').trim().split(/\r?\n/)[0].trim();
+      if (/^https?:\/\//.test(u)) return u.replace(/\/+$/, '');
+    }
+  } catch (e) { /* 忽略，回退到默认 */ }
+  return 'https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev';
+}
+
+const BASE = (process.argv[2] || process.env.PUBLIC_BASE_URL || deployedUrl()).trim().replace(/\/+$/, '');
 const LIMIT_MS = 2000;
 const ROUNDS = Number(process.env.ROUNDS) || 10;
 const PATHS = ['/healthz', '/api/meta', '/status', '/'];

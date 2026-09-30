@@ -5,6 +5,99 @@
 
 ---
 
+## [1.1.0] - 2026-09-30
+
+从「临时隧道演示」升级为「固定地址的正式线上服务」。
+
+### 新增
+
+#### Cloudflare Workers 正式部署
+- `worker/index.mjs`：边缘运行时入口，与 `server.mjs` 提供**等价接口**
+  - `GET /healthz` 健康检查（含词库条数校验、ASSETS 绑定状态、边缘节点标识）
+  - `GET /api/meta` 应用元信息
+  - `GET /status` 人类可读状态页
+  - `GET /` 应用页面（经 ASSETS 静态资源绑定）
+- `wrangler.toml`：Workers 配置，声明 `assets` 静态资源绑定与 `APP_VERSION` 变量
+- `scripts/deploy-workers.mjs`：一键部署（构建 → 生成部署目录 → 同步版本 → 上传 → 记录线上地址）
+- `npm run deploy` / `npm run prepare:deploy:workers` 命令
+- `docs/上线操作指引.md`：OAuth 与 API Token 两种授权方式的操作指引
+- `deploy-url.txt` 自动记录正式地址，供验收脚本引用
+
+#### Worker 测试
+- `tests/worker.test.mjs`：15 个用例，覆盖路由分发、健康检查升降级、元信息、
+  静态透传、响应头契约、环境变量回退等
+- 测试总数由 30 增至 **45**，分支覆盖率 81.3% → **82.78%**，行覆盖 **100%**
+
+### 变更
+
+- `scripts/prepare-deploy.mjs`：新增 `--workers` 模式，该模式下不再生成
+  `_redirects`。原因：其通配规则 `/* /index.html 200` 会与 Workers 静态资源
+  解析冲突，wrangler 会判定为无限循环并忽略（部署时产生告警）。
+- `scripts/prod-probe.mjs`：默认线上地址由临时隧道改为读取 `deploy-url.txt`
+  中的正式 Workers 地址。
+- `tests/` 目录按模块拆分，`.test.js`（CommonJS）与 `.test.mjs`（ESM）并存，
+  `npm test` 同时执行两类。
+
+### 修复
+
+- 修复 Worker 入口因 `package.json` 声明 `"type": "commonjs"` 而无法以 ESM
+  加载的问题：入口与测试文件改用 `.mjs` 扩展名。
+- 修复 `wrangler dev` 因 `_redirects` 无限循环规则产生的部署告警。
+
+### 为什么换掉隧道方案
+
+临时隧道（`*.trycloudflare.com`）每次重启都会生成新地址，导致线上环境地址
+不稳定、无法作为长期可访问入口。Workers 提供固定的 `*.workers.dev` 永久地址，
+且同样在免费额度内（每日 10 万请求）。
+
+---
+
+## [1.0.8] - 2026-09-30
+
+性能缺陷修复版本。修复入口页 ETag 协商缓存失效问题，将公网二次访问从回源全量传输
+改为 304 空响应。
+
+### 修复
+
+- `server.mjs` 入口页响应头丢失 ETag：压缩分支在设置响应头前提前 `return`，
+  导致 `ETag` 未随响应下发，浏览器无法发起协商缓存，每次访问都需回源传输 464KB 正文。
+  - 新增 `sendEntry()`：在压缩判定**之前**先处理 `If-None-Match`，命中即返回 304
+  - `Vary: Accept-Encoding` 与 `ETag` 现在随压缩响应一同下发
+
+### 效果
+
+| 场景 | 修复前 | 修复后 |
+|---|---|---|
+| 公网首页二次访问 | 200 · 约 2.7s · 回源 464KB | **304 · 1.12s · 传输 0 字节** |
+| 本地首页二次访问 | 200 · 5ms · 145KB | 304 · 3.8ms · 0 字节 |
+
+### 验证
+
+- `npm test`：30/30 通过
+- `npm run test:docs`：26/26 通过
+- 公网 `/healthz`、`/api/meta`、`/status` 每路径 10 次采样全部 200 且低于 2000ms
+
+---
+
+## [1.0.7] - 2026-09-30
+
+静态托管实测与文档校正版本。
+
+### 变更
+
+- 部署文档补充静态托管实测数据，修正「静态托管无健康检查」的表述：
+  `deploy/healthz.json` 提供等价静态健康检查，同样返回 HTTP 200 与版本、词库条数
+
+### 实测（本机模拟静态环境）
+
+| 项 | 值 |
+|---|---|
+| 首页传输 | 115 KB（brotli q11，原始 464 KB，减少约 76%） |
+| `/healthz.json` | 200 · 1.7ms |
+| 依赖回源 | 无（电脑关机仍可访问） |
+
+---
+
 ## [1.0.6] - 2026-09-30
 
 公网地址轮换版本。Cloudflare 免账号快速隧道重启后地址会变更，

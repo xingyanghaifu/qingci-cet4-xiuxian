@@ -10,6 +10,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -38,15 +39,38 @@ function lexiconCount() {
   }
 }
 
-function send(res, code, body, type) {
+/** 缓存压缩结果，避免每次请求重复计算（公网回源时显著降低首字节延迟） */
+const gzipCache = new Map();
+function gzipCached(key, payload) {
+  const hit = gzipCache.get(key);
+  if (hit && hit.src === payload) return hit.buf;
+  const buf = zlib.gzipSync(Buffer.from(payload, 'utf8'), { level: 6 });
+  gzipCache.set(key, { src: payload, buf });
+  return buf;
+}
+
+function send(res, code, body, type, req) {
   const payload = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
-  res.writeHead(code, {
+  const headers = {
     'Content-Type': type || 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(payload),
     'Cache-Control': 'no-store',
-  });
+  };
+  // 对文本响应做 gzip，显著降低公网传输体积（475 KB 页面可压到约 145 KB）
+  const ae = (req && req.headers['accept-encoding']) || '';
+  const compressible = /^text\/|json|javascript|svg/.test(headers['Content-Type']) && payload.length > 1024;
+  if (compressible && /\bgzip\b/.test(ae)) {
+    const buf = gzipCached(keyOf(headers['Content-Type'], code), payload);
+    headers['Content-Encoding'] = 'gzip';
+    headers['Vary'] = 'Accept-Encoding';
+    headers['Content-Length'] = buf.length;
+    res.writeHead(code, headers);
+    return res.end(buf);
+  }
+  headers['Content-Length'] = Buffer.byteLength(payload);
+  res.writeHead(code, headers);
   res.end(payload);
 }
+function keyOf(type, code) { return code + '|' + type; }
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://' + (req.headers.host || HOST));
@@ -65,7 +89,7 @@ const server = http.createServer((req, res) => {
       },
       runtime: { node: process.version, platform: os.platform() },
       timestamp: new Date().toISOString(),
-    });
+    }, req);
   }
 
   if (p === '/api/meta') {
@@ -77,14 +101,14 @@ const server = http.createServer((req, res) => {
       memoryKinds: ['zh2en', 'en2zh', 'similar', 'listen', 'spell', 'pos'],
       features: ['六种记忆题型', '试卷模拟', '斗法对战', '学情看板', '间隔重复', '离线可用'],
       servedFrom: source,
-    });
+    }, req);
   }
 
   if (p === '/' || p === '/index.html' || p === '/cet4-xiuxian.html') {
     const { file } = appFile();
     if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
     const html = fs.readFileSync(file, 'utf8');
-    return send(res, 200, html, 'text/html; charset=utf-8');
+    return send(res, 200, html, 'text/html; charset=utf-8', req);
   }
 
   send(res, 404, { error: 'not found', path: p });
@@ -92,6 +116,13 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   const { source } = appFile();
+  // 预热：提前压缩好页面与健康检查响应，消除公网首次请求的冷启动耗时
+  try {
+    const { file } = appFile();
+    const warmHtml = fs.readFileSync(file, 'utf8');
+    gzipCached(keyOf('text/html; charset=utf-8', 200), warmHtml);
+    console.log('   预热: 页面已压缩入缓存 (' + (gzipCached(keyOf('text/html; charset=utf-8', 200), warmHtml).length / 1024).toFixed(0) + ' KB)');
+  } catch (e) { console.log('   预热跳过:', e.message); }
   console.log('✅ 服务已启动');
   console.log('   地址: http://' + HOST + ':' + PORT);
   console.log('   健康检查: http://' + HOST + ':' + PORT + '/healthz');

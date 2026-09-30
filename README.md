@@ -89,6 +89,44 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 }
 ```
 
+## 线上环境
+
+应用已部署，公网可访问（通过 Cloudflare Tunnel 映射本地服务）：
+
+| 地址 | 说明 |
+|---|---|
+| `https://cigarettes-unions-radical-recorders.trycloudflare.com/` | 应用页面 |
+| `https://cigarettes-unions-radical-recorders.trycloudflare.com/healthz` | 健康检查（JSON） |
+| `https://cigarettes-unions-radical-recorders.trycloudflare.com/api/meta` | 元信息 |
+
+实测结果（2026-09-30）：
+
+```text
+健康检查   HTTP 200  稳定态 422–874ms（阈值 2000ms）
+应用页面   HTTP 200  1.0s
+API 元信息 HTTP 200
+```
+
+> **关于稳定性**：该地址基于免账号的 Cloudflare 快速隧道，好处是无需登录即可公网访问，
+> 代价是**回源到本机**、且 Cloudflare 不保证可用性。首次连接偶发 2s 左右的冷启动抖动。
+> 若需长期稳定托管，建议部署到静态托管平台（见下节），那属于账号授权操作。
+
+### 部署到静态托管（推荐用于生产）
+
+应用是单文件静态资源，可直接托管到任意静态平台：
+
+```bash
+npm run build                                    # 产出 dist/cet4-xiuxian.html
+# 将 dist/cet4-xiuxian.html 重命名为 index.html 后上传即可
+```
+
+| 平台 | 命令/方式 | 说明 |
+|---|---|---|
+| Cloudflare Pages | `npx wrangler pages deploy dist` | 需 Cloudflare 账号 |
+| GitHub Pages | 推送仓库后在 Settings → Pages 开启 | 需 GitHub 账号 |
+| Netlify | `npx netlify deploy --dir=dist --prod` | 需 Netlify 账号 |
+| Vercel | `npx vercel --prod dist` | 需 Vercel 账号 |
+
 ## 文档
 
 | 文档 | 说明 |
@@ -96,6 +134,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | [产品方案](docs/产品方案.md) | 用户画像、功能列表、技术架构、里程碑排期 |
 | [使用文档](docs/使用文档.md) | 三种使用方式、功能上手、常见问题 |
 | [API 文档](docs/API.md) | HTTP 接口与核心模块 API，示例均经真实执行验证 |
+| [部署说明](docs/部署说明.md) | 本地服务、隧道、静态托管三种部署方式 |
 | [更新日志](CHANGELOG.md) | 版本发布记录 |
 
 ## 架构

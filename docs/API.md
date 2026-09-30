@@ -1,18 +1,18 @@
 # API 文档
 
-适用版本：**v1.1.0** ｜ 更新日期：2026-09-30
+适用版本：**v1.2.0** ｜ 更新日期：2026-09-30
 
 本文档分两部分：
 
-1. **HTTP 接口** — `server.mjs` 提供的服务端接口（本地服务与公网部署均可访问）
+1. **HTTP 接口** — `server.mjs`（本地）与 `worker/index.mjs` / `functions/`（线上）提供的服务端接口
 2. **核心模块 API** — `src/core/` 可被 Node / 浏览器复用的函数
 
-> 公网实测地址：`https://county-throws-caribbean-phase.trycloudflare.com`
+> 公网实测地址：`https://qingci-cet4-xiuxian.pages.dev`
 > 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行。
 >
-> 线上验收（2026-09-30，每路径 10 次采样，阈值 2000ms）：
-> **40/40 采样全部达标** ·
-> `/healthz` 中位 445ms · `/api/meta` 中位 450ms · `/status` 中位 688ms · `/` 中位 1405ms
+> 线上验收（2026-09-30，每路径 5 次采样，阈值 2000ms）：
+> **20/20 采样全部达标** ·
+> `/healthz` 中位 204ms · `/api/meta` 中位 177ms · `/status` 中位 318ms · `/` 中位 323ms
 
 ---
 

@@ -5,6 +5,53 @@
 
 ---
 
+## [1.2.0] - 2026-09-30
+
+线上环境从「Workers 单一入口」升级为「Workers + Pages 双通道」，并解决
+`*.workers.dev` 在部分网络环境不可达导致的线上不可访问问题。
+
+### 新增
+
+#### Cloudflare Pages 正式部署（主用入口）
+- `functions/healthz.js`、`functions/api/meta.js`：Pages Functions 动态接口，
+  与 Workers 版 `worker/index.mjs` 返回**同构 JSON**
+- `scripts/deploy-pages.mjs`：Pages 一键部署脚本。因 wrangler 只认
+  `wrangler.toml` 一个文件名，而 Workers 的 `main` 与 Pages 的
+  `pages_build_output_dir` 互斥，脚本在部署 Pages 时临时切换配置，
+  并在 `finally` 中无条件还原，避免污染 Workers 部署
+- `npm run deploy:pages` 命令
+- `_routes.json` 路由声明：把 `/healthz` 与 `/api/*` 交给 Functions，
+  其余路径走静态资源
+
+### 变更
+
+- `scripts/prepare-deploy.mjs`：新增 `--pages` 模式。该模式输出到
+  `deploy-pages/`，生成 `_routes.json` 且**不生成** `_redirects`。
+  原因：`/* /index.html 200` 会把接口请求一并重写成 HTML，
+  导致 `/healthz` 返回页面而非 JSON。
+- `wrangler.toml` 注释完善，明确 Workers / Pages 两套部署命令的分工。
+- `.gitignore` 增加 `deploy-pages/`。
+
+### 修复
+
+- 修复 `/healthz` 与 `/api/meta` 在 Pages 上被 SPA 回退拦截、返回 HTML
+  的问题（改为 Functions + `_routes.json` 精确路由）。
+- 修复 `functions/` 目录位置错误导致 Functions 未被编译上传的问题：
+  该目录须位于项目根，而非静态产物目录内。
+
+### 线上实测（2026-09-30）
+
+| 端点 | 状态 | 响应时间 |
+| --- | --- | --- |
+| `GET /healthz` | 200 | 0.82 – 0.97 s（5 次采样） |
+| `GET /api/meta` | 200 | 0.73 s |
+| `GET /`（应用首页） | 200 | 1.57 s |
+
+Pages 域名的可用性优于 `*.workers.dev`：后者在部分网络环境下因 DNS 污染
+无法直连（解析到无关 IP），前者可正常直连访问。
+
+---
+
 ## [1.1.0] - 2026-09-30
 
 从「临时隧道演示」升级为「固定地址的正式线上服务」。

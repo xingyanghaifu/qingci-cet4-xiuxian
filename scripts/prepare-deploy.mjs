@@ -12,7 +12,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-const OUT = path.join(ROOT, 'deploy');
+// --pages 模式输出到 deploy-pages/，并声明 Functions 负责的路由
+const forPages = process.argv.includes('--pages');
+const OUT = path.join(ROOT, forPages ? 'deploy-pages' : 'deploy');
 
 const src = path.join(ROOT, 'dist', 'cet4-xiuxian.html');
 if (!fs.existsSync(src)) {
@@ -73,18 +75,28 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
 // 通配规则会与 Workers 静态资源解析冲突（wrangler 会报无限循环并忽略），
 // 因此仅在非 Workers 模式（Pages / Netlify 等纯静态托管）下生成该文件。
 const forWorkers = process.env.DEPLOY_TARGET === 'workers' || process.argv.includes('--workers');
-if (!forWorkers) {
+if (forPages) {
+  // Pages 模式：Functions 负责 /healthz 与 /api/meta，其余全部走静态资源。
+  // 不能写 /* -> /index.html 的 _redirects，否则会把接口请求也重写成 HTML。
+  const stale = path.join(OUT, '_redirects');
+  if (fs.existsSync(stale)) fs.unlinkSync(stale);
+  fs.writeFileSync(path.join(OUT, '_routes.json'), JSON.stringify({
+    version: 1,
+    include: ['/healthz', '/api/*'],
+    exclude: [],
+  }, null, 2) + '\n');
+} else if (!forWorkers) {
   fs.writeFileSync(path.join(OUT, '_redirects'), '/*  /index.html  200\n');
 } else {
   const stale = path.join(OUT, '_redirects');
   if (fs.existsSync(stale)) fs.unlinkSync(stale);
 }
 
-console.log('✅ 部署目录已生成目录: deploy/');
+console.log('✅ 部署目录已生成目录: ' + (forPages ? 'deploy-pages/' : 'deploy/'));
 console.log('   index.html      ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB');
 console.log('   healthz.json    版本 v' + pkg.version + ' 词库 ' + words + ' 条');
 console.log('   api-meta.json   元信息（机型/版本/特性）');
 console.log('   _headers        缓存与安全响应头');
-console.log(forWorkers ? '   _redirects      已跳过（Workers 模式由 Worker 处理路由）' : '   _redirects      SPA 回退');
+console.log(forPages ? '   _routes.json   Functions 路由（/healthz、/api/*）' : (forWorkers ? '   _redirects      已跳过（Workers 模式由 Worker 处理路由）' : '   _redirects      SPA 回退'));
 console.log('   产物指纹: sha256:' + sha);
 

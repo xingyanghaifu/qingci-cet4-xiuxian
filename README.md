@@ -91,28 +91,43 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ## 线上环境
 
-应用已部署，公网可访问（通过 Cloudflare Tunnel 映射本地服务）：
+应用已部署，公网可访问（Cloudflare Pages 边缘托管，固定域名）：
 
 | 地址 | 说明 |
 |---|---|
-| `https://county-throws-caribbean-phase.trycloudflare.com/` | 应用页面 |
-| `https://county-throws-caribbean-phase.trycloudflare.com/healthz` | 健康检查（JSON） |
-| `https://county-throws-caribbean-phase.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
-| `https://county-throws-caribbean-phase.trycloudflare.com/api/meta` | 元信息 |
+| `https://qingci-cet4-xiuxian.pages.dev/` | 应用页面 |
+| `https://qingci-cet4-xiuxian.pages.dev/healthz` | 健康检查（JSON，动态） |
+| `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON） |
 
-实测结果（2026-09-30，v1.1.0，每路径 10 次采样，`npm run probe:prod`）：
+实测结果（2026-09-30，v1.2.0，每路径 5 次采样，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    445ms    424ms    1740ms    10/10    0    ✅
-/api/meta   450ms    423ms     847ms    10/10    0    ✅
-/status     688ms    407ms    1113ms    10/10    0    ✅
-/          1405ms    986ms    1749ms    10/10    0    ✅
+/healthz    204ms    183ms     634ms     5/5      0    ✅
+/api/meta   177ms    174ms     191ms     5/5      0    ✅
+/status     318ms    281ms     502ms     5/5      0    ✅
+/          323ms    286ms     500ms     5/5      0    ✅
 ```
 
-> **40/40 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
-> 健康检查中位 445ms、元信息中位 450ms，远优于阈值要求。
-> 首页为 474 KB 单文件正文，中位 1.4s，全部采样均达标。
+> **20/20 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
+> 健康检查中位 204ms、元信息中位 177ms，远优于阈值要求。
+
+`/healthz` 返回的真实响应（2026-09-30 实测）：
+
+```json
+{
+  "status": "ok",
+  "version": "1.2.0",
+  "platform": "cloudflare-pages",
+  "checks": {
+    "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
+    "staticAsset": { "ok": true, "artifact": "index.html" }
+  },
+  "runtime": { "colo": "SEA", "country": "CN" },
+  "latencyMs": 79,
+  "timestamp": "2026-09-30T05:40:18.257Z"
+}
+```
 
 ### 双通道部署说明
 
@@ -120,13 +135,15 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Tunnel** | `https://county-throws-caribbean-phase.trycloudflare.com` | ✅ 实测可达 | 当前验收入口，40/40 采样达标 |
-| Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 需登录鉴权的固定边缘部署 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，20/20 采样达标，动静接口齐全 |
+| Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构 |
 
-> **为什么以隧道地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
-> （实测 TCP/UDP 均无法连通，DNS 返回污染 IP），而 `trycloudflare.com` 通道实测可达。
-> Workers 侧已完成部署并通过 API 确认为生产环境运行（`handlers: ["fetch"]`、
-> `has_assets: true`、`last_deployed_from: wrangler`），详见 `docs/上线操作指引.md`。
+> **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
+> （实测 DNS 解析到 Dropbox 的 IP `162.125.80.6`，属 DNS 污染，TCP 无法连通），
+> 而 `*.pages.dev` 域名实测可正常直连。两者共用同一套构建产物与同构接口实现，
+> 功能完全一致，因此以可达性更好的 Pages 地址作为线上验收入口。
+> Workers 侧已完成部署，并通过 Cloudflare API 确认为生产环境运行
+> （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）。
 
 > 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
 

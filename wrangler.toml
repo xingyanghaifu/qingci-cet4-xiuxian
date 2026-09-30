@@ -1,8 +1,16 @@
+# 青词天路 · 四级全卷修仙 —— Cloudflare Workers 部署配置
+#
+# 部署命令：npx wrangler deploy
+# 本地调试：npx wrangler dev --local --port 8787
+#
+# 注意：Pages 部署使用独立的 wrangler.pages.toml（wrangler 不支持指定配置文件路径，
+# 因此 Pages 部署时请临时切换文件名，或直接使用 npm run deploy:pages 脚本）。
+
 name = "qingci-cet4-xiuxian"
 main = "worker/index.mjs"
 compatibility_date = "2026-09-30"
 
-# 账户信息（部署时由 wrangler 读取本机已登录的账号）
+# 账户信息（wrangler 读取本机已登录账号）
 account_id = "2285eea4a9744659705f3cc8c47c7acd"
 
 # 静态资源绑定：deploy/ 目录作为 ASSETS 提供给 Worker
@@ -13,4 +21,4 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 [vars]
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"

@@ -2,6 +2,7 @@
 node_modules/
 dist/
 deploy/
+deploy-pages/
 
 # Wrangler 本地缓存与运行态（含 sqlite 状态库，不应入库）
 .wrangler/

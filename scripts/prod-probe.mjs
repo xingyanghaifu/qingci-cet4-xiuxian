@@ -3,7 +3,7 @@
  * 公网健康检查采样脚本
  * 对线上地址多次采样，统计 200 响应比例与耗时分布，用于验收留痕。
  * 用法：node scripts/prod-probe.mjs [URL]
- * 默认读取环境变量 PUBLIC_BASE_URL，否则用 README 记录的正式 Cloudflare Workers 地址。
+ * 默认读取环境变量 PUBLIC_BASE_URL，否则读 deploy-url.txt 中记录的正式 Pages 地址。
  */
 import https from 'node:https';
 import http from 'node:http';
@@ -22,7 +22,7 @@ function deployedUrl() {
       if (/^https?:\/\//.test(u)) return u.replace(/\/+$/, '');
     }
   } catch (e) { /* 忽略，回退到默认 */ }
-  return 'https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev';
+  return 'https://qingci-cet4-xiuxian.pages.dev';
 }
 
 const BASE = (process.argv[2] || process.env.PUBLIC_BASE_URL || deployedUrl()).trim().replace(/\/+$/, '');

@@ -104,10 +104,10 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ```text
 路径        中位      最慢      超 2 秒
-/healthz    685ms    1152ms    0/8    ✅
-/api/meta   445ms     533ms    0/8    ✅
-/status     435ms     988ms    0/8    ✅
-/           1349ms   1453ms    0/8    ✅
+/healthz    808ms    1814ms    0/8    ✅
+/api/meta   442ms     718ms    0/8    ✅
+/status     601ms    1188ms    0/8    ✅
+/          1464ms    1779ms    0/8    ✅
 ```
 
 ```text

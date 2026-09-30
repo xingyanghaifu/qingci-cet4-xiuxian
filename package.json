@@ -18,6 +18,7 @@
     "probe:prod": "node scripts/prod-probe.mjs",
     "watchdog": "node scripts/watchdog.mjs",
     "keepalive": "node scripts/watchdog.mjs --loop",
+    "supervise": "node scripts/supervisor.mjs",
     "test:docs": "node scripts/verify-docs.js",
     "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck",
     "verify:prod": "npm test && npm run test:docs && node scripts/watchdog.mjs"

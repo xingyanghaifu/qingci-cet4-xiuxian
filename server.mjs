@@ -27,17 +27,19 @@ function appFile() {
   return { file: path.join(ROOT, 'cet4-xiuxian.html'), source: 'source' };
 }
 
-/** 读取词库条数，用于健康检查自证数据完好 */
+/** 读取词库条数，用于健康检查自证数据完好（结果缓存，避免每次请求重读 464KB 文件） */
+let _lexCache = null;
 function lexiconCount() {
+  if (_lexCache !== null) return _lexCache;
   try {
     const { file } = appFile();
     const html = fs.readFileSync(file, 'utf8');
     const m = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
-    if (!m) return 0;
-    return JSON.parse(m[1]).length;
+    _lexCache = m ? JSON.parse(m[1]).length : 0;
   } catch (e) {
-    return 0;
+    _lexCache = 0;
   }
+  return _lexCache;
 }
 
 /** 缓存压缩结果，键含内容指纹，避免不同内容互相覆盖（公网回源时显著降低首字节延迟） */
@@ -135,11 +137,14 @@ const server = http.createServer((req, res) => {
     if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
     const etag = '"' + ENTRY_SHA + '"';
     if (req.headers['if-none-match'] === etag) {
-      res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });
+      res.writeHead(304, { ETag: etag, 'Cache-Control': 'public, max-age=300' });
       return res.end();
     }
     const html = fs.readFileSync(file, 'utf8');
-    return send(res, 200, html, 'text/html; charset=utf-8', req, { ETag: etag, 'Cache-Control': 'no-cache' });
+    return send(res, 200, html, 'text/html; charset=utf-8', req, {
+      ETag: etag,
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
+    });
   }
 
   if (p === '/status') {

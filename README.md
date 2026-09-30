@@ -84,7 +84,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 ```json
 {
   "status": "ok",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "checks": { "lexicon": { "ok": true, "count": 4540, "expected": 4540 } }
 }
 ```
@@ -100,16 +100,18 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | `https://helping-though-thou-services.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
 | `https://helping-though-thou-services.trycloudflare.com/api/meta` | 元信息 |
 
-实测结果（2026-09-30，v1.0.3，脚本 `npm run probe:prod` 采样）：
+实测结果（2026-09-30，v1.0.4，脚本 `npm run probe:prod` 采样）：
 
 ```text
 路径        200 比例   阈值内   中位      最快     最慢
-/healthz    6/6       6/6     461ms    385ms    882ms   ✅
-/api/meta   6/6       6/6     430ms    395ms   1159ms   ✅
+/healthz    10/10     10/10   429ms    396ms   1857ms   ✅
+/api/meta   10/10     10/10   422ms    384ms    826ms   ✅
+/status     10/10     10/10   425ms    387ms   1009ms   ✅
+/           10/10     10/10  1056ms    832ms   1256ms   ✅
 ```
 
 > 复采命令：`npm run probe:prod`（可用 `set ROUNDS=10` 调整采样次数）。
-> 上述采样共 12 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
+> 上述采样共 40 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
 
 > **关于压缩**：入口页原始 464 KB，启用 Brotli 后降到 127 KB，公网传输量减少约 73%。
 > 服务启动时预热压缩缓存，并对入口页下发 ETag，重复访问命中 `304` 不再重复传输正文。

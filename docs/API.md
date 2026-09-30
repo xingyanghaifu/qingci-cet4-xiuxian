@@ -37,22 +37,43 @@ PORT=8080 HOST=0.0.0.0 npm start
 **请求**
 
 ```bash
+# 本地
 curl -s http://127.0.0.1:4173/healthz
+
+# 线上（Cloudflare Pages，可直接复制执行）
+curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```
 
-**响应 200**
+**响应 200（本地 `server.mjs`）**
 
 ```json
 {
   "status": "ok",
-  "version": "1.0.6",
+  "version": "1.2.0",
   "uptimeSeconds": 27,
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "build": { "ok": true, "artifact": "dist/cet4-xiuxian.html" }
   },
   "runtime": { "node": "v24.18.0", "platform": "win32" },
-  "timestamp": "2026-09-30T03:06:37.083Z"
+  "timestamp": "2026-09-30T05:46:38.209Z"
+}
+```
+
+**响应 200（线上 Cloudflare Pages）**
+
+```json
+{
+  "status": "ok",
+  "version": "1.2.0",
+  "platform": "cloudflare-pages",
+  "checks": {
+    "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
+    "staticAsset": { "ok": true, "artifact": "index.html" }
+  },
+  "runtime": { "colo": "SEA", "country": "CN" },
+  "latencyMs": 87,
+  "timestamp": "2026-09-30T05:44:35.065Z"
 }
 ```
 
@@ -60,10 +81,12 @@ curl -s http://127.0.0.1:4173/healthz
 |---|---|---|
 | `status` | string | `ok` 健康 / `degraded` 降级 |
 | `version` | string | 应用版本，取自 package.json |
-| `uptimeSeconds` | number | 服务已运行秒数 |
+| `platform` | string | 仅线上返回，固定为 `cloudflare-pages` |
+| `uptimeSeconds` | number | 仅本地返回，服务已运行秒数 |
 | `checks.lexicon.ok` | boolean | 词库是否完整可解析 |
 | `checks.lexicon.count` | number | 实际词条数（期望 4540） |
-| `checks.build.ok` | boolean | 构建产物是否存在 |
+| `checks.build.ok` | boolean | 仅本地返回，构建产物是否存在 |
+| `runtime.colo` | string | 仅线上返回，Cloudflare 边缘节点代码 |
 
 **状态码**
 
@@ -72,27 +95,39 @@ curl -s http://127.0.0.1:4173/healthz
 | 200 | 健康，词库解析正常 |
 | 503 | 降级，词库缺失或损坏 |
 
-> 别名：`/health` 等价于 `/healthz`。
+> 别名：本地 `/health` 等价于 `/healthz`。
 
 ### 1.2 GET /api/meta — 应用元信息
 
 **请求**
 
 ```bash
+# 本地
 curl -s http://127.0.0.1:4173/api/meta
+
+# 线上（可直接复制执行）
+curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 ```
 
-**响应 200**
+**响应 200（线上实测）**
 
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.0.6",
+  "version": "1.2.0",
+  "platform": "cloudflare-pages",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
   "features": ["六种记忆题型", "试卷模拟", "斗法对战", "学情看板", "间隔重复", "离线可用"],
-  "servedFrom": "dist"
+  "endpoints": { "health": "/healthz", "meta": "/api/meta", "app": "/" }
 }
+```
+
+**一行命令提取版本号**（可直接复制执行）：
+
+```bash
+curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))"
+# 输出：1.2.0
 ```
 
 ### 1.3 GET / — 应用页面

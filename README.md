@@ -28,8 +28,11 @@ npm start                 # 访问 http://127.0.0.1:4173
 npm install               # 零外部依赖，秒完成
 npm run build             # 构建产物到 dist/
 npm test                  # 运行 30 个自动化测试
-npm run healthcheck       # 健康检查
-npm run verify            # 一键：构建 + 测试 + 健康检查
+npm run test:coverage     # 测试 + 覆盖率报告
+npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
+npm start                 # 启动本地服务（http://127.0.0.1:4173）
+npm run healthcheck       # 健康检查（校验状态码与响应时间）
+npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检查
 ```
 
 ## 核心功能
@@ -49,6 +52,7 @@ npm run verify            # 一键：构建 + 测试 + 健康检查
 - **确定性随机**：同一套卷子每次题序一致，便于重做对比
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
 - **可测试**：30 个用例，行覆盖率 100%、分支 81.3%
+- **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
 ## 项目结构

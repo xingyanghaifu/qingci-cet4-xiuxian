@@ -39,6 +39,7 @@
 - HTTP 服务 `server.mjs`：静态托管 + `/healthz` 健康检查 + `/api/meta` 元信息
 - 健康检查脚本 `scripts/healthcheck.mjs`，校验状态码与响应时间（阈值 2s）
 - 自动化测试 30 个用例（`node:test`），核心逻辑行覆盖率 100%、分支 81.3%
+- 文档核验脚本 `scripts/verify-docs.js`：逐条执行 API 文档中的 26 条示例并比对输出，`npm run test:docs` 可复现
 
 #### 文档
 - `docs/产品方案.md`：用户画像、功能列表、技术架构、里程碑排期

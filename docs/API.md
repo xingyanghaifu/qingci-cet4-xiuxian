@@ -476,6 +476,23 @@ console.log(Q.kindAccuracy({ r:3, n:4 }), Q.kindAccuracy(null));
 
 ## 第三部分：错误码与调试
 
+### 文档示例自动核验
+
+本文档中的 26 条示例全部可执行，且可用命令复现：
+
+```bash
+npm run test:docs
+```
+
+输出：
+
+```text
+总计 26 条：通过 26，失败 0
+```
+
+脚本 `scripts/verify-docs.js` 会逐条调用文档中的函数并比对输出，
+若某条示例与文档所述不符会列出差异并以非零码退出。
+
 | 现象 | 原因 | 处理 |
 |---|---|---|
 | `未知题型: xxx` | 传了不在 MEMORY_KINDS 的 kind | 用 `Q.MEMORY_KINDS` 校验 |

@@ -5,6 +5,41 @@
 
 ---
 
+## [1.2.1] - 2026-09-30
+
+本次发布为**可复现性验证版本**：在全新干净环境中严格按 README 步骤完整跑通，
+并修正文档与实际不符的测试计数。
+
+### 新增
+
+- `docs/全新环境验证记录.md`：记录在无 `node_modules`、无 `dist` 的干净目录中，
+  按 README 步骤逐条执行 `npm install → build → test → test:coverage → test:docs → verify`
+  的完整输出与耗时，作为「按文档步骤可成功运行」的可复现证据。
+
+### 修复
+
+- **README 测试计数与实际不符**：徽章与正文标注「30 个测试 / 分支 81.3%」，
+  实际为 **45 个测试 / 分支 82.78%**。已同步修正三处（徽章、快速开始注释、技术特色）。
+  原因是此前 `tests/worker.test.mjs` 新增 15 个 Worker 用例后未回改 README。
+
+### 验证
+
+在全新环境实测，`npm run verify` 一键链路全绿：
+
+| 步骤 | 结果 |
+|---|---|
+| `npm install` | ✅ up to date, 0 vulnerabilities（零外部依赖） |
+| `npm run build` | ✅ 产出 dist/cet4-xiuxian.html，463.5 KB，词库 4540 条 |
+| `npm test` | ✅ 45 tests / 45 pass / 0 fail |
+| `npm run test:coverage` | ✅ 行 100%、分支 82.78%、函数 97.92% |
+| `npm run test:docs` | ✅ 26 条文档示例全部通过 |
+| `npm run healthcheck` | ✅ `/healthz` `/api/meta` `/status` `/` 均 200 |
+
+线上环境同步复测（`https://qingci-cet4-xiuxian.pages.dev`）：
+`/healthz` HTTP 200 / 0.82s，`/api/meta` HTTP 200 / 0.76s，均在 2 秒阈值内。
+
+---
+
 ## [1.2.0] - 2026-09-30
 
 线上环境从「Workers 单一入口」升级为「Workers + Pages 双通道」，并解决

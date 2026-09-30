@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.0.0-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-30%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-45%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines-176b3f)](tests/)
 [![deps](https://img.shields.io/badge/dependencies-0-a56d22)](#技术特色)
 [![license](https://img.shields.io/badge/license-MIT-8b7360)](LICENSE)
@@ -27,7 +27,7 @@ npm start                 # 访问 http://127.0.0.1:4173
 # 方式三：从源码构建
 npm install               # 零外部依赖，秒完成
 npm run build             # 构建产物到 dist/
-npm test                  # 运行 30 个自动化测试
+npm test                  # 运行 45 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -51,7 +51,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 - **零依赖**：运行时不加载任何 CDN，构建脚本只用 Node 内置模块
 - **确定性随机**：同一套卷子每次题序一致，便于重做对比
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：30 个用例，行覆盖率 100%、分支 81.3%
+- **可测试**：45 个用例，行覆盖率 100%、分支 82.78%
 - **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
@@ -198,6 +198,7 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | [使用文档](docs/使用文档.md) | 三种使用方式、功能上手、常见问题 |
 | [API 文档](docs/API.md) | HTTP 接口与核心模块 API，示例均经真实执行验证 |
 | [部署说明](docs/部署说明.md) | 本地服务、隧道、静态托管三种部署方式 |
+| [全新环境验证记录](docs/全新环境验证记录.md) | 干净环境按本 README 步骤实测的完整输出（可复现） |
 | [更新日志](CHANGELOG.md) | 版本发布记录 |
 
 ## 架构

@@ -15,6 +15,7 @@
     "test:coverage": "node --experimental-test-coverage --test tests/*.test.js",
     "start": "node server.mjs",
     "healthcheck": "node scripts/healthcheck.mjs",
+    "probe:prod": "node scripts/prod-probe.mjs",
     "test:docs": "node scripts/verify-docs.js",
     "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck"
   },

@@ -5,6 +5,25 @@
 
 ---
 
+## [1.0.6] - 2026-09-30
+
+公网地址轮换版本。Cloudflare 免账号快速隧道重启后地址会变更，
+本版本将全部文档、探测脚本中的公网地址同步为新隧道，并复采线上数据。
+
+### 变更
+
+- 公网地址更新为 `https://owns-jake-tower-catch.trycloudflare.com`，
+  同步至 `README.md`、`docs/API.md`、`CHANGELOG.md`、`scripts/prod-probe.mjs`
+- `README.md` 线上实测数据按 `npm run probe:prod` 复采结果重写
+  （每路径 10 次采样，四个端点 40/40 全部 200 且在 2000ms 阈值内）
+
+### 验证
+
+- `npm run verify`：构建 + 30 项测试 + 26 条文档示例 + 本地健康检查，全部通过
+- `npm run probe:prod`：`/healthz` 451ms、`/api/meta` 434ms、`/status` 478ms、`/` 1203ms（均为中位数）
+
+---
+
 ## [1.0.5] - 2026-09-30
 
 公网在线稳定性版本。针对验收标准「线上环境接口返回 HTTP 200 且响应时间在 2 秒以内」，
@@ -61,7 +80,7 @@
 ### 变更
 
 - 公网环境重新部署，线上地址更新为
-  `https://helping-though-thou-services.trycloudflare.com`。
+  `https://owns-jake-tower-catch.trycloudflare.com`。
 - `scripts/prod-probe.mjs` 默认探测地址同步更新。
 
 ### 验证

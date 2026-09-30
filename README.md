@@ -84,7 +84,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 ```json
 {
   "status": "ok",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "checks": { "lexicon": { "ok": true, "count": 4540, "expected": 4540 } }
 }
 ```
@@ -95,27 +95,23 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 地址 | 说明 |
 |---|---|
-| `https://helping-though-thou-services.trycloudflare.com/` | 应用页面 |
-| `https://helping-though-thou-services.trycloudflare.com/healthz` | 健康检查（JSON） |
-| `https://helping-though-thou-services.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
-| `https://helping-though-thou-services.trycloudflare.com/api/meta` | 元信息 |
+| `https://owns-jake-tower-catch.trycloudflare.com/` | 应用页面 |
+| `https://owns-jake-tower-catch.trycloudflare.com/healthz` | 健康检查（JSON） |
+| `https://owns-jake-tower-catch.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
+| `https://owns-jake-tower-catch.trycloudflare.com/api/meta` | 元信息 |
 
-实测结果（2026-09-30，v1.0.5，32 次连续采样）：
-
-```text
-路径        中位      最慢      超 2 秒
-/healthz    808ms    1814ms    0/8    ✅
-/api/meta   442ms     718ms    0/8    ✅
-/status     601ms    1188ms    0/8    ✅
-/          1464ms    1779ms    0/8    ✅
-```
+实测结果（2026-09-30，v1.0.6，每路径 10 次采样，`npm run probe:prod`）：
 
 ```text
-总采样 32 次，达标 32/32（100.0%）
+路径        中位      最快      最慢      阈值内    超 2 秒
+/healthz    451ms    393ms    1138ms    10/10    0    ✅
+/api/meta   434ms    390ms     593ms    10/10    0    ✅
+/status     478ms    395ms    1118ms    10/10    0    ✅
+/          1203ms   1053ms    1275ms    10/10    0    ✅
 ```
 
 > 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
-> 上述采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。
+> 上表共 40 次采样，全部返回 HTTP 200 且耗时低于 2000ms 阈值（40/40）。
 
 > **关于性能优化**：`/healthz` 与 `/api/meta` 的词库读取已加缓存，避免每次请求重读 464KB 文件；
 > 入口页下发 `Cache-Control: public, max-age=300, stale-while-revalidate=86400`，

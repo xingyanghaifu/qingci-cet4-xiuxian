@@ -1,13 +1,13 @@
 # API 文档
 
-适用版本：**v1.0.5** ｜ 更新日期：2026-09-30
+适用版本：**v1.0.6** ｜ 更新日期：2026-09-30
 
 本文档分两部分：
 
 1. **HTTP 接口** — `server.mjs` 提供的服务端接口（本地服务与公网部署均可访问）
 2. **核心模块 API** — `src/core/` 可被 Node / 浏览器复用的函数
 
-> 公网实测地址：`https://helping-though-thou-services.trycloudflare.com`
+> 公网实测地址：`https://owns-jake-tower-catch.trycloudflare.com`
 > 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行。
 
 ---
@@ -41,7 +41,7 @@ curl -s http://127.0.0.1:4173/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "uptimeSeconds": 27,
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
@@ -83,7 +83,7 @@ curl -s http://127.0.0.1:4173/api/meta
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
   "features": ["六种记忆题型", "试卷模拟", "斗法对战", "学情看板", "间隔重复", "离线可用"],

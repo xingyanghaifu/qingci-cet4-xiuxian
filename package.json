@@ -1,6 +1,6 @@
 {
   "name": "qingci-cet4-xiuxian",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "青词天路 · 四级全卷修仙 —— CET-4 词汇修仙学习应用（单文件自包含 HTML + 六种记忆题型 + 对战模式 + 学情看板）",
   "private": true,
   "type": "commonjs",
@@ -16,8 +16,11 @@
     "start": "node server.mjs",
     "healthcheck": "node scripts/healthcheck.mjs",
     "probe:prod": "node scripts/prod-probe.mjs",
+    "watchdog": "node scripts/watchdog.mjs",
+    "keepalive": "node scripts/watchdog.mjs --loop",
     "test:docs": "node scripts/verify-docs.js",
-    "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck"
+    "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck",
+    "verify:prod": "npm test && npm run test:docs && node scripts/watchdog.mjs"
   },
   "keywords": [
     "cet4",

@@ -84,7 +84,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 ```json
 {
   "status": "ok",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "checks": { "lexicon": { "ok": true, "count": 4540, "expected": 4540 } }
 }
 ```
@@ -100,18 +100,29 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | `https://helping-though-thou-services.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
 | `https://helping-though-thou-services.trycloudflare.com/api/meta` | 元信息 |
 
-实测结果（2026-09-30，v1.0.4，脚本 `npm run probe:prod` 采样）：
+实测结果（2026-09-30，v1.0.5，脚本 `node scripts/watchdog.mjs` + 20 次连续采样）：
 
 ```text
-路径        200 比例   阈值内   中位      最快     最慢
-/healthz    10/10     10/10   429ms    396ms   1857ms   ✅
-/api/meta   10/10     10/10   422ms    384ms    826ms   ✅
-/status     10/10     10/10   425ms    387ms   1009ms   ✅
-/           10/10     10/10  1056ms    832ms   1256ms   ✅
+路径        达标比例   中位      最快     最慢
+/healthz    5/5       448ms    414ms    927ms    ✅
+/api/meta   5/5       486ms    438ms    878ms    ✅
+/status     5/5       590ms    437ms    968ms    ✅
+/           5/5      1653ms   1390ms   1894ms    ✅
 ```
 
-> 复采命令：`npm run probe:prod`（可用 `set ROUNDS=10` 调整采样次数）。
-> 上述采样共 40 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
+```text
+采样 20 次，达标 20/20
+min 414ms   median 590ms   max 1894ms   平均 859ms
+超 2 秒次数：0
+```
+
+> 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
+> 上述采样共 20 次请求，全部返回 HTTP 200 且耗时低于 2000ms 阈值。
+
+> **关于冷启动与保活**：免账号快速隧道在闲置后休眠，唤醒首个请求可能超过 2 秒
+> （实测曾出现 `/healthz` 2085ms、`/` 2464ms）。已提供看门狗常驻保活
+> `npm run keepalive`（默认 60s 心跳，`--interval` 可调），持续唤醒后采样全部落回 2 秒内。
+> 看门狗会在任一端点超预算时以退出码 1 报错，便于 CI / 定时任务告警。
 
 > **关于压缩**：入口页原始 464 KB，启用 Brotli 后降到 127 KB，公网传输量减少约 73%。
 > 服务启动时预热压缩缓存，并对入口页下发 ETag，重复访问命中 `304` 不再重复传输正文。

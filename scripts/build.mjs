@@ -41,15 +41,20 @@ console.log('   ✓ 校验词库 ' + words.length + ' 条');
 const required = [
   ['面板：斗法场', 'id="panel-duel"'],
   ['面板：学情看板', 'id="statGrid"'],
-  ['题型：形近辨析', 'MEMORY_KINDS'],
-  ['题型：拼写默写', 'function submitSpell'],
-  ['对战结算', 'function answerDuel'],
+  ['题型：形近辨析', 'function makeMemoryQuestion('],
+  ['题型：拼写默写', 'function submitSpell(){'],
+  ['对战结算', 'function answerDuel('],
   ['健康检查钩子', 'id="lexicon"'],
 ];
+const missing = [];
 for (const [name, token] of required) {
-  if (!html.includes(token)) fail('模板缺少关键结构：' + name + '（' + token + '）');
-  console.log('   ✓ 校验 ' + name);
+  if (html.includes(token)) {
+    console.log('   ✓ 校验 ' + name);
+  } else {
+    missing.push(name + '（' + token + '）');
+  }
 }
+if (missing.length) fail('模板缺少关键结构：' + missing.join('、'));
 
 // —— 2. 注入构建元信息（时间戳取自上一次产物，保证重复构建产物确定一致）——
 const metaRe = /<!-- build: qingci-cet4-xiuxian v[\d.]+ @ ([0-9T:.\-Z]+) -->/;

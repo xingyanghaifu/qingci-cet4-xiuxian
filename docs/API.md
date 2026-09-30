@@ -1,6 +1,6 @@
 # API 文档
 
-适用版本：**v1.0.4** ｜ 更新日期：2026-09-30
+适用版本：**v1.0.5** ｜ 更新日期：2026-09-30
 
 本文档分两部分：
 
@@ -41,7 +41,7 @@ curl -s http://127.0.0.1:4173/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "uptimeSeconds": 27,
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
@@ -83,7 +83,7 @@ curl -s http://127.0.0.1:4173/api/meta
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
   "features": ["六种记忆题型", "试卷模拟", "斗法对战", "学情看板", "间隔重复", "离线可用"],

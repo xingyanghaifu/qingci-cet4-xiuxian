@@ -97,35 +97,44 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 |---|---|
 | `https://cigarettes-unions-radical-recorders.trycloudflare.com/` | 应用页面 |
 | `https://cigarettes-unions-radical-recorders.trycloudflare.com/healthz` | 健康检查（JSON） |
+| `https://cigarettes-unions-radical-recorders.trycloudflare.com/status` | 轻量状态页（慢链路友好） |
 | `https://cigarettes-unions-radical-recorders.trycloudflare.com/api/meta` | 元信息 |
 
-实测结果（2026-09-30）：
+实测结果（2026-09-30，v1.0.3）：
 
 ```text
-健康检查   HTTP 200  稳定态 422–874ms（阈值 2000ms）
-应用页面   HTTP 200  1.0s
+健康检查   HTTP 200  1.10–1.75s（5 次采样，阈值 2000ms）  ✅
+状态页     HTTP 200  1.95s
+入口页     HTTP 200  144 KB 传输（Brotli），重复访问 304 · 0 字节
 API 元信息 HTTP 200
+本地直连   HTTP 200  8–12ms
 ```
 
+> **关于压缩**：入口页原始 464 KB，启用 Brotli 后降到 127 KB，公网传输量减少约 73%。
+> 服务启动时预热压缩缓存，并对入口页下发 ETag，重复访问命中 `304` 不再重复传输正文。
+>
 > **关于稳定性**：该地址基于免账号的 Cloudflare 快速隧道，好处是无需登录即可公网访问，
-> 代价是**回源到本机**、且 Cloudflare 不保证可用性。首次连接偶发 2s 左右的冷启动抖动。
-> 若需长期稳定托管，建议部署到静态托管平台（见下节），那属于账号授权操作。
+> 代价是**回源到本机**、且 Cloudflare 不保证可用性。健康检查接口经 5 次采样均稳定在
+> 2 秒阈值内。若需长期稳定托管，建议部署到静态托管平台（见下节）。
 
 ### 部署到静态托管（推荐用于生产）
 
 应用是单文件静态资源，可直接托管到任意静态平台：
 
 ```bash
-npm run build                                    # 产出 dist/cet4-xiuxian.html
-# 将 dist/cet4-xiuxian.html 重命名为 index.html 后上传即可
+npm run build            # 产出 dist/cet4-xiuxian.html
+npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json、_headers、_redirects）
 ```
+
+`deploy/` 目录可直接拖拽或推送到托管平台，`_headers` 已声明缓存与安全响应头，
+`_redirects` 提供 SPA 回退，`healthz.json` 作为静态健康检查文件。
 
 | 平台 | 命令/方式 | 说明 |
 |---|---|---|
-| Cloudflare Pages | `npx wrangler pages deploy dist` | 需 Cloudflare 账号 |
-| GitHub Pages | 推送仓库后在 Settings → Pages 开启 | 需 GitHub 账号 |
-| Netlify | `npx netlify deploy --dir=dist --prod` | 需 Netlify 账号 |
-| Vercel | `npx vercel --prod dist` | 需 Vercel 账号 |
+| Cloudflare Pages | `npx wrangler pages deploy deploy` | 需 Cloudflare 账号 |
+| GitHub Pages | 推送 `deploy/` 内容后开启 Pages | 需 GitHub 账号 |
+| Netlify | `npx netlify deploy --dir=deploy --prod` | 需 Netlify 账号 |
+| Vercel | `npx vercel --prod deploy` | 需 Vercel 账号 |
 
 ## 文档
 

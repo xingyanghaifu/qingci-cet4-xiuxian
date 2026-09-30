@@ -9,21 +9,31 @@ const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT) || 4173;
 const LIMIT_MS = 2000;
 
-function probe(path) {
+function probe(path, headers) {
   return new Promise((resolve) => {
     const t0 = Date.now();
-    const req = http.get({ host: HOST, port: PORT, path, timeout: LIMIT_MS + 2000 }, (res) => {
+    const req = http.get({ host: HOST, port: PORT, path, headers, timeout: LIMIT_MS + 2000 }, (res) => {
       let body = '';
       res.on('data', (c) => (body += c));
-      res.on('end', () => resolve({ path, status: res.statusCode, ms: Date.now() - t0, body }));
+      res.on('end', () => resolve({
+        path, status: res.statusCode, ms: Date.now() - t0, body,
+        headers: Object.entries(res.headers).map(([k, v]) => k + ': ' + v).join('\n'),
+      }));
     });
     req.on('error', (e) => resolve({ path, status: 0, ms: Date.now() - t0, error: e.message }));
     req.on('timeout', () => { req.destroy(); resolve({ path, status: 0, ms: Date.now() - t0, error: 'timeout' }); });
   });
 }
 
-const targets = ['/healthz', '/api/meta', '/'];
+const targets = ['/healthz', '/api/meta', '/status', '/'];
 let failed = 0;
+
+// 额外校验：入口页应带 ETag 并支持压缩协商
+const etagProbe = await probe('/', { 'Accept-Encoding': 'br,gzip', 'If-None-Match': 'nonexistent' });
+if (etagProbe.status === 200) {
+  const hasEtag = /etag/i.test(etagProbe.headers || '');
+  console.log((hasEtag ? '✅' : '⚠️ ') + ' / 入口页 ETag=' + (hasEtag ? '已下发' : '缺失') + '  压缩协商=' + ((etagProbe.headers || '').match(/content-encoding/i) ? '已启用' : '未启用'));
+}
 
 for (const t of targets) {
   const r = await probe(t);

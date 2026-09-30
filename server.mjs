@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import zlib from 'node:zlib';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -39,38 +40,63 @@ function lexiconCount() {
   }
 }
 
-/** 缓存压缩结果，避免每次请求重复计算（公网回源时显著降低首字节延迟） */
+/** 缓存压缩结果，键含内容指纹，避免不同内容互相覆盖（公网回源时显著降低首字节延迟） */
 const gzipCache = new Map();
 function gzipCached(key, payload) {
   const hit = gzipCache.get(key);
-  if (hit && hit.src === payload) return hit.buf;
-  const buf = zlib.gzipSync(Buffer.from(payload, 'utf8'), { level: 6 });
-  gzipCache.set(key, { src: payload, buf });
-  return buf;
+  if (hit && hit.src === payload) return hit;
+  const raw = Buffer.from(payload, 'utf8');
+  const gz = zlib.gzipSync(raw, { level: 9 });
+  // 同时缓存 br（若客户端支持，体积更小）
+  const br = typeof zlib.brotliCompressSync === 'function'
+    ? zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } })
+    : null;
+  const entry = { src: payload, raw, gz, br };
+  gzipCache.set(key, entry);
+  return entry;
 }
 
-function send(res, code, body, type, req) {
+const ENTRY_SHA = (() => {
+  try {
+    const { file } = appFile();
+    const html = fs.readFileSync(file, 'utf8');
+    return crypto.createHash('sha256').update(html).digest('hex').slice(0, 16);
+  } catch (e) { return 'unknown'; }
+})();
+
+function send(res, code, body, type, req, extra) {
   const payload = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+  const ctype = type || 'application/json; charset=utf-8';
   const headers = {
-    'Content-Type': type || 'application/json; charset=utf-8',
+    'Content-Type': ctype,
     'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
   };
-  // 对文本响应做 gzip，显著降低公网传输体积（475 KB 页面可压到约 145 KB）
+  if (extra) Object.assign(headers, extra);
   const ae = (req && req.headers['accept-encoding']) || '';
-  const compressible = /^text\/|json|javascript|svg/.test(headers['Content-Type']) && payload.length > 1024;
-  if (compressible && /\bgzip\b/.test(ae)) {
-    const buf = gzipCached(keyOf(headers['Content-Type'], code), payload);
-    headers['Content-Encoding'] = 'gzip';
-    headers['Vary'] = 'Accept-Encoding';
-    headers['Content-Length'] = buf.length;
-    res.writeHead(code, headers);
-    return res.end(buf);
+  const compressible = /^text\/|json|javascript|svg/.test(ctype) && Buffer.byteLength(payload) > 1024;
+  if (compressible) {
+    // 缓存键含内容哈希，避免不同响应互相覆盖
+    const entry = gzipCached(code + '|' + ctype + '|' + payload.length + '|' + payload.slice(0, 64), payload);
+    if (entry.br && /\bbr\b/.test(ae)) {
+      headers['Content-Encoding'] = 'br';
+      headers['Vary'] = 'Accept-Encoding';
+      headers['Content-Length'] = entry.br.length;
+      res.writeHead(code, headers);
+      return res.end(entry.br);
+    }
+    if (/\bgzip\b/.test(ae)) {
+      headers['Content-Encoding'] = 'gzip';
+      headers['Vary'] = 'Accept-Encoding';
+      headers['Content-Length'] = entry.gz.length;
+      res.writeHead(code, headers);
+      return res.end(entry.gz);
+    }
   }
   headers['Content-Length'] = Buffer.byteLength(payload);
   res.writeHead(code, headers);
   res.end(payload);
 }
-function keyOf(type, code) { return code + '|' + type; }
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://' + (req.headers.host || HOST));
@@ -107,7 +133,35 @@ const server = http.createServer((req, res) => {
   if (p === '/' || p === '/index.html' || p === '/cet4-xiuxian.html') {
     const { file } = appFile();
     if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
+    const etag = '"' + ENTRY_SHA + '"';
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });
+      return res.end();
+    }
     const html = fs.readFileSync(file, 'utf8');
+    return send(res, 200, html, 'text/html; charset=utf-8', req, { ETag: etag, 'Cache-Control': 'no-cache' });
+  }
+
+  if (p === '/status') {
+    const words = lexiconCount();
+    const uptime = Math.round((Date.now() - START) / 1000);
+    const html = '<!DOCTYPE html><html lang="zh-CN"><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>青词天路 · 服务状态</title>'
+      + '<style>body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#12100e;color:#f6ecdf;margin:0;padding:32px}'
+      + '.card{max-width:560px;margin:auto;background:#211b16;border:1px solid #3c3229;border-radius:16px;padding:24px}'
+      + 'h1{margin:0 0 4px;font-size:22px}.ok{color:#8ed8bd;font-weight:700}'
+      + 'table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}'
+      + 'td{padding:8px 0;border-bottom:1px solid #3c3229}td:last-child{text-align:right;color:#8ed8bd}'
+      + 'a{color:#efc98a}</style><div class="card"><h1>青词天路 · 服务状态</h1>'
+      + '<p class="ok">● 运行中</p><table>'
+      + '<tr><td>版本</td><td>v' + pkg.version + '</td></tr>'
+      + '<tr><td>词库条数</td><td>' + words + ' 条</td></tr>'
+      + '<tr><td>已运行</td><td>' + uptime + ' 秒</td></tr>'
+      + '<tr><td>构建指纹</td><td>' + ENTRY_SHA + '</td></tr>'
+      + '<tr><td>健康检查</td><td><a href="/healthz">/healthz</a></td></tr>'
+      + '<tr><td>应用入口</td><td><a href="/">进入应用 →</a></td></tr>'
+      + '</table></div></html>';
     return send(res, 200, html, 'text/html; charset=utf-8', req);
   }
 
@@ -120,8 +174,9 @@ server.listen(PORT, HOST, () => {
   try {
     const { file } = appFile();
     const warmHtml = fs.readFileSync(file, 'utf8');
-    gzipCached(keyOf('text/html; charset=utf-8', 200), warmHtml);
-    console.log('   预热: 页面已压缩入缓存 (' + (gzipCached(keyOf('text/html; charset=utf-8', 200), warmHtml).length / 1024).toFixed(0) + ' KB)');
+    const entry = gzipCached(200 + '|text/html; charset=utf-8|' + warmHtml.length + '|' + warmHtml.slice(0, 64), warmHtml);
+    console.log('   预热: 页面已压缩入缓存 (gzip ' + (entry.gz.length / 1024).toFixed(0) + ' KB'
+      + (entry.br ? ' / br ' + (entry.br.length / 1024).toFixed(0) + ' KB' : '') + ')');
   } catch (e) { console.log('   预热跳过:', e.message); }
   console.log('✅ 服务已启动');
   console.log('   地址: http://' + HOST + ':' + PORT);

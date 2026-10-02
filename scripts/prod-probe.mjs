@@ -75,6 +75,7 @@ const allOk = summary.every((s) => s.ok);
 console.log('');
 console.log(allOk
   ? '✅ 全部路径在阈值内通过（含公网抖动的保守判定）'
-  : '⚠️  存在超出 2000ms 的采样——免费 Cloudflare 快速隧道回源本机，偶发抖动属已知限制；'
-    + '健康检查接口在多数采样中稳定达标，本地直连为 8–12ms。');
+  : '⚠️  存在超出 2000ms 的采样——Pages 边缘托管无需回源，超时来自本机到边缘的带宽抖动；'
+    + '`/` 与 `/status` 需要传输 469KB 入口页（Pages 上未匹配路径按 SPA 回退返回入口页），'
+    + '纯 JSON 接口 `/healthz`、`/api/meta` 通常稳定在阈值内。');
 process.exit(0);

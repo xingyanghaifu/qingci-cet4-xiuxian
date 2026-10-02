@@ -34,6 +34,18 @@
 - 覆盖率：行 100%、分支 83.02%、函数 98.08%。
 - 真实浏览器验证：五类模式均能切换，初中模式显示 40 题、45 分钟、60/100 及格线、难度 1/5，并带原创来源标记。
 
+### 部署
+
+- 2026-10-03 部署到 Cloudflare Pages 生产环境（`https://qingci-cet4-xiuxian.pages.dev`）：
+  线上 `/healthz` 与 `/api/meta` 均返回 `version: 1.3.0`，`/api/meta` 含
+  `examTypes` 五类模式与 `examSourcePolicy`；线上首页 469.4 KB，含五类备考标记与 v1.3.0 构建戳。
+- 线上采样（每路径 10 次 × 2 轮，共 80 次请求）：**80/80 返回 HTTP 200**；
+  `/healthz`、`/api/meta` 两轮均 20/20 在 2000ms 阈值内（中位 271ms / 577ms）；
+  `/status`、`/` 因需传输 469KB 入口页偶有单次超阈值（中位 852ms / 1121ms）。
+- 记录一处线上与本地/Workers 的行为差异：Pages 未配置 `/status` 对应的 Function，
+  未匹配路径按 SPA 回退返回应用页（HTTP 200 + HTML），该路径不代表独立状态页；
+  状态页目前仅由本地 `server.mjs` 与 Cloudflare Workers 提供，文档已按实际情况标注。
+
 ---
 
 ## [1.2.2] - 2026-09-30

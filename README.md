@@ -99,53 +99,60 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 |---|---|
 | `https://qingci-cet4-xiuxian.pages.dev/` | 应用页面 |
 | `https://qingci-cet4-xiuxian.pages.dev/healthz` | 健康检查（JSON，动态） |
-| `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON） |
+| `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON，含五类备考与题源说明） |
 
-实测结果（2026-09-30 重新部署后，v1.2.2，每路径 10 次采样，`npm run probe:prod`）：
+实测结果（2026-10-03 部署 v1.3.0 后，每路径 10 次采样，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    209ms    191ms     615ms    10/10     0    ✅
-/api/meta   199ms    186ms     723ms    10/10     0    ✅
-/status     300ms    272ms     650ms    10/10     0    ✅
-/          270ms    267ms     637ms    10/10     0    ✅
+/healthz    271ms    212ms     719ms    10/10     0    ✅
+/api/meta   577ms    231ms     1112ms   10/10     0    ✅
+/status     852ms    572ms     2651ms    9/10     1    ⚠️
+/          1121ms    879ms     2309ms    9/10     1    ⚠️
 ```
 
-> **40/40 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
-> 健康检查中位 209ms、元信息中位 199ms，远优于阈值要求。
+> **两次采样合计 80 次请求全部返回 HTTP 200**（`/healthz` 与 `/api/meta` 20/20 在阈值内），
+> 但 `/status` 与 `/` 各有 2–3 次采样超过 2000ms：`/` 需要传输 469 KB 入口页，
+> `/status` 在 Pages 上走 SPA 回退同样返回该入口页，两者耗时取决于本机到 SEA 边缘的带宽抖动。
+> 纯 JSON 的动态接口（`/healthz`、`/api/meta`）稳定在阈值内。
 
-`/healthz` 返回的真实响应（2026-09-30 重新部署后实测）：
+> ⚠️ **`/status` 的线上行为**：Pages 未部署 `/status` 对应的 Function，
+> 未匹配路径会按 SPA 回退返回应用页面（HTTP 200 + HTML），因此该路径不代表独立状态页。
+> 人类可读状态页目前仅由本地 `server.mjs` 与 Cloudflare Workers 提供。
+
+`/healthz` 返回的真实响应（2026-10-03 部署 v1.3.0 后实测）：
 
 ```json
 {
   "status": "ok",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "staticAsset": { "ok": true, "artifact": "index.html" }
   },
   "runtime": { "colo": "SEA", "country": "CN" },
-  "latencyMs": 66,
-  "timestamp": "2026-09-30T06:13:07.356Z"
+  "latencyMs": 140,
+  "timestamp": "2026-10-02T16:46:44.358Z"
 }
 ```
 
 ### 双通道部署说明
 
-本项目同时提供两种线上通道，均已部署成功：
+本项目同时提供两种线上通道：
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，40/40 采样达标，动静接口齐全 |
-| Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.3.0（五类备考），动静接口齐全 |
+| Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构，当前仍为 v1.2.0 构建 |
 
 > **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
 > （实测 DNS 解析到 Dropbox 的 IP `162.125.80.6`，属 DNS 污染，TCP 无法连通），
 > 而 `*.pages.dev` 域名实测可正常直连。两者共用同一套构建产物与同构接口实现，
-> 功能完全一致，因此以可达性更好的 Pages 地址作为线上验收入口。
-> Workers 侧已完成部署，并通过 Cloudflare API 确认为生产环境运行
-> （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）。
+> 功能基本一致，因此以可达性更好的 Pages 地址作为线上验收入口。
+> Workers 侧此前已完成部署，并通过 Cloudflare API 确认为生产环境运行
+> （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）；
+> 该通道**未随本次 v1.3.0 的 Pages 部署一起更新**。
 
 > 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
 

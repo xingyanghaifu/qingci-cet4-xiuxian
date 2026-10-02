@@ -8,11 +8,13 @@
 2. **核心模块 API** — `src/core/` 可被 Node / 浏览器复用的函数
 
 > 公网实测地址：`https://qingci-cet4-xiuxian.pages.dev`
-> 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行。
+> 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行
+> （例外：`/status` 仅由本地 `server.mjs` 与 Cloudflare Workers 提供，Pages 上未匹配路径按 SPA 回退返回应用页）。
 >
-> 线上验收（2026-09-30，每路径 5 次采样，阈值 2000ms）：
-> **20/20 采样全部达标** ·
-> `/healthz` 中位 224ms · `/api/meta` 中位 213ms · `/status` 中位 554ms · `/` 中位 401ms
+> 线上验收（2026-10-03，v1.3.0，每路径 10 次采样，阈值 2000ms）：
+> **80/80 采样返回 HTTP 200** ·
+> `/healthz` 中位 271ms · `/api/meta` 中位 577ms · `/status` 中位 852ms · `/` 中位 1121ms
+> （`/healthz`、`/api/meta` 20/20 在阈值内；`/status`、`/` 因传输 469KB 入口页偶有单次超 2 秒）
 
 ---
 
@@ -65,15 +67,15 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "staticAsset": { "ok": true, "artifact": "index.html" }
   },
   "runtime": { "colo": "SEA", "country": "CN" },
-  "latencyMs": 87,
-  "timestamp": "2026-09-30T05:44:35.065Z"
+  "latencyMs": 140,
+  "timestamp": "2026-10-02T16:46:44.358Z"
 }
 ```
 
@@ -116,11 +118,13 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "platform": "cloudflare-pages",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
-  "features": ["六种记忆题型", "试卷模拟", "斗法对战", "学情看板", "间隔重复", "离线可用"],
+  "examTypes": ["junior", "senior", "pets3", "cet4", "cet6"],
+  "features": ["五类备考选择", "原创整套模拟与及格突破", "境界动态难度", "六种记忆题型", "斗法对战", "学情看板", "间隔重复", "离线可用"],
+  "examSourcePolicy": "原创练习；只有核验再利用许可的公开材料才会标为公开题源",
   "endpoints": { "health": "/healthz", "meta": "/api/meta", "app": "/" }
 }
 ```
@@ -129,7 +133,7 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 
 ```bash
 curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))"
-# 输出：1.2.2
+# 输出：1.3.0
 ```
 
 ### 1.3 GET / — 应用页面

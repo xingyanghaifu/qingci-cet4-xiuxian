@@ -136,6 +136,19 @@ function recentDays(days, n, now) {
   return out;
 }
 
+/** 多考试类型配置：题目均为原创练习，公开材料需单独核验许可后再加入 */
+const EXAM_CONFIGS = Object.freeze({
+  junior: { id: 'junior', name: '初中英语', level: 1, pass: 60, total: 100, count: 40, minutes: 45, source: '原创练习', description: '基础词汇、语法与短文理解' },
+  senior: { id: 'senior', name: '高中英语', level: 2, pass: 60, total: 100, count: 50, minutes: 60, source: '原创练习', description: '高中词汇、语法与阅读理解' },
+  pets3: { id: 'pets3', name: 'PETS-3', level: 3, pass: 60, total: 100, count: 60, minutes: 90, source: '原创练习', description: '公共英语三级能力训练' },
+  cet4: { id: 'cet4', name: 'CET-4', level: 4, pass: 425, total: 710, count: 57, minutes: 125, source: '原创模拟', description: '四级结构模拟，不是真题' },
+  cet6: { id: 'cet6', name: 'CET-6', level: 5, pass: 425, total: 710, count: 57, minutes: 130, source: '原创练习', description: '六级难度原创训练，不是真题' },
+});
+function getExamConfig(id) { return EXAM_CONFIGS[id] || EXAM_CONFIGS.cet4; }
+function difficultyForRealm(realmIndex, examLevel) { return Math.max(1, Math.min(5, Number(examLevel || 1) + Math.floor(Number(realmIndex || 0) / 2))); }
+function canBreakthrough(score, examId) { const e = getExamConfig(examId); return Number(score) >= e.pass; }
+function examPassResult(correct, examId) { const e = getExamConfig(examId); const score = Math.round((Math.max(0, correct) / e.count) * e.total); return { score, pass: score >= e.pass, passLine: e.pass, exam: e.id }; }
+
 /** 依据模拟卷得分计算是否及格参照线（425） */
 function paperScore(gates, got) {
   let score = 0;
@@ -149,5 +162,6 @@ function paperScore(gates, got) {
 module.exports = {
   hash, rng, pick, wordsOf, esc, dayKey, examDays, realmOf, REVIEW_GAPS,
   scheduleWord, dueWords, checkSpell, posOf, shuffleOptions, masteryPercent,
-  ringOffset, recentDays, paperScore,
+  ringOffset, recentDays, paperScore, EXAM_CONFIGS, getExamConfig,
+  difficultyForRealm, canBreakthrough, examPassResult,
 };

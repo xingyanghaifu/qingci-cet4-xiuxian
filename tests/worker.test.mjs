@@ -89,6 +89,13 @@ test('worker：/api/meta 返回元信息与词库条数', async () => {
   assert.ok(Array.isArray(body.features) && body.features.length > 0);
 });
 
+test('worker：/api/meta 返回五类备考模式与题源治理边界（与本地/Pages 一致）', async () => {
+  const res = await worker.fetch(req('/api/meta'), makeEnv(), {});
+  const body = await res.json();
+  assert.deepEqual(body.examTypes, ['junior', 'senior', 'pets3', 'cet4', 'cet6']);
+  assert.match(body.examSourcePolicy, /原创/);
+});
+
 test('worker：/status 返回可读状态页', async () => {
   const res = await worker.fetch(req('/status'), makeEnv(), {});
   assert.equal(res.status, 200);

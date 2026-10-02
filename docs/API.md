@@ -1,6 +1,6 @@
 # API 文档
 
-适用版本：**v1.2.0** ｜ 更新日期：2026-09-30
+适用版本：**v1.3.0** ｜ 更新日期：2026-09-30
 
 本文档分两部分：
 
@@ -49,14 +49,14 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "uptimeSeconds": 27,
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "build": { "ok": true, "artifact": "dist/cet4-xiuxian.html" }
   },
   "runtime": { "node": "v24.18.0", "platform": "win32" },
-  "timestamp": "2026-09-30T05:46:38.209Z"
+  "timestamp": "2026-10-02T15:47:57.408Z"
 }
 ```
 
@@ -65,7 +65,7 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
@@ -99,6 +99,8 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 
 ### 1.2 GET /api/meta — 应用元信息
 
+当前接口还返回 `examTypes`、`examSourcePolicy`，用于客户端展示备考模式和题源治理边界。五类模式为 `junior`、`senior`、`pets3`、`cet4`、`cet6`；当前新增模式均为原创练习/原创模拟，不代表官方真题。
+
 **请求**
 
 ```bash
@@ -114,7 +116,7 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "platform": "cloudflare-pages",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
@@ -127,7 +129,7 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 
 ```bash
 curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))"
-# 输出：1.2.0
+# 输出：1.2.2
 ```
 
 ### 1.3 GET / — 应用页面

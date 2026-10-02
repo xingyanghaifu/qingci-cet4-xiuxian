@@ -10,9 +10,15 @@
  * 地址固定不变：部署后为 https://<worker名>.<子域>.workers.dev
  */
 
+import core from '../src/core/utils.js';
+
 const APP_NAME = '青词天路 · 四级全卷修仙';
 const MEMORY_KINDS = ['zh2en', 'en2zh', 'similar', 'listen', 'spell', 'pos'];
 const EXPECTED_LEXICON = 4540;
+// 备考模式取自核心配置，与 server.mjs / Pages Functions 保持同一份来源
+const EXAM_TYPES = Object.keys(core.EXAM_CONFIGS);
+const FEATURES = ['五类备考选择', '原创整套模拟与及格突破', '境界动态难度', '六种记忆题型', '斗法对战', '学情看板', '间隔重复', '离线可用'];
+const EXAM_SOURCE_POLICY = '原创练习；只有核验再利用许可的公开材料才会标为公开题源';
 
 /** 从 HTML 中提取词库条数，用于健康检查自证数据完好 */
 function lexiconCount(html) {
@@ -107,7 +113,9 @@ export default {
         version,
         lexiconSize: words,
         memoryKinds: MEMORY_KINDS,
-        features: ['六种记忆题型', '试卷模拟', '斗法对战', '学情看板', '间隔重复', '离线可用'],
+        examTypes: EXAM_TYPES,
+        features: FEATURES,
+        examSourcePolicy: EXAM_SOURCE_POLICY,
         servedFrom: 'cloudflare-edge',
       });
     }

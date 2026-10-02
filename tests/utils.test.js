@@ -127,6 +127,30 @@ test('recentDays：返回连续 N 天', () => {
   assert.strictEqual(out[0].right, 0, '无记录应为 0');
 });
 
+test('考试配置：五类考试均有题量、时长和及格线', () => {
+  for (const id of ['junior','senior','pets3','cet4','cet6']) {
+    const e = U.getExamConfig(id);
+    assert.strictEqual(e.id, id);
+    assert.ok(e.count > 0 && e.minutes > 0 && e.pass > 0 && e.pass <= e.total);
+    assert.ok(e.source.includes('原创'));
+  }
+  assert.strictEqual(U.getExamConfig('missing').id, 'cet4');
+});
+
+test('考试难度：随境界上升并封顶', () => {
+  assert.strictEqual(U.difficultyForRealm(0, 1), 1);
+  assert.strictEqual(U.difficultyForRealm(4, 1), 3);
+  assert.strictEqual(U.difficultyForRealm(99, 5), 5);
+});
+
+test('整套考试判定：达到及格线才算突破', () => {
+  assert.strictEqual(U.canBreakthrough(60, 'junior'), true);
+  assert.strictEqual(U.canBreakthrough(59, 'junior'), false);
+  assert.deepStrictEqual(U.examPassResult(30, 'junior'), { score: 75, pass: true, passLine: 60, exam: 'junior' });
+  assert.strictEqual(U.examPassResult(34, 'cet4').pass, false);
+  assert.strictEqual(U.examPassResult(35, 'cet4').pass, true);
+});
+
 test('paperScore：按权重折算总分', () => {
   const gates = [
     { id: 'write', weight: 106.5, count: 1 },

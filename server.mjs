@@ -13,11 +13,17 @@ import os from 'node:os';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import core from './src/core/utils.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4173;
 const HOST = process.env.HOST || '127.0.0.1';
 const START = Date.now();
+
+// 备考模式取自核心配置，避免与 src/core/utils.js 各写一份而对不上
+const EXAM_TYPES = Object.keys(core.EXAM_CONFIGS);
+const EXAM_SOURCE_POLICY = '原创练习；只有核验再利用许可的公开材料才会标为公开题源';
+const FEATURES = ['五类备考选择', '原创整套模拟与及格突破', '境界动态难度', '六种记忆题型', '斗法对战', '学情看板', '间隔重复', '离线可用'];
 
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
@@ -143,7 +149,9 @@ const server = http.createServer((req, res) => {
       version: pkg.version,
       lexiconSize: lexiconCount(),
       memoryKinds: ['zh2en', 'en2zh', 'similar', 'listen', 'spell', 'pos'],
-      features: ['六种记忆题型', '试卷模拟', '斗法对战', '学情看板', '间隔重复', '离线可用'],
+      examTypes: EXAM_TYPES,
+      features: FEATURES,
+      examSourcePolicy: EXAM_SOURCE_POLICY,
       servedFrom: source,
     }, req);
   }

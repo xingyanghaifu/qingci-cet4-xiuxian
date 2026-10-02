@@ -2,8 +2,8 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.0.0-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-45%20passing-176b3f)](tests/)
+[![version](https://img.shields.io/badge/version-1.3.0-0e6b53)](CHANGELOG.md)
+[![tests](https://img.shields.io/badge/tests-49%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines-176b3f)](tests/)
 [![deps](https://img.shields.io/badge/dependencies-0-a56d22)](#技术特色)
 [![license](https://img.shields.io/badge/license-MIT-8b7360)](LICENSE)
@@ -12,8 +12,9 @@
 
 ## 这是什么
 
-一个**单文件自包含**的 CET-4 词汇学习应用：4540 条词库、六种记忆题型、模拟卷、
-回合制对战、学情看板。整个应用就是一个 463 KB 的 HTML 文件，**零外部依赖，断网可用**。
+一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
+CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。整个应用就是一个
+469 KB 的 HTML 文件，**零外部依赖，断网可用**。
 
 ## 快速开始
 
@@ -27,7 +28,7 @@ npm start                 # 访问 http://127.0.0.1:4173
 # 方式三：从源码构建
 npm install               # 零外部依赖，秒完成
 npm run build             # 构建产物到 dist/
-npm test                  # 运行 45 个自动化测试
+npm test                  # 运行 49 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -40,7 +41,8 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | 模块 | 内容 |
 |---|---|
 | **背单词** | 六种记忆题型轮换：中译英 / 英译中 / 形近辨析 / 听音辨词 / 拼写默写 / 词性判断 |
-| **试炼殿** | 六套 CET-4 模拟卷（125 分钟 57 题），710 分制折算 |
+| **多考试备考** | 初中 / 高中 / PETS-3 / CET-4 / CET-6 五类模式：题量、时长、总分、及格线按考试类型配置；整套作答达线才记一次境界突破 |
+| **试炼殿** | 六套 CET-4 模拟卷（125 分钟 57 题），710 分制折算；难度按考试等级与境界动态取 1–5 |
 | **斗法场** | 回合制对战：血条、15 秒倒计时、连击、命中率 |
 | **学情看板** | 掌握度环形图、近 7 日曲线、六题型正确率对比 |
 | **心魔本** | 错词归集 + 艾宾浩斯间隔重复（0.25/1/3/7 天） |
@@ -51,7 +53,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 - **零依赖**：运行时不加载任何 CDN，构建脚本只用 Node 内置模块
 - **确定性随机**：同一套卷子每次题序一致，便于重做对比
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：45 个用例，行覆盖率 100%、分支 82.78%
+- **可测试**：49 个用例，行覆盖率 100%、分支 83.02%、函数 98.08%
 - **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
@@ -99,33 +101,33 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | `https://qingci-cet4-xiuxian.pages.dev/healthz` | 健康检查（JSON，动态） |
 | `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON） |
 
-实测结果（2026-09-30，v1.2.0，每路径 5 次采样，`npm run probe:prod`）：
+实测结果（2026-09-30 重新部署后，v1.2.2，每路径 10 次采样，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    224ms    198ms     643ms     5/5      0    ✅
-/api/meta   213ms    189ms     227ms     5/5      0    ✅
-/status     554ms    332ms     840ms     5/5      0    ✅
-/          401ms    317ms    1079ms     5/5      0    ✅
+/healthz    209ms    191ms     615ms    10/10     0    ✅
+/api/meta   199ms    186ms     723ms    10/10     0    ✅
+/status     300ms    272ms     650ms    10/10     0    ✅
+/          270ms    267ms     637ms    10/10     0    ✅
 ```
 
-> **20/20 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
-> 健康检查中位 224ms、元信息中位 213ms，远优于阈值要求。
+> **40/40 采样全部返回 HTTP 200 且耗时低于 2000ms 阈值。**
+> 健康检查中位 209ms、元信息中位 199ms，远优于阈值要求。
 
-`/healthz` 返回的真实响应（2026-09-30 实测）：
+`/healthz` 返回的真实响应（2026-09-30 重新部署后实测）：
 
 ```json
 {
   "status": "ok",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "staticAsset": { "ok": true, "artifact": "index.html" }
   },
   "runtime": { "colo": "SEA", "country": "CN" },
-  "latencyMs": 79,
-  "timestamp": "2026-09-30T05:40:18.257Z"
+  "latencyMs": 66,
+  "timestamp": "2026-09-30T06:13:07.356Z"
 }
 ```
 
@@ -135,7 +137,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，20/20 采样达标，动静接口齐全 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，40/40 采样达标，动静接口齐全 |
 | Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构 |
 
 > **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断

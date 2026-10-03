@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.4.0-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-182%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-190%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 677.9 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 693.3 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 182 个自动化测试
+npm test                  # 运行 190 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：182 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：190 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -103,6 +103,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── types/titles.ts           成就称号：门槛定义与解锁判定
 │   ├── services/gamification.ts  境界与称号的状态持久化与本次变化
 │   ├── services/group.ts         道友小组客户端（隐私安全负载 / 降级）
+│   ├── services/a11y.ts          无障碍偏好（字号 / 对比度 / 动效）+ 快捷键文案
 ├── db/schema.sql                    反馈库 D1 建表脚本
 ├── scripts/build-changelog.mjs      CHANGELOG.md → 静态更新日志页
 │   ├── services/mistake-store.ts  错题仓库（IndexedDB CRUD + 复习日志）
@@ -287,6 +288,57 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
 | 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
 
+## 无障碍与个性化（P2.12）
+
+### 三条互相独立的偏好轴
+
+| 轴 | 档位 | 落地方式 |
+|---|---|---|
+| 主题 | 跟随系统 / 浅色 / 深色 | `<html data-theme>`；跟随系统时移除属性交给 `prefers-color-scheme` |
+| 字号 | 标准 · 大（115%）· 特大（130%）· 超大（150%） | `<html data-font>` + CSS 变量 `--q-scale`，只作用于题干/选项/解析/原文 |
+| 对比度 | 标准 / 高对比度 | `<html data-contrast="high">` 覆盖主题变量为纯黑纯白并加粗边框 |
+| 动效 | 跟随系统 / 减少动态效果 | `<html data-motion="reduced">` + `prefers-reduced-motion` 媒体查询 |
+
+- 偏好存 `localStorage`（`qingci.a11y` / `qingci.theme`），读取时规范化，脏数据回落默认；
+- 首屏 `<head>` 内有一段**防闪烁**脚本，先于样式应用偏好，避免字号/对比度跳变；
+- 三轴完全正交：调字号不会改动对比度，改对比度不会重置字号（有测试断言）。
+
+### 键盘快捷键（完整列表）
+
+| 按键 | 作用 |
+|---|---|
+| `1` – `4` | 选择第 1–4 个选项（未作答且按钮可用时） |
+| `→` / `↓` | 下一题 |
+| `←` / `↑` | 上一题 |
+| `Enter` | 推进：优先「下一题」，否则提交写作 / 拼写 |
+| `空格` | 播放 / 暂停听力 |
+| `R` | 重播听力 |
+| `Esc` | 关闭最上层弹窗（精听 / 反馈 / 突破） |
+| `?` | 显示或隐藏快捷键表 |
+
+- 焦点在 `input` / `textarea` / `select` / `contenteditable` 时，数字键与方向键**放行**（不抢输入）；
+- 带 `Ctrl`/`Meta`/`Alt` 的组合键一律不拦截，系统与浏览器快捷键优先；
+- `Esc` 与 `?` 是例外：即使焦点在输入框内也生效，避免用户被困在弹窗里；
+- 快捷键文案与解析实现同源（`src/services/a11y.ts` 的 `SHORTCUT_HELP` ↔ `src/services/shortcuts.ts`），有测试防漂移。
+
+### 色盲友好与屏幕阅读器
+
+- 「正确 / 错误」不只靠颜色：正确选项带 `✓` 前缀、错误选项带 `✗`，并追加屏幕阅读器专用文本
+  （「正确答案」/「你的选择，错误」）与 `aria-label`；
+- 语义与 ARIA 规范：
+
+  | 元素 | 规范 |
+  |---|---|
+  | 页面 | `<html lang="zh-CN">`、`<main id="main">`、跳过链接 `a.skip-link`（首个可聚焦元素） |
+  | 题干 | `#prompt` 带 `aria-live="polite" aria-atomic="true"`，换题自动朗读，并把焦点移到题干 |
+  | 选项组 | `#choices` 为 `role="group" aria-label="选项" aria-describedby="prompt"` |
+  | 反馈区 | `#feedback` 带 `aria-live="polite"`；错误横幅 `#errBanner` 为 `role="alert"` |
+  | 弹窗 | 精听 / 反馈 / 突破均为 `role="dialog" aria-modal="true"` + 可读 `aria-label`，`Esc` 关闭 |
+  | 切换按钮 | 字号 / 高对比度 / 动效按钮使用 `aria-pressed` 表达开关状态 |
+  | 播报通道 | 视觉隐藏的 `#srAnnouncer`（`.sr-only` + `role="status"`）用于过程性提示 |
+  | 焦点可见 | 全局 `:focus-visible` 3px 描边，键盘用户任何时候都能看到焦点 |
+
+- 所有无障碍增强都包在 `try/catch` 旁路中：任何一步失败都不影响答题。
 ## 修仙主题与学习目标绑定（P2.11）
 
 ### 学业境界（与「修为」区分开）

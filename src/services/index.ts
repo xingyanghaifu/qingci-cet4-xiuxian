@@ -70,6 +70,10 @@ import {
   isValidGroupCode, bucketProgress, rememberGroup, lastGroup, describeMember,
   GROUP_API_PATH, GROUP_MEMBER_KEY, GROUP_NICKNAME_KEY, GROUP_LAST_KEY, MAX_MEMBERS as GROUP_MAX_MEMBERS,
 } from './group';
+import {
+  loadA11y, saveA11y, applyA11y, initA11y, normalizeA11y, describeA11y, fontScaleLabel,
+  FONT_SCALES, CONTRAST_OPTIONS, MOTION_OPTIONS, SHORTCUT_HELP, DEFAULT_A11Y, A11Y_STORAGE_KEY,
+} from './a11y';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -321,6 +325,21 @@ const QingciServices = {
     nicknameKey: GROUP_NICKNAME_KEY,
     lastKey: GROUP_LAST_KEY,
     maxMembers: GROUP_MAX_MEMBERS,
+  },
+  a11y: {
+    load: loadA11y,
+    save: saveA11y,
+    apply: applyA11y,
+    init: initA11y,
+    normalize: normalizeA11y,
+    describe: describeA11y,
+    fontScaleLabel,
+    fontScales: FONT_SCALES,
+    contrastOptions: CONTRAST_OPTIONS,
+    motionOptions: MOTION_OPTIONS,
+    shortcutHelp: SHORTCUT_HELP,
+    defaults: DEFAULT_A11Y,
+    key: A11Y_STORAGE_KEY,
   },
 };
 

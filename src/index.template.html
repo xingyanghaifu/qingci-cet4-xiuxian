@@ -4,6 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>青词天路 · 四级全卷修仙</title>
+<script>
+/* 无障碍与个性化偏好必须在首屏渲染前应用，避免字号/对比度闪烁（FOUC） */
+(function () {
+  try {
+    var raw = localStorage.getItem('qingci.a11y');
+    if (!raw) return;
+    var prefs = JSON.parse(raw) || {};
+    var root = document.documentElement;
+    if (prefs.fontScale && prefs.fontScale !== 'standard') root.setAttribute('data-font', prefs.fontScale);
+    if (prefs.contrast === 'high') root.setAttribute('data-contrast', 'high');
+    if (prefs.motion === 'reduced') root.setAttribute('data-motion', 'reduced');
+  } catch (e) { /* 忽略 */ }
+})();
+</script>
 <meta name="description" content="把 CET-4 的 4540 个单词变成一场修仙：六级全卷试炼、六种记忆题型、间隔复习、问道斗法与学情看板。纯本地运行，断网可用，学习记录只存在你自己的浏览器里。">
 <meta name="theme-color" content="#f3ecdf" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12100e" media="(prefers-color-scheme: dark)">
@@ -34,7 +48,7 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .err-banner{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:9999;max-width:92vw;margin-top:10px;padding:12px 16px;border-radius:12px;background:var(--card);border:1px solid var(--bad);box-shadow:var(--shadow);color:var(--ink);font-size:13px;line-height:1.6;display:none}
 .err-banner.show{display:block}
 .err-banner b{color:var(--bad)}
-.err-banner code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--soft);word-break:break-all} .app{width:min(1180px,calc(100% - 28px));margin:auto;padding:22px 0 48px} .hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;align-items:stretch} .kicker{letter-spacing:.24em;color:var(--jade);font-size:12px;margin:0 0 8px} h1{font-size:clamp(36px,5vw,58px);line-height:.95;margin:0} .lede{color:var(--soft);max-width:48em} .seal,.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)} .seal{padding:16px 18px} .seal b{font-size:28px} .bar{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0} .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0e6b53,#d7a441)} .muted{color:var(--muted);font-size:13px} .row,.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap} .tabs button,.btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px} .tabs button.on,.btn.solid{background:var(--jade-ink);color:#f8f3ea;border-color:transparent} @media (prefers-color-scheme:dark){.tabs button.on,.btn.solid{color:#10241c}} .layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px} .panel{padding:18px} .hidden{display:none!important} .shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .paper-card,.gate{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:12px} .paper-card b,.gate b{display:block;font-size:18px} .paper-card.on{outline:2px solid var(--gold)} .road{display:grid;grid-template-columns:repeat(9,1fr);gap:8px;margin-bottom:14px} .gate{min-height:86px;padding:8px} .gate small,.gate em{display:block;color:var(--muted);font-style:normal;font-size:12px} .gate.now{outline:2px solid var(--gold)} .prompt{font-size:clamp(32px,5vw,54px);line-height:1.05;margin:8px 0;overflow-wrap:anywhere} .passage{background:var(--bg);border-radius:14px;padding:12px 14px;line-height:1.7} .choices{display:grid;gap:8px} .choice{border:1px solid var(--line);background:var(--bg);border-radius:12px;text-align:left;padding:12px 14px;font-size:16px} .choice:disabled{cursor:default} .choice.good{background:#e7f6ee;border-color:var(--ok);color:#103824} .choice.bad{background:#f8e7e2;border-color:var(--bad);color:#5d2418} @media (prefers-color-scheme:dark){.choice.good{background:#173428;color:#e7fff1}.choice.bad{background:#3c241e;color:#ffe4dc}} textarea,input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px} textarea{min-height:160px;resize:vertical} .audio-dock{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.audio-dock button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px}.audio-dock button.primary{background:var(--jade-ink);color:#f8f3ea;border-color:transparent}.audio-dock input[type=range]{width:min(180px,38vw);padding:0;accent-color:var(--jade)}.audio-status{font-size:12px;color:var(--muted);min-width:72px}.feedback{min-height:58px;border-top:1px dashed var(--line);margin-top:12px;padding-top:10px} .dict{max-height:64vh;overflow:auto} .entry{display:grid;grid-template-columns:150px 1fr auto;gap:8px;border-bottom:1px solid var(--line);padding:10px 0} table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top} .scroll{overflow-x:auto} .note{color:var(--muted);font-size:12px;margin-top:14px} .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--jade-ink);color:#f8f3ea;border-radius:999px;padding:10px 16px;opacity:0} @media (prefers-color-scheme:dark){.toast{color:#10241c}} .toast.show{opacity:1} .section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:12px;letter-spacing:.12em;color:var(--jade)} .section-label:after{content:"";height:1px;flex:1;background:var(--line)} .mission-list{display:grid;gap:8px}.study-summary{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--soft);font-size:13px}.study-summary b{color:var(--jade)}.shop-card{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.shop-item{border:1px solid var(--line);background:var(--card);border-radius:12px;text-align:left;padding:10px}.shop-item:hover{border-color:var(--gold);transform:translateY(-1px)}.shop-item b,.shop-item small{display:block}.shop-item small{color:var(--muted);margin-top:4px}.assessment-card{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--jade) 9%,var(--bg)),var(--bg))}.assessment-card p{margin:5px 0 10px;color:var(--soft);font-size:13px}.assessment-card label{display:flex;align-items:center;gap:6px}.assessment-card input{display:inline-block;padding:7px 8px}.badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--jade)}.rating-label{font-size:12px;color:var(--muted);margin-left:4px}.rating-btn{min-width:64px}.mission{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.mission.done{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--bg))}.mission b{display:block;font-size:14px}.mission small{display:block;color:var(--muted);margin-top:3px}.mini-bar{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:7px}.mini-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.achievement{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:12px}.achievement.unlocked{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(165,109,34,.18)}.achievement b{display:block;font-size:16px;margin-bottom:3px}.duel-board{display:grid;grid-template-columns:1fr 76px 1fr;gap:14px;align-items:stretch;margin:14px 0 12px}
+.err-banner code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--soft);word-break:break-all} .app{width:min(1180px,calc(100% - 28px));margin:auto;padding:22px 0 48px} .hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;align-items:stretch} .kicker{letter-spacing:.24em;color:var(--jade);font-size:12px;margin:0 0 8px} h1{font-size:clamp(36px,5vw,58px);line-height:.95;margin:0} .lede{color:var(--soft);max-width:48em} .seal,.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)} .seal{padding:16px 18px} .seal b{font-size:28px} .bar{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0} .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0e6b53,#d7a441)} .muted{color:var(--muted);font-size:13px} .row,.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap} .tabs button,.btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px} .tabs button.on,.btn.solid{background:var(--jade-ink);color:#f8f3ea;border-color:transparent} @media (prefers-color-scheme:dark){.tabs button.on,.btn.solid{color:#10241c}} .layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px} .panel{padding:18px} .hidden{display:none!important} .shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .paper-card,.gate{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:12px} .paper-card b,.gate b{display:block;font-size:18px} .paper-card.on{outline:2px solid var(--gold)} .road{display:grid;grid-template-columns:repeat(9,1fr);gap:8px;margin-bottom:14px} .gate{min-height:86px;padding:8px} .gate small,.gate em{display:block;color:var(--muted);font-style:normal;font-size:12px} .gate.now{outline:2px solid var(--gold)} .prompt{font-size:clamp(calc(32px * var(--q-scale)),calc(5vw * var(--q-scale)),calc(54px * var(--q-scale)));line-height:1.05;margin:8px 0;overflow-wrap:anywhere} .passage{background:var(--bg);border-radius:14px;padding:12px 14px;line-height:1.7} .choices{display:grid;gap:8px} .choice{border:1px solid var(--line);background:var(--bg);border-radius:12px;text-align:left;padding:12px 14px;font-size:calc(16px * var(--q-scale))} .choice:disabled{cursor:default} .choice.good{background:#e7f6ee;border-color:var(--ok);color:#103824} .choice.bad{background:#f8e7e2;border-color:var(--bad);color:#5d2418} @media (prefers-color-scheme:dark){.choice.good{background:#173428;color:#e7fff1}.choice.bad{background:#3c241e;color:#ffe4dc}} textarea,input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px} textarea{min-height:160px;resize:vertical} .audio-dock{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.audio-dock button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px}.audio-dock button.primary{background:var(--jade-ink);color:#f8f3ea;border-color:transparent}.audio-dock input[type=range]{width:min(180px,38vw);padding:0;accent-color:var(--jade)}.audio-status{font-size:12px;color:var(--muted);min-width:72px}.feedback{min-height:58px;border-top:1px dashed var(--line);margin-top:12px;padding-top:10px} .dict{max-height:64vh;overflow:auto} .entry{display:grid;grid-template-columns:150px 1fr auto;gap:8px;border-bottom:1px solid var(--line);padding:10px 0} table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top} .scroll{overflow-x:auto} .note{color:var(--muted);font-size:12px;margin-top:14px} .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--jade-ink);color:#f8f3ea;border-radius:999px;padding:10px 16px;opacity:0} @media (prefers-color-scheme:dark){.toast{color:#10241c}} .toast.show{opacity:1} .section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:12px;letter-spacing:.12em;color:var(--jade)} .section-label:after{content:"";height:1px;flex:1;background:var(--line)} .mission-list{display:grid;gap:8px}.study-summary{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--soft);font-size:13px}.study-summary b{color:var(--jade)}.shop-card{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.shop-item{border:1px solid var(--line);background:var(--card);border-radius:12px;text-align:left;padding:10px}.shop-item:hover{border-color:var(--gold);transform:translateY(-1px)}.shop-item b,.shop-item small{display:block}.shop-item small{color:var(--muted);margin-top:4px}.assessment-card{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--jade) 9%,var(--bg)),var(--bg))}.assessment-card p{margin:5px 0 10px;color:var(--soft);font-size:13px}.assessment-card label{display:flex;align-items:center;gap:6px}.assessment-card input{display:inline-block;padding:7px 8px}.badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--jade)}.rating-label{font-size:12px;color:var(--muted);margin-left:4px}.rating-btn{min-width:64px}.mission{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.mission.done{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--bg))}.mission b{display:block;font-size:14px}.mission small{display:block;color:var(--muted);margin-top:3px}.mini-bar{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:7px}.mini-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.achievement{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:12px}.achievement.unlocked{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(165,109,34,.18)}.achievement b{display:block;font-size:16px;margin-bottom:3px}.duel-board{display:grid;grid-template-columns:1fr 76px 1fr;gap:14px;align-items:stretch;margin:14px 0 12px}
 .duel-log{position:relative;min-height:46px;padding:12px 15px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 7%,var(--bg)),var(--bg));color:var(--soft);font-size:14px;line-height:1.65;margin-bottom:12px}
 .duel-log .blade{color:var(--gold);font-weight:700;margin-right:6px}
 @keyframes logIn{from{opacity:.35;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
@@ -177,6 +191,48 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .group-row.me{border-color:var(--gold)}
 .group-bar{flex:1;height:8px;border-radius:999px;background:var(--bg2);overflow:hidden;margin:0 8px}
 .group-bar i{display:block;height:100%;background:var(--jade)}
+/* ===== P2.12：无障碍与个性化 ===== */
+/* 1) 字号档位：只放大「阅读内容」（题干/选项/解析/原文），不放大导航与按钮，避免布局被打散 */
+:root{--q-scale:1}
+:root[data-font="large"]{--q-scale:1.15}
+:root[data-font="xlarge"]{--q-scale:1.3}
+:root[data-font="huge"]{--q-scale:1.5}
+.feedback{font-size:calc(15px * var(--q-scale))}
+.passage{font-size:calc(15px * var(--q-scale))}
+#subline{font-size:calc(14px * var(--q-scale))}
+.seg-text{font-size:calc(15px * var(--q-scale))}
+/* 2) 高对比度：纯黑/纯白 + 加粗边框，覆盖主题变量（深浅色下都成立） */
+:root[data-contrast="high"]{--bg:#fff;--bg2:#fff;--card:#fff;--ink:#000;--muted:#1a1a1a;--soft:#000;--line:#000;--gold:#6b3d00;--jade:#00513d;--bad:#a30000;--ok:#005c00}
+@media (prefers-color-scheme:dark){
+  :root[data-contrast="high"]{--bg:#000;--bg2:#000;--card:#000;--ink:#fff;--muted:#f2f2f2;--soft:#fff;--line:#fff;--gold:#ffd166;--jade:#5fe3bd;--bad:#ff8a8a;--ok:#7ee787}
+}
+:root[data-contrast="high"] .btn,
+:root[data-contrast="high"] .choice,
+:root[data-contrast="high"] .shop-card,
+:root[data-contrast="high"] .panel{border-width:2px}
+:root[data-contrast="high"] .choice.good,
+:root[data-contrast="high"] .choice.bad{outline:2px solid currentColor}
+/* 3) 键盘焦点始终可见（无障碍基础要求，不能只靠鼠标 hover） */
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.choice:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+/* 4) 色盲友好：正确/错误不只靠颜色，附加符号与文字 */
+.choice.good::before{content:'✓ ';font-weight:700}
+.choice.bad::before{content:'✗ ';font-weight:700}
+.state-mark{font-weight:700;margin-right:4px}
+.state-mark.ok{color:var(--ok)}
+.state-mark.bad{color:var(--bad)}
+/* 5) 跳转链接（屏幕阅读器/键盘用户第一站） */
+.skip-link{position:absolute;left:-9999px;top:0;z-index:99;background:var(--card);color:var(--ink);border:2px solid var(--gold);border-radius:0 0 10px 0;padding:8px 14px}
+.skip-link:focus{left:0}
+/* 6) 减少动态效果：偏好或系统任一开启即生效 */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+/* 屏幕阅读器专用文本（视觉隐藏但可朗读） */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* ===== P0.5：手动主题（覆盖系统偏好）+ 三档响应式断点 ===== */
 :root[data-theme="light"] { --ink:#23170f; --soft:#5a4330; --muted:#8b7360; --bg:#f3ecdf; --bg2:#e7dccb; --card:#fffaf3; --line:#ddcfbb; --jade:#0e6b53; --jade-ink:#08382c; --gold:#a56d22; --ok:#176b3f; --bad:#922f1d; --shadow:0 18px 40px rgba(62,36,12,.08); color-scheme:light; }
 :root[data-theme="dark"] { --ink:#f6ecdf; --soft:#ddcfbc; --muted:#b09b88; --bg:#12100e; --bg2:#221c17; --card:#211b16; --line:#3c3229; --jade:#8ed8bd; --jade-ink:#dffcf1; --gold:#efc98a; --ok:#b7ebc8; --bad:#ffc7bb; --shadow:0 18px 40px rgba(0,0,0,.32); color-scheme:dark; }
@@ -214,11 +270,11 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
   <div class="layout"><main id="main">
     <section class="panel" id="panel-missions"><p class="section-label">今日功课 · DAILY QUESTS</p><div class="mission-list" id="missionList"></div><div class="study-summary" id="studySummary" aria-live="polite"></div><div class="assessment-card" id="assessmentCard"><b id="assessmentTitle">先做一次词汇摸底</b><p id="assessmentText">用 10 题估算当前词汇量，再自动生成每日背词目标。</p><div class="tools"><button class="btn solid" id="startAssessment">开始摸底</button><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn" id="saveDailyTarget">保存目标</button></div></div><div class="shop-card" id="planCard"><div class="row" style="justify-content:space-between"><b>动态学习计划</b><span class="muted" id="planSummary">加载中…</span></div><p class="muted" id="planAdvice">按考试日期、当前水平与每日可用时间生成，并根据完成情况与模考成绩自动调整。</p><div class="tools"><label class="muted">考试日期 <input id="planExamDate" type="date" style="width:150px"></label><label class="muted">每日可用 <input id="planDailyMinutes" type="number" min="10" max="240" step="5" style="width:86px"> 分钟</label><button class="btn" id="planSave">保存设置</button></div><div class="tools"><button class="btn solid" id="planAssess">开始自适应摸底（30–50 题）</button><span class="muted" id="planAssessHint"></span></div><div id="planBody"></div></div><div class="shop-card" id="vocabSrsCard"><div class="row" style="justify-content:space-between"><b>词汇间隔复习（SM-2）</b><span class="muted" id="vsrsSummary">加载中…</span></div><p class="muted" id="vsrsPlan">按考试日期与掌握度动态安排每日学习量。</p><div class="tools" id="vsrsTiers"></div><div class="tools"><button class="btn solid" id="vsrsStart">开始今日复习</button><button class="btn" id="vsrsNew">学新词（按分级）</button><span class="muted" id="vsrsHint"></span></div><div class="mk-bars" id="vsrsStats"></div></div></section>
     <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · DAILY TRIAL</p><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn solid" id="startPaper">开考这一卷</button><button class="btn" id="randomPractice">随机练习（20 题）</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
-    <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="muted" id="poolLabel"></span></div><div class="prompt" id="prompt"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><button type="button" id="intensiveOpen">精听</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices"></div><div id="writeBox" class="hidden"><textarea id="essay"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
+    <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="muted" id="poolLabel"></span></div><div class="prompt" id="prompt" aria-live="polite" aria-atomic="true"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><button type="button" id="intensiveOpen">精听</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices" role="group" aria-label="选项" aria-describedby="prompt"></div><div id="writeBox" class="hidden"><textarea id="essay"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。"></textarea></section>
     <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><h2>错题本与心魔</h2><p class="muted" id="bookLead"></p><div class="shop-card" id="mistakePanel"><div class="row" style="justify-content:space-between"><b>错题本 · 间隔复习（SM-2）</b><span class="muted" id="mkSummary">加载中…</span></div><p class="muted">答错的题会自动收进来，按 SM-2 动态安排复习间隔：越熟的题间隔越长，反复错的题始终留在短间隔。</p><div class="tools" id="mkFilters"></div><div class="tools"><button class="btn solid" id="mkReviewBtn">开始今日复习</button><span class="muted" id="mkHint"></span></div><div id="mkCards"></div><div id="mkStats"></div></div><button class="btn solid" id="drillWrong">只练这些词</button><div class="dict" id="bookList"></div></section>
     <section class="panel hidden" id="panel-codex"><p class="section-label">词谱 · 4540 WORDS</p><h2>词谱</h2><div class="tools"><input id="q" placeholder="搜单词或中文"><select id="letter"></select><select id="mastery"><option value="all">全部掌握度</option><option value="new">未学过</option><option value="known">已斩获</option><option value="wrong">心魔词</option></select></div><div class="dict" id="codexList"></div></section>
-    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div></section>
+    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div></section>
   </main><aside><section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section></aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -570,7 +626,45 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     if (!action) return;
     if (action.type === 'next') { if (goNext()) e.preventDefault(); }
     else if (action.type === 'prev') { showPrev(); e.preventDefault(); }
+    else if (action.type === 'answer') {
+      // 1–4：选择第 N 个选项（未作答且按钮可用时才生效）
+      var btns = byId('choices') ? byId('choices').children : [];
+      var target = btns[action.index];
+      if (target && !target.disabled) {
+        target.click();
+        e.preventDefault();
+      }
+    }
+    else if (action.type === 'submit') {
+      // Enter：优先推进（已作答后的「下一题」），否则提交写作/拼写
+      var visible = function (id) {
+        var el = byId(id);
+        return el && !el.classList.contains('hidden') && !el.disabled ? el : null;
+      };
+      var advance = visible('next') || visible('submitWrite') || visible('submitSpell');
+      if (advance) {
+        advance.click();
+        e.preventDefault();
+      }
+    }
+    else if (action.type === 'play') {
+      var play = visibleAudio();
+      if (play) {
+        play.click();
+        e.preventDefault();
+      }
+    }
   }, true);
+
+  /** 听力控件当前可用的按钮（播放或重播） */
+  function visibleAudio() {
+    var dock = byId('audioDock');
+    if (!dock || dock.classList.contains('hidden')) return null;
+    var play = byId('audioPlay');
+    if (play && !play.disabled) return play;
+    var replay = byId('audioReplay');
+    return replay && !replay.disabled ? replay : null;
+  }
 
   /* —— 3) Media Session：听力可在锁屏 / 通知栏 / 耳机上控制 —— */
   if (S.media.supported()) {
@@ -1981,6 +2075,174 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
 
   pullReportData();
   if (S.group.last()) setTimeout(syncAndBoard, 1200);
+})();
+</script>
+<script>
+/* 无障碍与个性化（P2.12）
+   · 偏好：字号 4 档 / 高对比度 / 减少动效 —— 与主题（浅色·深色·跟随系统）互相独立
+   · 键盘：1-4 选项、←/→ 上下一题、Enter 提交、空格播放、R 重播、Esc 关弹窗、? 快捷键表
+   · 朗读：题干 aria-live 自动播报；选项带 ✓/✗ 文字标记（不只靠颜色）；焦点在每个新题落到题干
+   · 失败静默：任何无障碍增强出错都不影响答题 */
+(function () {
+  var S = window.QingciServices;
+  if (!S || !S.a11y) return;
+  var byId = function (id) { return document.getElementById(id); };
+
+  /* ---------- 1. 偏好：应用 + 界面 ---------- */
+  function applyAndRender(persist) {
+    var prefs = S.a11y.load();
+    var applied = S.a11y.apply(prefs, { persist: !!persist });
+    byId('a11yState').textContent = S.a11y.describe(prefs) + (applied.reducedMotion ? ' · 已减少动效' : '');
+
+    byId('a11yFont').innerHTML = S.a11y.fontScales.map(function (option) {
+      return '<button class="btn' + (prefs.fontScale === option.value ? ' solid' : '') + '" data-font="'
+        + option.value + '" aria-pressed="' + (prefs.fontScale === option.value) + '">' + option.label + ' ' + Math.round(option.scale * 100) + '%</button>';
+    }).join(' ');
+
+    var contrastBtn = byId('a11yContrast');
+    var high = prefs.contrast === 'high';
+    contrastBtn.setAttribute('aria-pressed', String(high));
+    contrastBtn.className = 'btn' + (high ? ' solid' : '');
+
+    var motionBtn = byId('a11yMotion');
+    var reduced = prefs.motion === 'reduced';
+    motionBtn.setAttribute('aria-pressed', String(reduced));
+    motionBtn.className = 'btn' + (reduced ? ' solid' : '');
+
+    byId('a11yShortcuts').innerHTML = '<ul class="muted" style="margin:6px 0 0;padding-left:20px">'
+      + S.a11y.shortcutHelp.map(function (row) {
+        return '<li><b>' + row.keys + '</b> — ' + row.action + '</li>';
+      }).join('') + '</ul>';
+  }
+
+  var card = byId('a11yCard');
+  if (card) {
+    card.addEventListener('click', function (e) {
+      var target = e.target;
+      if (!target || !target.closest) return;
+      var fontBtn = target.closest('[data-font]');
+      if (fontBtn) { S.a11y.save({ fontScale: fontBtn.getAttribute('data-font') }); applyAndRender(true); return; }
+      if (target.closest('#a11yContrast')) {
+        var next = S.a11y.load().contrast === 'high' ? 'normal' : 'high';
+        S.a11y.save({ contrast: next });
+        applyAndRender(true);
+        if (window.toast) toast(next === 'high' ? '已开启高对比度' : '已恢复标准对比度');
+        return;
+      }
+      if (target.closest('#a11yMotion')) {
+        var motion = S.a11y.load().motion === 'reduced' ? 'system' : 'reduced';
+        S.a11y.save({ motion: motion });
+        applyAndRender(true);
+        if (window.toast) toast(motion === 'reduced' ? '已减少动态效果' : '已跟随系统动效');
+      }
+    });
+  }
+
+  /* ---------- 2. 朗读与焦点：题干变化时播报并把焦点交给题干 ---------- */
+  var lastPrompt = '';
+  var promptEl = byId('prompt');
+  if (promptEl && typeof MutationObserver !== 'undefined') {
+    new MutationObserver(function () {
+      var text = (promptEl.textContent || '').trim();
+      if (!text || text === lastPrompt) return;
+      lastPrompt = text;
+      // 把焦点移到题干：键盘用户不必逐次 Tab，屏幕阅读器也会从新题开始朗读
+      if (document.activeElement && document.activeElement.tagName === 'BODY') {
+        promptEl.setAttribute('tabindex', '-1');
+        try { promptEl.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ }
+      }
+      announce('第 ' + (promptEl.textContent || '').slice(0, 60));
+    }).observe(promptEl, { childList: true, characterData: true, subtree: true });
+  }
+
+  /** 屏幕阅读器专用播报（视觉隐藏，role=status） */
+  function announce(text) {
+    var live = byId('srAnnouncer');
+    if (!live) {
+      live = document.createElement('div');
+      live.id = 'srAnnouncer';
+      live.className = 'sr-only';
+      live.setAttribute('role', 'status');
+      live.setAttribute('aria-live', 'polite');
+      document.body.appendChild(live);
+    }
+    live.textContent = String(text || '').slice(0, 200);
+  }
+  window.QingciAnnounce = announce;
+
+  /* ---------- 3. 选项状态：加 ✓/✗ 文字标记（不只靠颜色） ---------- */
+  var choicesEl = byId('choices');
+  if (choicesEl && typeof MutationObserver !== 'undefined') {
+    var decorate = function () {
+      Array.prototype.forEach.call(choicesEl.children, function (btn) {
+        var good = btn.classList.contains('good');
+        var bad = btn.classList.contains('bad');
+        var wanted = good ? 'good' : bad ? 'bad' : '';
+        if (!wanted) {
+          if (btn.getAttribute('data-state')) {
+            btn.removeAttribute('data-state');
+            btn.removeAttribute('aria-label');
+          }
+          return;
+        }
+        if (btn.getAttribute('data-state') === wanted) return;
+        btn.setAttribute('data-state', wanted);
+        var label = (btn.textContent || '').trim();
+        var extra = good ? '（正确答案 ✓）' : '（你的选择 ✗）';
+        btn.setAttribute('aria-label', label + extra);
+        var mark = document.createElement('span');
+        mark.className = 'sr-only';
+        mark.textContent = good ? '正确答案' : '你的选择，错误';
+        btn.appendChild(mark);
+      });
+    };
+    new MutationObserver(decorate).observe(choicesEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* ---------- 4. 键盘：扩展 Esc / ? 与重播 ---------- */
+  function closeTopOverlay() {
+    var ids = ['breakthroughOverlay', 'feedbackOverlay', 'intensiveOverlay'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = byId(ids[i]);
+      if (el && !el.classList.contains('hidden')) {
+        el.classList.add('hidden');
+        announce('已关闭弹窗');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      if (closeTopOverlay()) e.preventDefault();
+      return;
+    }
+    var target = e.target;
+    var inEditable = !!(target && target.closest && target.closest('input,textarea,select,[contenteditable="true"]'));
+    if (inEditable) return;
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      var help = byId('a11yHelp');
+      if (help) { help.open = !help.open; help.scrollIntoView({ block: 'nearest' }); e.preventDefault(); }
+      return;
+    }
+    if ((e.key === 'r' || e.key === 'R') && typeof replayAudio === 'function' && audioText()) {
+      e.preventDefault();
+      replayAudio();
+    }
+  });
+
+  /* ---------- 5. 系统偏好变化时保持同步 ---------- */
+  try {
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var sync = function () { applyAndRender(false); };
+      if (mq.addEventListener) mq.addEventListener('change', sync);
+      else if (mq.addListener) mq.addListener(sync);
+    }
+  } catch (e) { /* 忽略 */ }
+
+  applyAndRender(false);
 })();
 </script>
 </body></html>

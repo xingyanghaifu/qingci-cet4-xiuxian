@@ -5,6 +5,32 @@
 
 ---
 
+## [未发布]
+
+仓库清理：移除隧道时代遗留的保活 / 守护设施，线上巡检统一走 `prod-probe`。
+本次不改动任何业务代码，也不影响线上 v1.3.1 运行。
+
+### 移除
+
+- `npm run keepalive`、`npm run supervise`、`npm run watchdog` 三个脚本入口。
+  前两者依赖免账号 Cloudflare 快速隧道（已弃用）；后者按 README 中记录的
+  `*.trycloudflare.com` 地址工作，README 清理后已解析不到目标地址。
+- `scripts/supervisor.mjs`（守护本地服务与 cloudflared 进程）与
+  `scripts/watchdog.mjs`（隧道保活 + 单次巡检），二者均无其他引用。
+
+### 变更
+
+- `npm run probe:prod` 新增 `--strict`：任一采样非 200 或超阈值即以退出码 1 结束；
+  另提供 `npm run probe:prod:strict` 便捷入口。
+- `npm run verify:prod` 的线上巡检由 `scripts/watchdog.mjs` 改为
+  `node scripts/prod-probe.mjs --strict`，保留「不达标即非零退出」的发布门禁语义，
+  采样覆盖由 3 个端点扩到 4 个（`/healthz`、`/api/meta`、`/status`、`/`）。
+- `docs/部署说明.md`：删除整节 Cloudflare 快速隧道配置与实测，隧道方案压缩为一句
+  「已弃用」；部署方式总览中的隧道行改为「其他静态托管」；澄清纯静态平台无动态接口、
+  而 Cloudflare Pages 通过 `functions/` 提供三个动态接口；常见问题按 Pages 形态重写。
+
+---
+
 ## [1.3.1] - 2026-10-03
 
 本次为**线上接口一致性修复版本**：补齐 Pages 侧缺失的 `/status` 端点，并让该端点

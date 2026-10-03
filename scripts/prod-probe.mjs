@@ -2,8 +2,9 @@
 /**
  * 公网健康检查采样脚本
  * 对线上地址多次采样，统计 200 响应比例与耗时分布，用于验收留痕。
- * 用法：node scripts/prod-probe.mjs [URL]
+ * 用法：node scripts/prod-probe.mjs [URL] [--strict]
  * 默认读取环境变量 PUBLIC_BASE_URL，否则读 deploy-url.txt 中记录的正式 Pages 地址。
+ * --strict：任一采样不达标（非 200 或超过阈值）即退出码 1，便于接入 CI / 发布门禁。
  */
 import https from 'node:https';
 import http from 'node:http';
@@ -25,7 +26,9 @@ function deployedUrl() {
   return 'https://qingci-cet4-xiuxian.pages.dev';
 }
 
-const BASE = (process.argv[2] || process.env.PUBLIC_BASE_URL || deployedUrl()).trim().replace(/\/+$/, '');
+const CLI_ARGS = process.argv.slice(2);
+const STRICT = CLI_ARGS.includes('--strict');
+const BASE = (CLI_ARGS.find((a) => !a.startsWith('--')) || process.env.PUBLIC_BASE_URL || deployedUrl()).trim().replace(/\/+$/, '');
 const LIMIT_MS = 2000;
 const ROUNDS = Number(process.env.ROUNDS) || 10;
 const PATHS = ['/healthz', '/api/meta', '/status', '/'];
@@ -75,7 +78,11 @@ const allOk = summary.every((s) => s.ok);
 console.log('');
 console.log(allOk
   ? '✅ 全部路径在阈值内通过（含公网抖动的保守判定）'
-  : '⚠️  存在超出 2000ms 的采样——Pages 边缘托管无需回源，超时来自本机到边缘的带宽抖动；'
-    + '`/` 与 `/status` 需要传输 469KB 入口页（Pages 上未匹配路径按 SPA 回退返回入口页），'
-    + '纯 JSON 接口 `/healthz`、`/api/meta` 通常稳定在阈值内。');
+  : '⚠️  存在超阈值采样——Pages 边缘托管无需回源，偏慢的通常是 `/`（需传输 469KB 入口页）'
+    + '或本机到边缘的带宽抖动；纯 JSON 接口 `/healthz`、`/api/meta` 与 1KB 级的 `/status` 一般稳定在阈值内。');
+
+if (STRICT && !allOk) {
+  console.log('❌ --strict 模式：存在不达标项，退出码 1');
+  process.exit(1);
+}
 process.exit(0);

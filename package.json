@@ -20,12 +20,10 @@
     "deploy:pages": "node scripts/deploy-pages.mjs",
     "healthcheck": "node scripts/healthcheck.mjs",
     "probe:prod": "node scripts/prod-probe.mjs",
-    "watchdog": "node scripts/watchdog.mjs",
-    "keepalive": "node scripts/watchdog.mjs --loop",
-    "supervise": "node scripts/supervisor.mjs",
+    "probe:prod:strict": "node scripts/prod-probe.mjs --strict",
     "test:docs": "node scripts/verify-docs.js",
     "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck",
-    "verify:prod": "npm test && npm run test:docs && node scripts/watchdog.mjs"
+    "verify:prod": "npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
   },
   "keywords": [
     "cet4",

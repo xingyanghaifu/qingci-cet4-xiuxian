@@ -5,7 +5,40 @@
 
 ---
 
-## [未发布] - 2026-10-03
+## [1.7.0] - 2026-10-03
+
+### 部署：v1.7.0 导航重构上线（2026-10-03）
+
+- 部署时间：**2026-10-03T23:51:01+08:00**（北京时区）；入口 `https://qingci-cet4-xiuxian.pages.dev`
+  ；部署快照 `https://194f446d.qingci-cet4-xiuxian.pages.dev`。
+- 产物：`sha256:16aca78c7a191be0`（HTML 753.3 KB，服务层 130.8 KB）、sw 缓存版本 `1.6.0-16aca78c`。
+  部署执行于升版之前，`/healthz` 与 `/api/meta` **沿用 1.6.0**；本次提交已把 `package.json` 升至
+  **1.7.0**，下次部署 `writePagesConfig` 会自动带出（`wrangler.toml` 的 APP_VERSION 由
+  `deploy-workers` 在 Workers 部署时自动同步）。上传 4 个新文件（4725 复用，6.43s）。
+- **线上验收 12/12 通过**：
+
+  | # | 项 | 结果 |
+  |---|---|---|
+  | 1 | `/` | 200 · `navMenu`/`menuBtn`/`brandVer` 齐全 |
+  | 2 | `/healthz` | 200 · `version=1.6.0` `status=ok`（沿用，见上） |
+  | 3 | `/api/meta` | 200 · `version=1.6.0` |
+  | 4 | `/audio/tts/manifest.json` | 200 · `count=4690` |
+  | 5 | 抽查 `q_paper_qingci_news_01.mp3` | 200 · `audio/mpeg` · 28512B · ID3 ✓ |
+  | 6 | `/changelog.html` | 200 · 含本轮 A/B/C 与行为变更 |
+  | 7 | `/sw.js` | 200 · `CACHE_VERSION=1.6.0-16aca78c`（已更新） |
+  | 8 | `/vocab-detail/manifest.json` | 200 · 26 分片 |
+  | 9 | 悬浮菜单结构 | `role=dialog` + `aria-modal` + `aria-labelledby=navMenuTitle` ✓ |
+  | 10 | 移动状态条 | `#ovToggle` 于顶部区 + 「功课 x/20」同步逻辑在位 ✓ |
+  | 11 | 侧栏纯数据 | 侧栏 `role=tab` 计数 **0**、菜单内 **8** ✓ |
+  | 12 | `Ctrl/Cmd+K` | 绑定 + `preventDefault` 在位 ✓ |
+- **异常如实记录**：
+  1. **首次部署失败（真实失败，非误报）**：wrangler 刷新 auth token 时 Cloudflare 认证端点
+     不可达（瞬时网络抖动，凭据未失效）→ 按纪律先核实线上仍为旧版、探测端点已恢复后重试一次；
+     未绕过产物硬闸与脚本逻辑。
+  2. **重试成功后 wrangler daemon 挂起**（与 v1.6.0 部署同款现象，`Deployment complete` 后不退出）：
+     先实测线上确认新版本已生效（`navMenu` 在、`sw` 版本已更新），再仅终止挂起的 wrangler 子进程，
+     让脚本 `finally` 自然完成配置还原（`wrangler.toml` 已回 Workers 版、`.bak` 已清理、git 树干净）；
+     日志尾部「候选 2/3 重试失败 + exit 1」是该处置的连带误报，**线上状态以验收表实测为准**。
 
 ### 悬浮菜单导航重构 + 侧边栏改为纯数据展示（v1.7 待发布）
 

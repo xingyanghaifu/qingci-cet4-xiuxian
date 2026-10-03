@@ -55,7 +55,7 @@ fs.writeFileSync(path.join(OUT, 'api-meta.json'), JSON.stringify({
 //      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝；
 //      题库体积 >1.5MB，按独立 JSON 交付、由 SW 与页面按需缓存。
 const pwaAssets = ['manifest.webmanifest', 'sw.js', 'question-bank.json', 'changelog.html'];
-const pwaDirs = ['icons', 'vocab-detail'];
+const pwaDirs = ['icons', 'vocab-detail', 'audio'];
 const pwaCopied = [];
 for (const file of pwaAssets) {
   const from = path.join(path.dirname(src), file);
@@ -108,6 +108,10 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
   '/vocab-detail/*',
   '  Content-Type: application/json; charset=utf-8',
   '  Cache-Control: public, max-age=3600',
+  '',
+  // 听力音频（Edge TTS 构建期产物）：长缓存，由 SW /audio/* cache-first 离线兜底
+  '/audio/*',
+  '  Cache-Control: public, max-age=2592000',
   '',
   '/healthz.json',
   '  Content-Type: application/json; charset=utf-8',

@@ -21,9 +21,10 @@ function run(cmd, args, opts = {}) {
 
 console.log('🚀 部署 青词天路 v' + pkg.version + ' 到 Cloudflare Workers\n');
 
-// 1) 构建
-console.log('[1/4] 构建产物');
+// 1) 构建（含听力音频增量生成：失败即中止，线上必须有音频）
+console.log('[1/4] 构建产物（build + build:audio 听力音频）');
 run('node', ['scripts/build.mjs']);
+run('node', ['scripts/build-audio-tts.mjs']);
 
 // 2) 生成 Workers 版部署目录
 console.log('\n[2/4] 生成部署目录（Workers 模式）');

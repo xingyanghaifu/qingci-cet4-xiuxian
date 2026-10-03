@@ -11,6 +11,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:vocab": "node scripts/build-vocab-detail.mjs",
+    "build:audio": "node scripts/build-audio-tts.mjs",
+    "fetch:voa": "node scripts/fetch-voa-audio.mjs",
     "typecheck": "tsc --noEmit",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "prepare:deploy:workers": "node scripts/prepare-deploy.mjs --workers",
@@ -43,7 +45,9 @@
   },
   "homepage": "https://qingci-cet4-xiuxian.pages.dev",
   "devDependencies": {
+    "edge-tts-generator": "^0.1.7",
     "esbuild": "^0.28.2",
+    "music-metadata": "^11.16.1",
     "typescript": "^7.0.2"
   }
 }

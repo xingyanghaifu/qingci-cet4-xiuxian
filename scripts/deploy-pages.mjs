@@ -147,6 +147,9 @@ try {
   // 1) 构建
   run('[1/5] 构建产物', 'node', ['scripts/build.mjs']);
 
+  // 1.5) 听力音频（增量；生成失败则中止部署——线上必须有音频）
+  run('[1.5/5] 生成听力音频（build:audio）', 'node', ['scripts/build-audio-tts.mjs']);
+
   // 2) 生成 Pages 部署目录（含 functions 复制）
   run('[2/5] 生成 Pages 部署目录', 'node', ['scripts/prepare-deploy.mjs', '--pages']);
 

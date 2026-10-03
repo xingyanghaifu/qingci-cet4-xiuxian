@@ -31,6 +31,9 @@ Thumbs.db
 # 数据管线缓存（build-vocab-detail.mjs 按词缓存的语料，可重跑生成）
 .cache/
 
+# 音频产物（build:audio / fetch:voa 构建期生成，不进仓库）
+dist/audio/
+
 # 备份目录（改版前的源码备份与压缩包）
 backups/
 dist-offline/

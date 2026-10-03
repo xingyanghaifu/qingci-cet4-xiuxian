@@ -5,6 +5,71 @@
 
 ---
 
+## [未发布] - 2026-10-03
+
+### 听力音频方案落地（Edge TTS + VOA 脚本骨架 + 来源声明）
+
+**任务 A · Edge TTS 生成管线（构建期）**
+
+- 新增 `scripts/build-audio-tts.mjs`（`npm run build:audio`）+ Python 后端 `scripts/edge_tts_batch.py`：
+  - 筛选题库听力题 **4690 条**（listen 4540 / news 42 / talk 48 / passage 60，全部带 `audioMeta`）；
+    TTS 文本取 `audioMeta.text`（应用实际播放的文本），语速 1.0，输出 MP3 至 `dist/audio/tts/<questionId>.mp3`。
+  - **音色轮换**：`VOICE_MAP` 为唯一改音色处——listen/news → `en-US-AriaNeural`（narration）；
+    passage → Aria / `en-GB-RyanNeural` 按序轮换；**talk 48 条均无对话轮次标记（Man/Woman/M:/W:），
+    按约定统一 Aria、`voiceRole` 留空并输出分类报告**，题库补齐轮次后重跑即自动升级为 Aria+Guy 分声。
+  - **后端探测链**：edge-tts-generator（npm, GPL-3.0）被微软 Sec-MS-GEC 校验拒绝（403）→
+    自动切换 **Python edge-tts**（pip 安装, MIT）批量合成；两后端同为 Microsoft Edge Read Aloud 音源，
+    日志打印实际使用的后端。构建依赖仅 devDependencies + `pip install edge-tts`，**运行时零 TTS 调用**。
+  - **增量生成**：`textHash = sha256(text|voice|speed)`，文件存在且哈希一致 → 跳过；文本/音色变化 → 重生成；
+    单条失败重试 1 次，仍失败记录不阻塞（重跑可续）。
+  - **时长**：`music-metadata`（纯 JS）读取 MP3 时长写入 manifest，作为精听时间戳初值。
+  - `dist/audio/tts/manifest.json` 结构：`{ schema, count, speed, voiceMap, entries: { <questionId>: { questionId, file, kind, voice, voiceRole, duration, textHash, bytes } } }`。
+- 部署联动：`deploy-pages` 流程自动执行 `build:audio`（无音频不部署）；`prepare-deploy` 拷贝 `audio/`
+  并为 `/audio/*` 声明长缓存；Service Worker 既有 `/audio/*` cache-first 分支负责离线。
+
+**任务 B · VOA 公共领域素材（脚本骨架，本轮未下载）**
+
+- 新增 `scripts/fetch-voa-audio.mjs`（`npm run fetch:voa`）+ `scripts/voa-seeds.json`（空清单）+
+  `scripts/voa-seeds.template.json`（格式模板）+ `docs/VOA素材筛选指南.md`（栏目白名单、90–120 词/分、
+  2–5 分钟、20–30 段、第三方版权过滤规则）。
+- **授权说明**：VOA Learning English 的文本、MP3 与视频属美国联邦政府作品，处于公共领域
+  （17 U.S.C. § 105）；转载须注明来源 `learningenglish.voanews.com`。manifest 强制标注
+  `source: "VOA Learning English"` / `sourceUrl` / `license: "Public Domain"` / `fetchedAt`，**不伪造出处**。
+- 合规过滤：正文命中 `Associated Press / AP News / Reuters / AFP / Music: / background music` →
+  跳过并记录原因；单条网络不可达 / 403 / 404 → 跳过不阻塞。
+- **本环境无法访问 learningenglish.voanews.com（node 与抓取双通道实测失败），
+  本轮未下载任何素材、未伪造任何 URL 或数据**；待在可访问该站点的网络下执行 `npm run fetch:voa`。
+- **不集成 BBC Learning English**（其条款禁止通过其他网站或出版物传播）。
+
+**任务 C · 音频来源声明页**
+
+- 洞府页新增「🔊 音频来源声明」入口 → `#audioSrcOverlay`（`role="dialog" aria-modal="true"`，
+  语义化 `<section><h2><p>`，复用 `.overlay` 组件，Esc / 遮罩 / 关闭按钮 + 焦点回归）。
+- 三段声明：① TTS 合成音频（Microsoft Edge TTS，仅教育及个人学习，语音基于题库文本合成、
+  非真人发音，生成工具 edge-tts-generator GPL-3.0 与 edge-tts，仅构建期使用）；
+  ② VOA 公共领域素材（**预留占位，当前未集成**；接入后标注来源与 17 U.S.C. § 105 依据，
+  含 AP/Reuters/背景音乐成分的素材不集成）；③ 版权免责声明（本应用不拥有音频版权）。
+
+**任务 D · 听力精听模块对接**
+
+- 新增 `src/services/audio-sources.ts` → `QingciServices.audioSources`：
+  - **D1 源选择**：题库听力题 → `audio/tts/<questionId>.mp3`；VOA 素材 → `audio/voa/<id>.mp3`
+    （清单缺失时对应入口不显示）。
+  - **D2 时间戳初始化**：`audioMeta` 有逐句时间戳直接使用；否则整段单句
+    （`timing: 'measured'`，A-B 循环按秒精确生效）。
+  - **D3 离线策略**：未缓存且离线 → 提示「该音频需要联网下载」并回退语音合成；
+    未缓存且在线 → 确认框「该音频需要联网下载，是否立即下载？」→ 确认后下载并**双缓存**
+    （Service Worker Cache API + IndexedDB `datasets` 仓 `audio:` 键），之后离线直接命中。
+- 对接点：精听面板 `open()` 的预留接缝（该处注释本就写明「接入真实音频后只需换成 kind:'file'」），
+  拒绝下载或离线时**原样回退现有 TTS 占位轨道**，核心播放逻辑零改动。
+- 新增 UI（只增不改）：audioDock「▶ 真实音频」按钮（音频清单缺失时自动隐藏）、
+  精听面板「VOA 精听素材」区块（无素材时整块隐藏，点击素材 → 取 transcript → 装载整段轨道进精听）。
+- **主播放「▶ 播放听力」保持 SpeechSynthesis 不变**（不修改核心逻辑）；真实音频经新增按钮与精听面板使用。
+
+**其他**
+
+- `.gitignore` 追加 `dist/audio/`（音频构建期生成，不进仓库）。
+
 ## [1.6.0] - 2026-10-03
 
 ### 部署：布局重构 + UI 美化 + 词库扩展上线（2026-10-03）

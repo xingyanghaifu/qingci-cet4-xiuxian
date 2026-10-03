@@ -654,6 +654,32 @@ IntensivePlayer（怎么练）   逐句 / 循环 / A-B / 变速 / 原文 / 听�
 > 密钥只存在于 Cloudflare 环境变量中；仓库、前端代码、构建产物里都不会出现任何 Key。
 > 未完成授权核验前，界面不会展示任何虚拟评分或雷达图。
 
+## 听力音频（构建期生成 · 离线可用）
+
+| 来源 | 内容 | 授权 | 状态 |
+|---|---|---|---|
+| **Microsoft Edge TTS**（构建期合成） | 题库 4690 条听力题音频（听音辨词 4540 / 短篇新闻 42 / 长对话 48 / 听力篇章 60） | 由本应用生成，仅供教育及个人学习，非真人发音 | ✅ `npm run build:audio` |
+| **VOA Learning English** | Words and Their Stories 等栏目精听素材（目标 20–30 段，2–5 分钟/段） | 美国联邦政府作品 · 公共领域（17 U.S.C. § 105），转载须注明来源 learningenglish.voanews.com | ⏸ 脚本骨架就绪（`npm run fetch:voa`），待填种子清单后在可访问网络执行 |
+| ~~BBC Learning English~~ | — | 条款禁止通过其他网站或出版物传播 | ❌ 不集成 |
+
+**音色与工具**：音色映射 `VOICE_MAP`（`en-US-AriaNeural` 主音色 / `en-US-GuyNeural` 对话预留 /
+`en-GB-RyanNeural` 篇章轮换），语速 1.0；合成后端按序探测 edge-tts-generator（npm, GPL-3.0）→
+不可用时切换 Python edge-tts（pip, MIT），两者同为 Microsoft Edge Read Aloud 音源，日志打印实际后端。
+**仅构建期调用，运行时不发起任何 TTS 请求。**
+
+**目录与离线策略**：
+
+- `dist/audio/tts/<questionId>.mp3` + `manifest.json`（voice / voiceRole / duration / textHash 增量键）；
+  `dist/audio/voa/<id>.mp3|.txt` + `manifest.json`（source / sourceUrl / license 如实标注）。
+- 音频**不内联进单文件 HTML、不进 git**（`.gitignore` 已忽略 `dist/audio/`）；
+  `deploy:pages` 部署流程会自动执行 `build:audio`，无音频不部署。
+- 运行时按需 `fetch`，由 Service Worker `/audio/*` cache-first 分支缓存；首次播放前未缓存会确认
+  「该音频需要联网下载，是否立即下载？」，确认后下载并写入 Cache API + IndexedDB（`audio:` 键），
+  之后离线直接命中；离线未缓存时回退 SpeechSynthesis 语音合成占位并提示。
+- 入口：audioDock「▶ 真实音频」按钮（音频清单缺失时自动隐藏）、精听面板（真实音频轨道 +
+  VOA 素材区，无素材时区块隐藏）；主播放「▶ 播放听力」保持语音合成不变。
+- 版权声明：洞府页 →「🔊 音频来源声明」弹窗。
+
 ## 下一步待办（仅规划，均未执行）
 
 | 优先级 | 事项 | 依赖 / 说明 |

@@ -31,6 +31,14 @@ import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, 
 import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
 import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_SCHEMA, FREE_DICT_API } from './vocab-detail';
 import {
+  canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
+  tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
+  tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
+  saveTribulationRecord, latestTribulationRecord, readInventorySummary, loadInventorySummary,
+  TRIBULATION_TOTAL, TRIBULATION_PASS, TRIBULATION_COOLDOWN_MS, TRIBULATION_REWARD_SPIRIT,
+  TRIBULATION_PENALTY, TRIBULATION_KINDS, TRIBULATION_TIME_LIMIT_MS,
+} from './tribulation';
+import {
   loadTtsManifest, loadVoaManifest, ttsEntryOf, voaList, warmTts, pickTtsSrc, ttsEntrySync,
   isKnown, isAudioCached, downloadAudio, fileTrack, prepareTrack, armVoa, playReal,
 } from './audio-sources';
@@ -141,6 +149,33 @@ const QingciServices = {
     prepareTrack,
     armVoa,
     playReal,
+  },
+  tribulation: {
+    canTribulate,
+    pick: pickTribulationQuestions,
+    grade: gradeTribulation,
+    range: difficultyRangeForRealm,
+    yields: tribulationSessionYields,
+    vocabSizeOf,
+    createSession: createTribSession,
+    answerPick,
+    releaseLock: releaseTribLock,
+    sessionDone: tribSessionDone,
+    formatTime: formatTribTime,
+    timerWarn: tribTimerWarn,
+    pickFromKey: tribPickIndexFromKey,
+    correctIndex: tribCorrectIndex,
+    saveRecord: saveTribulationRecord,
+    latestRecord: latestTribulationRecord,
+    readInventorySummary,
+    loadInventorySummary,
+    TOTAL: TRIBULATION_TOTAL,
+    PASS: TRIBULATION_PASS,
+    COOLDOWN: TRIBULATION_COOLDOWN_MS,
+    REWARD: TRIBULATION_REWARD_SPIRIT,
+    PENALTY: TRIBULATION_PENALTY,
+    KINDS: TRIBULATION_KINDS,
+    TIME_LIMIT: TRIBULATION_TIME_LIMIT_MS,
   },
   vocabDetail: {
     get: getVocabDetail,

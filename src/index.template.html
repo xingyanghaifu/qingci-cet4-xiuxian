@@ -582,6 +582,50 @@ aside.side > section.panel{padding:14px 16px}
   .clock-row{top:55px}
 }
 @media (max-width:359px){ .brand-text{display:none} } /* 极窄屏仅保留青字标 */
+/* ===== 阶段 A · 渡劫浮层（独立于 #panel-trial，自有 .trib-choice，R9 会话门载体） ===== */
+.trib-card{width:min(640px,100%);padding:0;overflow:hidden}
+.trib-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;
+  border-bottom:1px solid var(--border-subtle);
+  background:radial-gradient(140% 100% at 50% 0%,rgba(212,168,83,.07),transparent 62%),var(--bg-elevated)}
+.trib-timer{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold);
+  letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.trib-timer.warn{color:var(--bad);animation:tribTimerPulse 1s ease-in-out infinite}
+@keyframes tribTimerPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.trib-progress{font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.trib-body{padding:18px}
+.trib-stem{font-size:calc(20px * var(--q-scale));line-height:1.6;font-weight:600;min-height:56px;margin-bottom:14px;overflow-wrap:anywhere}
+.trib-choices{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){ .trib-choices{grid-template-columns:1fr 1fr} }
+.trib-choice{display:flex;align-items:center;gap:10px;min-height:52px;padding:12px 14px;
+  border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);color:var(--ink);
+  text-align:left;font-size:calc(16px * var(--q-scale));line-height:1.45;cursor:pointer;
+  transition:background .18s cubic-bezier(.4,0,.2,1),border-color .18s cubic-bezier(.4,0,.2,1),color .18s cubic-bezier(.4,0,.2,1)}
+.trib-choice:hover{border-color:color-mix(in srgb,var(--gold) 55%,transparent);background:color-mix(in srgb,var(--gold) 7%,transparent)}
+.trib-choice.picked{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold);font-weight:600}
+.trib-choice .idx{flex:0 0 auto;font-family:var(--font-mono);font-weight:700;color:var(--muted)}
+.trib-choice.picked .idx{color:var(--gold)}
+.trib-result{padding:20px 18px;text-align:center;border-top:1px solid var(--border-subtle)}
+.trib-result-title{font-size:26px;letter-spacing:.05em;margin:4px 0 8px;font-weight:800}
+.trib-result-title.ok{color:var(--gold)}
+.trib-result-title.bad{color:var(--bad)}
+.trib-result-body{color:var(--soft);font-size:14px;line-height:1.8;margin-bottom:14px}
+.trib-result-body b{color:var(--gold);font-family:var(--font-mono)}
+.trib-result .tools{justify-content:center}
+/* ===== 阶段 A · ④ 境界卡四态 / 规则说明 / 放弃确认 ===== */
+.trib-status{margin-top:10px}
+.trib-go{border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);color:var(--gold);
+  background:color-mix(in srgb,var(--gold) 10%,transparent);box-shadow:0 0 10px rgba(212,168,83,.25);
+  font-weight:700;letter-spacing:.08em}
+.trib-go:hover{background:color-mix(in srgb,var(--gold) 18%,transparent);border-color:var(--gold);
+  box-shadow:0 0 14px rgba(212,168,83,.4);filter:none}
+.trib-items{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.trib-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--border-default);
+  color:var(--text-secondary);background:var(--bg)}
+.trib-rules-list{margin:10px 0 4px;padding-left:18px;font-size:14px;line-height:1.85;color:var(--soft)}
+.trib-rules-list li{margin:2px 0}
+.trib-rules-list b{color:var(--gold);font-family:var(--font-mono)}
+.trib-confirm-text{font-size:15px;line-height:1.7;margin:12px 0 4px;color:var(--soft)}
+#tribRulesTarget{margin:4px 0 0}
 </style>
 </head>
 <body>
@@ -590,7 +634,7 @@ aside.side > section.panel{padding:14px 16px}
 <div class="app">
   <header class="hero">
     <div class="brand"><span class="brand-mark" aria-hidden="true">青</span><span class="brand-text"><b>青词天路</b><small id="brandVer">v1.5.0</small></span><button type="button" class="menu-btn" id="menuBtn" aria-label="打开导航菜单" aria-haspopup="menu" aria-expanded="false" aria-controls="navMenu"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7h18M3 12h18M3 17h18"/></svg></button></div>
-    <aside class="seal"><div class="row" style="justify-content:space-between"><b id="realmName">炼气</b><span class="muted" id="daoName">道号未立</span></div><div class="bar"><i id="realmBar"></i></div><div class="row muted"><span id="qiText"></span><span id="spiritText">灵石 0</span><span id="streakText"></span><span id="paperText"></span></div></aside><button type="button" class="btn ov-toggle" id="ovToggle" aria-expanded="false" aria-controls="sidePanel">概览 ▾</button><button type="button" class="btn data-toggle" id="dataToggle" aria-expanded="false" aria-controls="sidePanel">数据面板</button>
+    <aside class="seal"><div class="row" style="justify-content:space-between"><b id="realmName">炼气</b><span class="muted" id="daoName">道号未立</span></div><div class="bar"><i id="realmBar"></i></div><div class="row muted"><span id="qiText"></span><span id="spiritText">灵石 0</span><span id="streakText"></span><span id="paperText"></span></div><div class="trib-status" id="tribStatus" aria-live="polite"></div><div class="trib-items" id="tribItems"></div></aside><button type="button" class="btn ov-toggle" id="ovToggle" aria-expanded="false" aria-controls="sidePanel">概览 ▾</button><button type="button" class="btn data-toggle" id="dataToggle" aria-expanded="false" aria-controls="sidePanel">数据面板</button>
   </header>
   <div class="nav-menu" id="navMenu" role="dialog" aria-modal="true" aria-labelledby="navMenuTitle"><h2 id="navMenuTitle" class="sr-only">导航</h2><nav class="tabs" role="tablist" aria-label="修炼模块"><button role="tab" aria-selected="true" aria-controls="panel-paper" class="on" data-tab="paper"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M8 7.5h7M8 11h5"/></svg><span class="lbl">试炼殿</span></button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial" data-mode="words"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M7 9.5h7M7 13.5h4"/></svg><span class="lbl">背单词</span></button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/></svg><span class="lbl">单题</span></button><button role="tab" aria-selected="false" aria-controls="panel-speak" data-tab="speak"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9.5" y="3.5" width="5" height="10" rx="2.5"/><path d="M6 11.5a6 6 0 0 0 12 0M12 17.5V21"/></svg><span class="lbl">口语</span></button><button role="tab" aria-selected="false" aria-controls="panel-book" data-tab="book"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5c3 4 6 5.2 6 9a6 6 0 0 1-12 0c0-3.8 3-5 6-9z"/></svg><span class="lbl">心魔</span></button><button role="tab" aria-selected="false" aria-controls="panel-codex" data-tab="codex"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span class="lbl">词谱</span></button><button role="tab" aria-selected="false" aria-controls="panel-map" data-tab="map"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5z"/><path d="M9 4.5v13M15 6.5v13"/></svg><span class="lbl">卷面</span></button><button role="tab" aria-selected="false" aria-controls="panel-duel" data-tab="duel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4.5h3.5L18 14M19 4.5h-3.5L6 14"/><path d="m5 4.5 2.5 2.5M19 4.5l-2.5 2.5M4.5 19.5 9 15M19.5 19.5 15 15"/></svg><span class="lbl">斗法场</span></button></nav><div class="nav-sub"><p class="section-label">题型速捷 · QUICK ACCESS</p><div class="road" id="road"></div></div></div><div class="nav-scrim" id="navScrim"></div>
   <div class="layout"><main id="main">
@@ -611,8 +655,28 @@ aside.side > section.panel{padding:14px 16px}
       <footer class="side-foot"><button type="button" class="btn" id="sideSettings">⚙ 设置</button><button type="button" class="btn" id="sideTheme">主题 · 跟随系统</button><button type="button" class="btn" id="sideAudioSrc">🔊 音频来源</button></footer>
     </aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
+<div class="overlay trib-session hidden" id="tribOverlay" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="tribTitle">
+  <h2 id="tribTitle" class="sr-only">渡劫挑战</h2>
+  <div class="overlay-card trib-card">
+    <header class="trib-head">
+      <div class="trib-timer" id="tribTimer" aria-live="polite">剩余 5:00</div>
+      <div class="trib-progress" id="tribProgress">第 1 / 10 题</div>
+    </header>
+    <div class="trib-body">
+      <div class="trib-stem" id="tribStem" aria-live="polite"></div>
+      <div class="trib-choices" id="tribChoices" role="group" aria-label="渡劫选项"></div>
+    </div>
+    <section class="trib-result hidden" id="tribResult" aria-live="polite">
+      <div class="trib-result-title" id="tribResultTitle"></div>
+      <div class="trib-result-body" id="tribResultBody"></div>
+      <div class="tools" id="tribResultActions"></div>
+    </section>
+  </div>
+</div>
+<div class="overlay trib-session hidden" id="tribRulesOverlay" role="dialog" aria-modal="true" aria-labelledby="tribRulesTitle"><div class="overlay-card trib-card"><div class="row" style="justify-content:space-between"><b id="tribRulesTitle">渡劫规则</b><span class="muted">TRIBULATION</span></div><p class="muted" id="tribRulesTarget"></p><ul class="trib-rules-list"><li>共 <b>10</b> 题，限时 <b>5 分钟</b>，全部为客观题（听力 + 阅读）。</li><li>答对 <b>≥8</b> 题渡劫成功；答对 5–7 题扣 <b>10%</b> 修为，答对 &lt;5 题扣 <b>20%</b>。</li><li>失败不掉境界（扣罚以当前层结余为限）；成功后 <b>24 小时</b> 冷却。</li><li>持有护道符可抵挡一次扣罚；成功奖励 <b>100 灵石</b>。</li><li>中途 Esc 可放弃，放弃按当前成绩判定且 <b>永不判过</b>，同样进入冷却。</li></ul><div class="tools" style="justify-content:flex-end"><button class="btn" id="tribRulesCancel">再等等</button><button class="btn solid" id="tribRulesStart">开始渡劫</button></div></div></div>
+<div class="overlay trib-confirm hidden" id="tribConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="tribConfirmTitle"><div class="overlay-card trib-card"><div class="row" style="justify-content:space-between"><b id="tribConfirmTitle">放弃渡劫？</b><span class="muted">ABANDON</span></div><p class="trib-confirm-text" id="tribConfirmText">当前已答 0 题、答对 0 题。放弃将按当前成绩判定，是否确认？</p><div class="tools" style="justify-content:flex-end"><button class="btn" id="tribConfirmAbandon">放弃</button><button class="btn solid" id="tribConfirmResume">继续渡劫</button></div></div></div>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="overlay hidden" id="breakthroughOverlay" role="dialog" aria-modal="true" aria-label="境界突破"><div class="overlay-card breakthrough"><div class="bt-ring" aria-hidden="true"><span></span></div><h2 id="btTitle">境界突破</h2><p id="btRealm" class="bt-realm">筑基</p><p id="btPerk" class="muted"></p><div id="btTitles" class="mk-tags"></div><div class="tools" style="justify-content:center"><button class="btn solid" id="btClose">继续修行</button></div></div></div>
+<div class="overlay hidden" id="breakthroughOverlay" role="dialog" aria-modal="true" aria-label="境界突破"><div class="overlay-card breakthrough"><div class="bt-ring" aria-hidden="true"><span></span></div><h2 id="btTitle">境界突破</h2><p id="btRealm" class="bt-realm">筑基</p><p id="btPerk" class="muted"></p><div id="btTitles" class="mk-tags"></div><div class="tools" style="justify-content:center"><button class="btn solid hidden" id="btribStart">立即渡劫</button><button class="btn solid" id="btClose">继续修行</button></div></div></div>
 <div class="overlay hidden" id="feedbackOverlay" role="dialog" aria-modal="true" aria-label="反馈"><div class="overlay-card"><div class="row" style="justify-content:space-between"><b>报错 / 建议</b><span class="muted" id="feedbackQueue">—</span><button class="btn" id="feedbackClose">关闭</button></div><div class="tools"><label class="muted">类型 <select id="feedbackKind"><option value="bug">功能报错</option><option value="suggestion">改进建议</option><option value="content">题目/内容问题</option><option value="other">其它</option></select></label><label class="muted">截图（可选，≤512KB）<input id="feedbackShot" type="file" accept="image/png,image/jpeg,image/webp"></label><span class="muted" id="feedbackShotState"></span></div><textarea id="feedbackDesc" rows="5" maxlength="2000" placeholder="遇到了什么问题？或希望改进什么？越具体越好（例如：第几题、哪个按钮、期望的行为）" style="width:100%;margin-top:8px"></textarea><div class="tools"><label class="muted">联系方式（可选）<input id="feedbackContact" maxlength="120" placeholder="邮箱 / 其它" style="width:200px"></label><input id="feedbackTrap" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true"></div><div class="tools"><button class="btn solid" id="feedbackSubmit">提交反馈</button><button class="btn" id="feedbackClear">清空</button><span class="muted" id="feedbackState"></span></div><p class="muted">提交内容会发送到本站的 Cloudflare Pages Function（/api/feedback）并存入 D1 数据库：只保存你填写的文字、截图、页面位置、版本号与浏览器 UA；IP 仅以加盐哈希形式用于限流。网络不可用时会先存在本机，联网后自动重试。</p></div></div>
 <div class="overlay hidden" id="intensiveOverlay" role="dialog" aria-modal="true" aria-label="听力精听"><div class="overlay-card"><div class="row" style="justify-content:space-between"><b>听力精听</b><span class="muted" id="intensiveMeta">—</span><button class="btn" id="intensiveClose">关闭</button></div><div class="tools"><button class="btn solid" id="intensiveToggle">▶ 播放</button><button class="btn" id="intensivePrev">⏮ 上一句</button><button class="btn" id="intensiveNext">⏭ 下一句</button><button class="btn" id="intensiveLoop">循环：关</button><button class="btn" id="intensiveSetA">设 A</button><button class="btn" id="intensiveSetB">设 B</button><button class="btn" id="intensiveAbClear">清除 A-B</button><label class="muted">语速 <select id="intensiveRate"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><button class="btn" id="intensiveText">隐藏原文</button><button class="btn" id="intensiveDictation">听写模式</button></div><div class="voa-block hidden" id="voaBlock"><p class="section-label">VOA 精听素材 · PUBLIC DOMAIN</p><div id="voaList"></div></div><div id="intensiveList"></div><p class="muted" id="intensiveNote"></p></div></div>
 <div class="overlay hidden" id="vdOverlay" role="dialog" aria-modal="true" aria-label="单词详解"><div class="overlay-card vd-card"><div class="vd-head"><div class="vd-title"><b class="vd-word" id="vdWord">—</b><span class="muted" id="vdPhonetic"></span></div><div class="vd-actions"><button class="btn" type="button" id="vdSpeak">🔊 发音</button><button class="btn" type="button" id="vdClose">关闭</button></div></div><p class="vd-src muted" id="vdSource"></p><div id="vdBody" aria-live="polite"></div></div></div>
@@ -951,6 +1015,9 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       + '<div class="muted">只读回看，不影响本卷作答与计分。</div>';
   }
   document.addEventListener('keydown', function (e) {
+    /* R9 会话门：渡劫浮层(.trib-session)可见时，全局快捷键整体让位（必须在 inEditable 之前） */
+    var tribSess = document.querySelector('.trib-session');
+    if (tribSess && !tribSess.classList.contains('hidden')) return;
     var target = e.target;
     var inEditable = !!(target && target.closest && target.closest('input,textarea,select,[contenteditable="true"]'));
     var action = S.shortcuts.resolve(e.key, {
@@ -2199,12 +2266,16 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   /* ---------- 2. 判定 + 持久化 + 突破提示 ---------- */
   function refresh(showEffects) {
     try {
-      var result = S.gamification.record(snapshot());
+      /* 阶段A改道：位次推进延后到渡劫成功（deferRealmAdvance），突破信息仅作「可挑战」提示返回 */
+      var result = S.gamification.record(snapshot(), undefined, { deferRealmAdvance: true });
       last = result;
       renderRealm(result);
       renderTitles(result);
       if (showEffects) {
-        if (result.breakthrough) showBreakthrough(result.breakthrough, result.newTitles);
+        if (result.breakthrough) {
+          if (window.__tribulationPrompt) window.__tribulationPrompt(result.breakthrough, snapshot());
+          else showBreakthrough(result.breakthrough, result.newTitles);
+        }
         else if (result.newTitles.length) {
           if (window.toast) toast('解锁称号 · ' + result.newTitles.map(function (t) { return t.name; }).join('、'));
           renderTitles(result);
@@ -2215,6 +2286,8 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       return null;
     }
   }
+  /* 供渡劫成功后重算并刷新洞府境界卡/称号（record 在 defer 模式下不会越级推进） */
+  window.__refreshRealm = function () { try { refresh(false); } catch (e) { /* 忽略 */ } };
 
   function renderRealm(result) {
     var status = result.status;
@@ -2555,6 +2628,9 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   }
 
   document.addEventListener('keydown', function (e) {
+    /* R9 会话门（与快捷键处理器同款）：Esc 在渡劫会话期间交给会话自身处理 */
+    var tribSess = document.querySelector('.trib-session');
+    if (tribSess && !tribSess.classList.contains('hidden')) return;
     if (e.key === 'Escape' || e.key === 'Esc') {
       if (closeTopOverlay()) e.preventDefault();
       return;
@@ -2989,6 +3065,500 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       focusMainTitle();
     });
   });
+})();
+</script>
+<script>
+/* 阶段 A · ③ 渡劫会话运行时（新增脚本：只增不改）
+   · R9 协同：会话开 = 浮层移除 hidden → 两个全局 keydown 顶部的门自动让位；
+     会话关 = hidden 加回 → 全局自动恢复。本脚本 keydown **注册一次**，以
+     phase + hidden 双判定做开关（不重复挂监听器）。
+   · 选择即确认（步骤 1+2 已定）：点按 1-4 / 点击选项直接进下一题，无 Enter。
+   · 本步骤只判定与显示：修为扣罚、灵石奖励、位次推进均不落库（步骤 4/5 处理）。 */
+(function () {
+  var S = window.QingciServices;
+  if (!S || !S.tribulation) return;
+  var T = S.tribulation;
+  var ov = document.getElementById('tribOverlay');
+  if (!ov) return;
+  var el = function (id) { return document.getElementById(id); };
+  var timerEl = el('tribTimer');
+  var progEl = el('tribProgress');
+  var stemEl = el('tribStem');
+  var choiceEl = el('tribChoices');
+  var resultEl = el('tribResult');
+  var rTitle = el('tribResultTitle');
+  var rBody = el('tribResultBody');
+  var rActions = el('tribResultActions');
+  var bodyEl = choiceEl ? choiceEl.parentNode : null; // .trib-body
+  var session = null;
+  var interval = null;
+  var advanceTimer = null;
+  var starting = false; // 防并发启动（双击/连点）
+  var rulesEl = document.getElementById('tribRulesOverlay');     // 规则说明（带 trib-session → 期间全局让位）
+  var confirmEl = document.getElementById('tribConfirmOverlay'); // 放弃确认（独立类，不带 trib-session）
+  var rulesOpener = null;   // 打开规则说明的触发元素（取消后焦点归还）
+  var lastFinishedAt = null; // 最近一次渡劫结束时间（冷却数据源）
+
+  function escx(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function toastMsg(m) { if (window.toast) toast(m); }
+  function nameOf(i) { var r = S.realm && S.realm.byIndex ? S.realm.byIndex(i) : null; return r && r.name ? r.name : String(i); }
+  function perkOf(i) { var r = S.realm && S.realm.byIndex ? S.realm.byIndex(i) : null; return r && r.perk ? r.perk : ''; }
+
+  /* 题源：复用现有题库服务（与随机练习同源，不新建题库） */
+  function loadBank() {
+    var svc = window.__QINGCI_BANK__ || (S.bank && S.bank.createService ? S.bank.createService() : null);
+    return svc && svc.load ? svc.load() : Promise.resolve(null);
+  }
+  /* 当前位次（学业五档持久位次）与目标位次 */
+  function targetIndexes() {
+    var g = S.gamification && S.gamification.load ? S.gamification.load() : null;
+    var from = g && typeof g.realmIndex === 'number' ? g.realmIndex : 0;
+    var max = (S.realm && S.realm.list ? S.realm.list.length : 5) - 1;
+    return { from: Math.max(0, Math.min(from, max)), to: Math.max(0, Math.min(from + 1, max)) };
+  }
+
+  function renderQuestion() {
+    if (!session) return;
+    session.state = T.releaseLock(session.state);
+    var q = session.questions[session.state.idx];
+    if (!q) { finish('timeout'); return; }
+    progEl.textContent = '第 ' + Math.min(session.state.idx + 1, session.state.total) + ' / ' + session.state.total + ' 题';
+    var c = q.content || {};
+    stemEl.textContent = c.prompt || q.id;
+    session.correctIdx = T.correctIndex(q);
+    var ch = c.choices || [];
+    var letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    choiceEl.innerHTML = ch.map(function (txt, i) {
+      return '<button type="button" class="trib-choice" data-idx="' + i + '">'
+        + '<span class="idx">' + (letters[i] || (i + 1)) + '.</span>'
+        + '<span class="txt">' + escx(txt) + '</span></button>';
+    }).join('');
+    // 焦点进首项：数字键与 Tab 的起点（关闭确认后也回到这里）
+    var first = choiceEl.querySelector('.trib-choice');
+    if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+  }
+
+  function userPick(i) {
+    if (!session || session.phase !== 'running') return;
+    if (session.state.locked) return;
+    var q = session.questions[session.state.idx];
+    if (!q) return;
+    var btns = choiceEl.querySelectorAll('.trib-choice');
+    if (i >= btns.length) return;
+    // 选中即确认：视觉高亮 + 立即锁步（不显示对错）
+    btns[i].classList.add('picked');
+    Array.prototype.forEach.call(btns, function (b) { b.disabled = true; });
+    var next = T.answerPick(session.state, i, session.correctIdx);
+    var done = T.sessionDone(next);
+    session.state = next;
+    if (done) { finish('complete'); return; }
+    clearTimeout(advanceTimer);
+    advanceTimer = setTimeout(function () { renderQuestion(); }, 220);
+  }
+
+  /* ---------- 计时器 ---------- */
+  function stopTimer() { if (interval) { clearInterval(interval); interval = null; } }
+  function startTimer() {
+    stopTimer();
+    session.deadline = Date.now() + T.TIME_LIMIT;
+    timerEl.classList.remove('warn');
+    timerEl.textContent = T.formatTime(Math.round(T.TIME_LIMIT / 1000));
+    interval = setInterval(function () {
+      if (!session || session.phase !== 'running') { stopTimer(); return; }
+      var left = Math.max(0, Math.ceil((session.deadline - Date.now()) / 1000));
+      timerEl.textContent = T.formatTime(left);
+      timerEl.classList.toggle('warn', T.timerWarn(left));
+      if (left <= 0) finish('timeout');
+    }, 500);
+  }
+
+  /* ---------- 结束与结果页 ---------- */
+  function finish(reason) {
+    if (!session || session.phase === 'done') return;
+    stopTimer();
+    clearTimeout(advanceTimer);
+    session.phase = 'done';
+    session.reason = reason;
+    var grade = T.grade(session.state.correct, {
+      qi: (typeof state !== 'undefined' && state ? Number(state.qi) || 0 : 0),
+      maxSafeDeduct: (typeof realm === 'function' ? realm().into : 0),
+      hasTalisman: false,          // inventory 接入在步骤 4/5
+      abandoned: reason !== 'complete',  // 超时与放弃同档：永不判过、按题数落失败档
+    });
+    session.grade = grade;
+    /* —— 落库（步骤 4）：记录+冷却 / 修为扣罚（夹逼不掉境界）/ 成功时位次·灵石·突破史 —— */
+    var rec = {
+      id: 'trib-' + Date.now(),
+      realmFrom: session.realmFrom,
+      realmTo: session.realmTo,
+      startedAt: session.startedAt || new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      correctCount: session.state.correct,
+      totalCount: session.state.total,
+      passed: grade.passed,
+      qiPenalty: grade.qiPenalty,
+      questionIds: session.questions.map(function (q) { return q.id; }),
+      abandoned: reason !== 'complete',
+    };
+    session.record = rec;
+    persistFinish(rec, grade);
+
+    if (reason === 'abandon') {
+      // 放弃：按当前成绩判定（永不判过）→ 回主界面 + 摘要（验收 14），不展示结果页
+      var summary = '放弃渡劫 · 答对 ' + rec.correctCount + '/' + rec.totalCount + ' · '
+        + (grade.talismanUsed ? '护道符已抵扣' : (grade.qiPenalty > 0 ? '扣除修为 ' + grade.qiPenalty : '修为无损'))
+        + ' · 冷却 24 小时';
+      closeSession();
+      toastMsg(summary);
+      return;
+    }
+    if (bodyEl) bodyEl.classList.add('hidden');
+    resultEl.classList.remove('hidden');
+    if (grade.passed) {
+      rTitle.className = 'trib-result-title ok';
+      rTitle.textContent = '渡劫成功';
+      rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题 · 灵石 <b>+' + T.REWARD + '</b><br>'
+        + '境界 ' + escx(nameOf(session.realmFrom)) + ' → ' + escx(nameOf(session.realmTo)) + ' 已晋升（修为与灵石已入账）';
+      openBreakthrough();
+    } else {
+      rTitle.className = 'trib-result-title bad';
+      rTitle.textContent = reason === 'timeout' ? '渡劫失败 · 时间到' : '渡劫失败';
+      var extra = grade.talismanUsed ? '护道符已抵扣' : (grade.qiPenalty > 0 ? '扣除修为 <b>' + grade.qiPenalty + '</b>' : '修为无损');
+      rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题 · ' + extra
+        + '<br>已记入渡劫史 · 冷却 24 小时' + (reason !== 'complete' ? '（按当前题数落失败档）' : '');
+    }
+    rActions.innerHTML = '<button type="button" class="btn solid" data-act="retry">再战</button>'
+      + '<button type="button" class="btn" data-act="close">关闭</button>';
+    var firstAction = rActions.querySelector('button');
+    if (firstAction) { try { firstAction.focus({ preventScroll: true }); } catch (err) { firstAction.focus(); } }
+  }
+
+  /* 落库编排：记录→冷却缓存；修为扣罚；成功→位次推进+灵石+突破史+称号重评 */
+  function persistFinish(rec, grade) {
+    T.saveRecord(rec).then(function () { lastFinishedAt = rec.finishedAt; renderTribStatus(); });
+    if (grade.qiPenalty > 0 && typeof state !== 'undefined') {
+      state.qi = Math.max(0, (Number(state.qi) || 0) - grade.qiPenalty);
+    }
+    if (grade.passed) {
+      if (typeof state !== 'undefined') {
+        state.spirit = (Number(state.spirit) || 0) + T.REWARD;
+      }
+      var gs = S.gamification.load();
+      if (gs.realmIndex < session.realmTo) {
+        var hist = (gs.breakthroughs || []).concat([{
+          at: new Date().toISOString(), from: gs.realmIndex, to: session.realmTo,
+        }]);
+        S.gamification.save(Object.assign({}, gs, { realmIndex: session.realmTo, breakthroughs: hist.slice(-20) }));
+      }
+      // 重算并刷新洞府境界卡/称号（defer 模式不会越级）
+      if (window.__refreshRealm) window.__refreshRealm();
+    }
+    if (typeof save === 'function') { try { save(); } catch (e) { /* 忽略 */ } }
+    if (typeof renderTop === 'function') { try { renderTop(); } catch (e) { /* 忽略 */ } }
+    renderTribStatus();
+    renderTribItems();
+  }
+
+  /* 复用既有突破弹窗呈现晋升动效（btClose 仅隐藏，无副作用——已核实） */
+  function openBreakthrough() {
+    var bt = el('breakthroughOverlay');
+    if (!bt) return;
+    var t = el('btTitle'), r = el('btRealm'), p = el('btPerk'), ts = el('btTitles');
+    if (t) t.textContent = '渡劫成功';
+    if (r) r.textContent = nameOf(session.realmFrom) + ' → ' + nameOf(session.realmTo);
+    if (p) p.textContent = '灵石 +' + T.REWARD + (perkOf(session.realmTo) ? ' · ' + perkOf(session.realmTo) : '');
+    if (ts) ts.innerHTML = '';
+    // 成功态：只留「继续修行」（提示态的「立即渡劫」隐藏、文案复位）
+    var bs = el('btribStart');
+    if (bs) bs.classList.add('hidden');
+    var bc = el('btClose');
+    if (bc) bc.textContent = '继续修行';
+    bt.classList.remove('hidden');
+  }
+
+  /* ---------- 境界卡四态 + 道具只读摘要（验收 7-10 / 17-21） ---------- */
+  function gamRank() {
+    var g = S.gamification && S.gamification.load ? S.gamification.load() : null;
+    return g && typeof g.realmIndex === 'number' ? g.realmIndex : 0;
+  }
+  function tribContext(now) {
+    var st = (typeof state !== 'undefined' && state) ? state : {};
+    return {
+      qi: Number(st.qi) || 0,
+      currentIndex: gamRank(),
+      vocabSize: T.vocabSizeOf(Object.keys(st.known || {}).length, Number(st.assessment) || 0),
+      bestScore: Number(st.bestScore) || 0,
+      lastFinishedAt: lastFinishedAt,
+      now: now || Date.now(),
+    };
+  }
+  function renderTribStatus() {
+    var stEl = el('tribStatus');
+    if (!stEl) return;
+    var e = T.canTribulate(tribContext());
+    if (e.ok) {
+      stEl.innerHTML = '<button type="button" class="btn trib-go" id="tribGoBtn">⚔ 渡劫</button>';
+    } else if (e.reason === 'not-qualified') {
+      stEl.innerHTML = '<span class="muted">距离渡劫还需：词汇量 +' + (e.gap ? e.gap.vocab : 0)
+        + ' / 模考分 +' + (e.gap ? e.gap.score : 0) + '</span>';
+    } else if (e.reason === 'cooldown') {
+      var ms = e.remainingMs || 0;
+      stEl.innerHTML = '<span class="muted">渡劫冷却中 · 剩余 ' + Math.floor(ms / 3600000)
+        + ' 小时 ' + Math.floor((ms % 3600000) / 60000) + ' 分钟</span>';
+    } else {
+      stEl.innerHTML = '<span class="muted">已至极境</span>';
+    }
+  }
+  function renderTribItems() {
+    var itemsEl = el('tribItems');
+    if (!itemsEl) return;
+    T.loadInventorySummary().then(function (sum) {
+      var chips = [];
+      if (sum.talisman > 0) chips.push('护道符 x ' + sum.talisman);
+      if (sum.arrayUntil) {
+        var hrs = Math.max(1, Math.ceil((Date.parse(sum.arrayUntil) - Date.now()) / 3600000));
+        chips.push('聚灵阵生效 · 剩余 ' + hrs + ' 小时');
+      }
+      itemsEl.innerHTML = chips.map(function (c) { return '<span class="trib-chip">' + escx(c) + '</span>'; }).join('');
+    });
+  }
+
+  /* ---------- 「渡劫资格已开启」提示（IIFE 改道入口，验收 1-6） ---------- */
+  window.__tribulationPrompt = function (/* breakthrough, snap */) {
+    var bt = el('breakthroughOverlay');
+    if (!bt) return;
+    if (session && session.phase === 'running') return; // 会话中不打扰
+    var ctx = tribContext();
+    var e = T.canTribulate(ctx);
+    var bStart = el('btribStart'), bClose = el('btClose'), ts = el('btTitles');
+    if (ts) ts.innerHTML = '';
+    if (e.ok) {
+      el('btTitle').textContent = '渡劫资格已开启';
+      el('btRealm').textContent = nameOf(ctx.currentIndex) + ' → ' + nameOf(e.targetIndex);
+      el('btPerk').textContent = '修为已达晋升门槛，可发起渡劫挑战冲击更高境界。';
+      if (bStart) bStart.classList.remove('hidden');
+      if (bClose) bClose.textContent = '稍后';
+      bt.classList.remove('hidden');
+    } else if (e.reason === 'cooldown') {
+      var cms = e.remainingMs || 0;
+      el('btTitle').textContent = '渡劫冷却中';
+      el('btRealm').textContent = '剩余 ' + Math.floor(cms / 3600000) + ' 小时 ' + Math.floor((cms % 3600000) / 60000) + ' 分钟';
+      el('btPerk').textContent = '上次渡劫已进入冷却，恢复后可再次发起。';
+      if (bStart) bStart.classList.add('hidden');
+      if (bClose) bClose.textContent = '知道了';
+      bt.classList.remove('hidden');
+    } else if (e.reason === 'maxed') {
+      el('btTitle').textContent = '已至极境';
+      el('btRealm').textContent = nameOf(ctx.currentIndex);
+      el('btPerk').textContent = '学业境界已达顶档，道途圆满。';
+      if (bStart) bStart.classList.add('hidden');
+      if (bClose) bClose.textContent = '知道了';
+      bt.classList.remove('hidden');
+    }
+    // not-qualified → 不弹（4.1-3）
+    renderTribStatus();
+  };
+
+  /* ---------- 规则说明浮层（带 trib-session，期间全局快捷键让位） ---------- */
+  function openRules(opener) {
+    if (!rulesEl) return;
+    rulesOpener = opener || null;
+    var ctx = tribContext();
+    var target = el('tribRulesTarget');
+    var maxIdx = (S.realm && S.realm.list ? S.realm.list.length : 5) - 1;
+    if (target) {
+      target.textContent = '目标境界：' + nameOf(ctx.currentIndex) + ' → ' + nameOf(Math.min(ctx.currentIndex + 1, maxIdx));
+    }
+    rulesEl.classList.remove('hidden');
+    var startBtn = el('tribRulesStart');
+    if (startBtn) { try { startBtn.focus({ preventScroll: true }); } catch (e) { startBtn.focus(); } }
+  }
+  function closeRules() {
+    if (!rulesEl || rulesEl.classList.contains('hidden')) return;
+    rulesEl.classList.add('hidden');
+    if (rulesOpener && rulesOpener.focus && rulesOpener.offsetParent !== null) {
+      try { rulesOpener.focus({ preventScroll: true }); } catch (e) { rulesOpener.focus(); }
+    }
+    rulesOpener = null;
+  }
+
+  /* ---------- Esc 放弃二次确认（独立浮层，计时不中断） ---------- */
+  function openConfirm() {
+    if (!confirmEl || !session || session.phase !== 'running') return;
+    var txt = el('tribConfirmText');
+    if (txt) {
+      txt.textContent = '当前已答 ' + session.state.idx + ' 题、答对 ' + session.state.correct
+        + ' 题。放弃将按当前成绩判定，是否确认？';
+    }
+    confirmEl.classList.remove('hidden');
+    var resume = el('tribConfirmResume');
+    if (resume) { try { resume.focus({ preventScroll: true }); } catch (e) { resume.focus(); } }
+  }
+  function closeConfirm() {
+    if (!confirmEl || confirmEl.classList.contains('hidden')) return;
+    confirmEl.classList.add('hidden');
+    var back = choiceEl.querySelector('.trib-choice:not([disabled])');
+    if (back) { try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); } }
+    else { try { ov.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ } }
+  }
+  function abandonFromConfirm() {
+    if (!session || session.phase !== 'running') return;
+    confirmEl.classList.add('hidden');
+    finish('abandon');
+  }
+
+  /* ---------- 会话开合 ---------- */
+  function startSession(opts) {
+    opts = opts || {};
+    if (starting) return;
+    starting = true;
+    stopTimer();
+    clearTimeout(advanceTimer);
+    var idx = targetIndexes();
+    var realmTo = typeof opts.realmTo === 'number' ? opts.realmTo : idx.to;
+    var seed = typeof opts.seed === 'number' ? opts.seed : Math.floor(Math.random() * 1e9);
+    loadBank().then(function (bank) {
+      starting = false;
+      if (!bank) { toastMsg('题库未就绪，请稍后再试'); return; }
+      var qs = T.pick(bank, { realmTo: realmTo, seed: seed });
+      if (qs.length < T.TOTAL) {
+        // 难度带题量不足 → 加宽带补抽（仍限客观题白名单，排除已选）
+        var extra = T.pick(bank, {
+          realmTo: realmTo, seed: seed + 1, difficulty: [0, 1],
+          excludeIds: qs.map(function (q) { return q.id; }),
+        });
+        qs = qs.concat(extra).slice(0, T.TOTAL);
+      }
+      if (qs.length < T.PASS) { toastMsg('题库题量不足，暂无法渡劫'); return; }
+      session = {
+        questions: qs, realmFrom: idx.from, realmTo: realmTo, seed: seed,
+        state: T.createSession(qs.length), phase: 'running', reason: null, correctIdx: -1,
+        startedAt: new Date().toISOString(),
+      };
+      // 复位 UI
+      resultEl.classList.add('hidden');
+      rTitle.textContent = ''; rBody.innerHTML = ''; rActions.innerHTML = '';
+      if (bodyEl) bodyEl.classList.remove('hidden');
+      stemEl.textContent = ''; choiceEl.innerHTML = '';
+      timerEl.classList.remove('warn');
+      // 开门：移除 hidden → R9 门让位全局快捷键
+      ov.classList.remove('hidden');
+      renderQuestion();
+      startTimer();
+    }).catch(function () {
+      starting = false;
+      toastMsg('题库加载失败，请稍后再试');
+    });
+  }
+
+  function closeSession() {
+    stopTimer();
+    clearTimeout(advanceTimer);
+    session = null;
+    // 清空内容（验收 15）+ 恢复计时样式（验收 16）
+    stemEl.textContent = '';
+    choiceEl.innerHTML = '';
+    rTitle.textContent = ''; rBody.innerHTML = ''; rActions.innerHTML = '';
+    resultEl.classList.add('hidden');
+    if (bodyEl) bodyEl.classList.remove('hidden');
+    timerEl.classList.remove('warn');
+    timerEl.textContent = T.formatTime(Math.round(T.TIME_LIMIT / 1000));
+    progEl.textContent = '第 1 / ' + T.TOTAL + ' 题';
+    // 防御性复位：规则/确认浮层一并关闭
+    if (rulesEl) rulesEl.classList.add('hidden');
+    if (confirmEl) confirmEl.classList.add('hidden');
+    // 关门：加回 hidden → 全局快捷键自动恢复
+    ov.classList.add('hidden');
+    // 焦点归还：回到「渡劫」入口（存在才聚焦）
+    var back = el('tribGoBtn');
+    if (back) { try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); } }
+  }
+
+  /* ---------- 事件（全部注册一次，委托 + phase/hidden 判定） ---------- */
+  if (choiceEl) choiceEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.trib-choice') : null;
+    if (!b) return;
+    userPick(Number(b.getAttribute('data-idx')));
+  });
+  if (rActions) rActions.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+    if (!b || !session) return;
+    if (b.getAttribute('data-act') === 'retry') {
+      var rt = session.realmTo;
+      startSession({ realmTo: rt, seed: Math.floor(Math.random() * 1e9) });
+    } else {
+      closeSession();
+    }
+  });
+  /* keydown 注册一次：规则/确认/会话三层状态机（Esc 流与数字键互不串台） */
+  document.addEventListener('keydown', function (e) {
+    // 层 1：放弃确认浮层（计时器不中断，吞掉其余按键）
+    if (confirmEl && !confirmEl.classList.contains('hidden')) {
+      if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeConfirm(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); closeConfirm(); return; }
+      return;
+    }
+    // 层 2：规则说明浮层（trib-session 已让位全局，这里接管 Esc/Enter）
+    if (rulesEl && !rulesEl.classList.contains('hidden')) {
+      if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeRules(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); closeRules(); startSession({}); return; }
+      return;
+    }
+    // 层 3：渡劫会话
+    if (!session || session.phase !== 'running' || ov.classList.contains('hidden')) return;
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); openConfirm(); return; }
+    var idx = T.pickFromKey(e.key);
+    if (idx !== null) { e.preventDefault(); userPick(idx); }
+  });
+
+  /* ---------- 步骤 4 接线：入口/按钮/初始渲染/冷却自刷新 ---------- */
+  var statusEl = el('tribStatus');
+  if (statusEl) statusEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('#tribGoBtn') : null;
+    if (b) openRules(b);   // 验收 11：境界卡「渡劫」→ 规则说明
+  });
+  var bStartBtn = el('btribStart');
+  if (bStartBtn) bStartBtn.addEventListener('click', function () {
+    var bt = el('breakthroughOverlay');
+    if (bt) bt.classList.add('hidden');
+    openRules(bStartBtn);  // 验收 2：提示弹窗「立即渡劫」→ 规则说明
+  });
+  var rStart = el('tribRulesStart');
+  if (rStart) rStart.addEventListener('click', function () { closeRules(); startSession({}); }); // 验收 3
+  var rCancel = el('tribRulesCancel');
+  if (rCancel) rCancel.addEventListener('click', function () { closeRules(); });                 // 验收 4
+  var cResume = el('tribConfirmResume');
+  if (cResume) cResume.addEventListener('click', function () { closeConfirm(); });               // 验收 13
+  var cAbandon = el('tribConfirmAbandon');
+  if (cAbandon) cAbandon.addEventListener('click', abandonFromConfirm);                          // 验收 14
+
+  /* 初始渲染：冷却数据异步读最近一次渡劫 */
+  renderTribStatus();
+  renderTribItems();
+  T.latestRecord().then(function (rec) {
+    lastFinishedAt = rec && rec.finishedAt ? rec.finishedAt : null;
+    renderTribStatus();
+  });
+  /* 冷却到期自动刷新：每 60 秒一次（可见时才刷），不做每帧刷新 */
+  setInterval(function () {
+    try { if (document.visibilityState !== 'hidden') renderTribStatus(); } catch (e) { /* 忽略 */ }
+  }, 60000);
+
+  /* 临时启动入口（步骤 4/5 将以境界卡「渡劫」按钮与「立即渡劫」替换） */
+  window.__tribDebugStart = function (opts) { startSession(opts); };
+  window.__tribDebugClose = closeSession;
+  window.__tribDebugState = function () {
+    return session ? {
+      phase: session.phase, reason: session.reason,
+      idx: session.state.idx, correct: session.state.correct,
+      total: session.state.total,
+      grade: session.grade || null,
+    } : null;
+  };
 })();
 </script>
 </body></html>

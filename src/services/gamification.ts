@@ -123,9 +123,56 @@ export interface EvaluateResult {
   state: GamificationState;
 }
 
+export interface EvaluateOptions {
+  /**
+   * 阶段 A 渡劫改道：位次推进延后到渡劫成功。
+   * - `true` 时：state.realmIndex 停在 previous（不落库晋级）、breakthroughs 历史不追加，
+   *   但 `breakthrough` 仍照常返回（供「渡劫资格已开启」提示使用）；
+   * - 同时 status 做展示钳制（realm/进度停在当前境界），避免洞府卡与道友榜显示未获得的境界；
+   * - `detectBreakthrough` / `evaluateRealm` 纯函数本身不改，仅在此编排层调整。
+   */
+  deferRealmAdvance?: boolean;
+}
+
+/** defer 模式下把可及档位钳回当前境界的展示态（进度按 当前→目标 重算） */
+function clampStatusToPending(
+  status: RealmStatus,
+  previousIndex: number,
+  snapshot: GamificationSnapshot,
+): RealmStatus {
+  const current = realmByIndex(previousIndex);
+  const target = status.realm;
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+  const vocabSpan = Math.max(1, target.minVocab - current.minVocab);
+  const scoreSpan = Math.max(1, target.minScore - current.minScore);
+  return {
+    ...status,
+    realm: current,
+    next: target,
+    gap: {
+      vocab: Math.max(0, target.minVocab - snapshot.vocabSize),
+      score: Math.max(0, target.minScore - snapshot.bestScore),
+      vocabMet: snapshot.vocabSize >= target.minVocab,
+      scoreMet: snapshot.bestScore >= target.minScore,
+    },
+    progress: Math.min(
+      clamp01((snapshot.vocabSize - current.minVocab) / vocabSpan),
+      clamp01((snapshot.bestScore - current.minScore) / scoreSpan),
+    ),
+    vocabProgress: clamp01((snapshot.vocabSize - current.minVocab) / vocabSpan),
+    scoreProgress: clamp01((snapshot.bestScore - current.minScore) / scoreSpan),
+    bottleneck: status.bottleneck,
+    justEligible: true,
+  };
+}
+
 /** 由快照计算当前境界与称号，并识别本次的突破与新称号 */
-export function evaluateProgress(snapshot: GamificationSnapshot, previous: GamificationState): EvaluateResult {
-  const status = evaluateRealm({
+export function evaluateProgress(
+  snapshot: GamificationSnapshot,
+  previous: GamificationState,
+  options: EvaluateOptions = {},
+): EvaluateResult {
+  const status0 = evaluateRealm({
     vocabSize: snapshot.vocabSize,
     bestScore: snapshot.bestScore,
     currentIndex: previous.realmIndex,
@@ -142,13 +189,15 @@ export function evaluateProgress(snapshot: GamificationSnapshot, previous: Gamif
     vocabSize: snapshot.vocabSize,
     bestScore: snapshot.bestScore,
   });
+  const defer = options.deferRealmAdvance === true && status0.realm.index > previous.realmIndex;
+  const status = defer ? clampStatusToPending(status0, previous.realmIndex, snapshot) : status0;
   const newTitles = newlyUnlocked(evaluation.unlocked, previous.titles);
   const now = new Date().toISOString();
 
   const state: GamificationState = {
-    realmIndex: status.realm.index,
+    realmIndex: defer ? previous.realmIndex : status0.realm.index,
     titles: [...previous.titles, ...newTitles.map((t) => t.key)],
-    breakthroughs: breakthrough
+    breakthroughs: !defer && breakthrough
       ? [...previous.breakthroughs, { at: now, from: breakthrough.fromIndex, to: breakthrough.toIndex }].slice(-20)
       : previous.breakthroughs,
     titleUnlocks: [
@@ -161,9 +210,13 @@ export function evaluateProgress(snapshot: GamificationSnapshot, previous: Gamif
 }
 
 /** 便捷入口：读取历史 → 判定 → 持久化 → 返回结果 */
-export function recordProgress(snapshot: GamificationSnapshot, storage?: StorageLike | null): EvaluateResult {
+export function recordProgress(
+  snapshot: GamificationSnapshot,
+  storage?: StorageLike | null,
+  options?: EvaluateOptions,
+): EvaluateResult {
   const previous = loadGamification(storage);
-  const result = evaluateProgress(snapshot, previous);
+  const result = evaluateProgress(snapshot, previous, options);
   saveGamification(result.state, storage);
   return result;
 }

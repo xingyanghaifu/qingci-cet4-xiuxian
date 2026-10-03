@@ -139,7 +139,7 @@ test('theme：跟随系统 / 一键切换 / 持久化（P2.12 第 1 项）', () 
   applyTheme('auto', { host: null, persist: false }); // 无 DOM 不抛
 
   const storage = makeStorage();
-  assert.equal(readPreference(storage), 'auto');
+  assert.equal(readPreference(storage), 'dark', '无存储（首次访问）回落暗色默认');
   assert.equal(writePreference('dark', storage), true);
   assert.equal(readPreference(storage), 'dark');
   assert.equal(readPreference(null), 'auto', '无存储回落 auto');

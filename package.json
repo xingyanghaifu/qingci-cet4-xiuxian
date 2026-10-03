@@ -1,6 +1,6 @@
 {
   "name": "qingci-cet4-xiuxian",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "青词天路 · 四级全卷修仙 —— CET-4 词汇修仙学习应用（单文件自包含 HTML + 六种记忆题型 + 对战模式 + 学情看板）",
   "private": true,
   "type": "commonjs",
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:vocab": "node scripts/build-vocab-detail.mjs",
     "typecheck": "tsc --noEmit",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "prepare:deploy:workers": "node scripts/prepare-deploy.mjs --workers",

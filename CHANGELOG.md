@@ -5,6 +5,124 @@
 
 ---
 
+## [1.6.0] - 2026-10-03
+
+### 部署：布局重构 + UI 美化 + 词库扩展上线（2026-10-03）
+
+- 线上地址 `https://qingci-cet4-xiuxian.pages.dev`，部署版本 **1.6.0**，
+  产物指纹 `sha256:fdc25fb19dba5541`（应用 HTML 732.1 KB，服务层 127.3 KB）。
+- 上传 38 文件（32 新 +6 复用），Pages 部署目录含 **35 个 PWA 资源**
+  （manifest + sw.js + 4 图标 + 27 个词典详情分片）。
+- 端点验收（全部 200）：
+
+  | 端点 | 结果 |
+  |---|---|
+  | `/` | 200 · 新标记齐全（`main-head` / `side-foot` / `vdOverlay` / `vdBtn` / `vocabDetail` / `sidePanel` / 8 模块标题） |
+  | `/healthz` | 200 · `version=1.6.0` `status=ok` `lexicon 4540` |
+  | `/api/meta` | 200 · `version=1.6.0` `lexiconSize=4540` |
+  | `/vocab-detail/manifest.json` | 200 · `schema=qingci-vocab-detail/1` · 26 分片 · 4540 词 · `cache-control: public, max-age=3600` |
+  | `/vocab-detail/s.json` | 200 · 563 词（最大分片，raw 1400.3 KB） |
+  | `/changelog.html` | 200 · 含 1.6.0 记录（18 个版本） |
+  | `/sw.js` | 200 · `CACHE_VERSION=1.6.0-fdc25fb1`（预缓存 10 项、缺失 0） |
+
+- 回归门禁全绿：`typecheck` ✅ · `build` ✅ · `test` **190/190** ✅ · `verify:pwa` ✅ ·
+  `test:docs` **26/26** ✅ · 产物结构自检（id 唯一、8 tab、script 不在 style 内）✅。
+
+### 布局重构：左侧边栏应用外壳（任务 A）
+
+- 桌面 ≥1025px 改为「280px 侧栏 + 右侧主内容」应用外壳：侧栏自上而下为品牌（青字标 + 版本号，
+  与服务层 `QingciServices.version` 同步）+ 紧凑修为进度条 → 八模块导航（新增内联 SVG 图标，
+  按钮的 `role` / `aria-selected` / `aria-controls` / `data-*` 逐字未动）→ 题型速捷九宫格 →
+  今日功课 / 今日 / 学情看板 / 最近斩获 / 本卷 / 成就 → 吸底的设置与主题页脚；
+  主区为「模块标题 + 开考按钮 + 模块内容」，主区与概览各自内滚（`height:100dvh`），导航与页脚常驻。
+- `.layout{display:contents}` 展平分组，DOM 顺序 = 视觉顺序 = Tab 顺序（skip-link 保留，
+  主区先于概览，与旧版语义一致）。
+- 平板 768–1024px：侧栏收成 60px 图标轨（文字裁剪为 0 但仍留在无障碍树，悬停或键盘聚焦
+  展开 236px 浮层），概览移至主区下方通栏，不隐藏任何内容。
+- 手机 <768px：导航固定为底部标签栏（**8 个入口全部保留**，横向滑动不隐藏）；概览与题型速捷
+  收进顶部抽屉——新增 `#ovToggle` / `#ovClose` 与独立脚本（`aria-expanded` / `aria-controls`、
+  Esc 关闭、开合间焦点往返，关闭时 `visibility:hidden` 保证脱离 Tab 序）。
+- `#missionList` / `#studySummary`（含 `aria-live`）迁入侧栏「今日功课」，原面板改名
+  「每日修炼设置」（摸底 / 学习计划 / SM-2 三卡原位保留，id 与交互零改动）；`#road` 迁入
+  侧栏「题型速捷」（点击行为与监听不变）。
+- 新增 `.main-head`：单个 `h1#mainTitle` 内按模块放 span，由 `@supports (selector(:has(*)))`
+  按面板可见性驱动切换（零 JS）；`#startPaper`（开考这一卷）移至主区操作位。
+  不支持 `:has()` 的浏览器降级为标题全显 + 开考按钮常显——功能永不丢失。
+
+### 导航选中态强化（任务 B）
+
+- 选中项：左侧 3px 金砂竖线 + 背景加深 + 文字金砂 + 图标微光；悬停金砂淡底；未选中次要色。
+- 模块切换 200ms 淡入（`prefers-reduced-motion` 与 `data-motion=reduced` 由既有全局规则接管）。
+- 当前模块标题 24px 在主区顶部展示；移动端底栏选中项金砂 + 加粗。
+- **修复既有 bug**：`switchTab('trial')` 曾让「背单词 / 单题」两个按钮同时点亮且
+  `aria-selected` 双 `true`。现 `switchTab(name, srcBtn)`：点击时精确定位被点按钮；
+  程序化调用按 `state.pool === 'words' && !paper` 判定；`.on` 与 `aria-selected` 同步为单选中。
+
+### 水墨微光视觉体系（任务 C）
+
+- **暗色为默认**：`:root` 基线直接给暗色（墨青 `#0d1117` / 面 `#161b22` / 浮层 `#1c2129` /
+  侧栏 `#0f1319`，金砂 `#d4a853`、青绿 `#3fb950`、朱砂 `#f85149`，三级细边框 + 圆角 + 间距 token）；
+  浅色仅经 `@media (prefers-color-scheme: light)`（无 `data-theme` 时）与 `[data-theme="light"]`
+  覆盖为暖白底深墨字（金砂调深为 `#96611b` 保证对比度）；高对比度规则（原 L205-208）未改动。
+- 既有变量名（`--bg/--bg2/--card/--ink/--soft/--muted/--line/--gold/--jade/--ok/--bad`…）
+  反向映射到新 token，未改写的旧规则自动继承；新增 `--font-ui` / `--font-mono` / `--solid-fg`。
+- **⚠️ 行为变更：主题默认值**。`readPreference()` 空存储（首次访问）由 `'auto'` 改为 `'dark'`
+  ——`tests/theme-shortcuts.test.mjs` 与 `tests/a11y.test.mjs` 各一处断言同步更新；
+  `readPreference(null)`（存储不可用）仍回退 `'auto'`；显式「跟随系统」（存储 `'auto'`）
+  照旧按系统；脏值仍规范化为 `'auto'`。
+- **修复既有 bug：主题早渲染脚本从未生效**。原 `<script>` 被嵌在 `<style>` 内（RAWTEXT 不执行），
+  已移出到 `<style>` 之前并同步「无存储 → 暗色、light/dark 显式、auto/脏值跟随系统」逻辑，
+  与 `theme.ts` 完全一致，消除显式主题用户的首屏闪色。
+- 排版：`system-ui / PingFang SC / Microsoft YaHei` 字体栈、正文 16px/1.6、
+  进度与统计数字等宽（`SF Mono / Consolas`）、境界与称号 `letter-spacing`。
+- 组件：卡片 1px 细线 + 顶部径向灵光；修为与进度条金砂渐变 + 微光；今日功课金砂细线紧凑卡；
+  看板数字等宽金砂、副标题次要色；境界卡金砂细线 + 灵光；称号墙已解锁微光 / 未解锁降透明；
+  选项细线透明底、悬停金砂、**正答金砂 / 错答朱砂（✓/✗ 前缀与色盲标识保留）**；
+  弹窗半透明墨色遮罩 + 墨色面板；动效统一 `cubic-bezier(.4,0,.2,1)` 150–300ms；
+  境界突破动效降强度，装饰环改为单圈后静止（不再无限旋转）。
+
+### 词库与词典扩展（任务 D）
+
+- 新增 `scripts/build-vocab-detail.mjs`（`npm run build:vocab`）：
+  - **数据源优先级写死**：jsDelivr → api.github.com（contents + `Accept: vnd.github.raw`）→
+    raw.githubusercontent；任一源失败自动切换下一个，并在日志打印实际使用的源。
+    HTTP 404 视为「镜像同源、内容不存在」直接判定缺失（避免无谓的 API 配额消耗）。
+  - **严格白名单**：只取模板内 lexicon 的 **4540** 词，严禁打包 44,000+ 词整库。
+  - 主源 ruizer/vocabulary-corpus（MIT）覆盖 **4515** 词；回退 ECDICT（MIT，52MB CSV 经
+    api.github.com 源链下载）补 **25** 词（含 `o_clock`↔`o'clock`、`b.c`↔`b.c.` 等词形变体）；
+    **词库兜底 0 词**，4540 全量均为富详情。
+  - 按首字母分片，**单片 >1.5MB 自动按更长前缀二次拆分并断言**，不通过则 `exit 1`。
+  - **分片体积报告（raw / gzip）**：26 片合计 **11194.5 KB / 3587.7 KB**，
+    最大 `s.json` **1400.3 KB ≤ 1.5 MB ✅**；`c.json` 1088 KB、`p.json` 901 KB，其余均 <710 KB。
+  - 下载缓存于 `.cache/`（可重跑增量复用）。
+- 新增 `src/services/vocab-detail.ts`：`VocabDetail` 模型（词性释义中英分组 / 例句含出处 /
+  搭配 / 短语 / 同义反义 / 词源词根 / 助记 / 用法场景 / 形态变化）。离线优先链：
+  内存 → 本地分片（同源 fetch，SW 既有 stale-while-revalidate 按需缓存）→ IndexedDB
+  （复用无 schema 的 `datasets` 仓、`vocabdetail:` 键前缀，**零版本升级**）→
+  Free Dictionary API 联网回退并写回 IDB；全链失败返回 `null`。
+  发音走 `SpeechSynthesis`（英式优先，离线可用）。经 `services/index.ts` 暴露为
+  `QingciServices.vocabDetail`。
+- 单词详情面板（复用现有 `.overlay` 结构，新增 `#vdOverlay`，`role="dialog"` + `aria-modal`）：
+  七段式——词性释义 → 例句（出处徽标）→ 搭配与短语 → 同义/反义 → 词根词缀与词源 →
+  易混词（vocab-enrich 运行时数据）→ 记忆辅助与用法场景；顶部发音/关闭按钮，
+  `aria-live` 播报正文，关闭后焦点回到触发元素。入口两个：
+  ① 背单词题面新增「详解」按钮（键盘可达，读取当前题 `current.word`）；
+  ② 词谱列表点击单词（事件委托，`renderCodex` 一行未改）。
+- **`file://` 回退**：分片 fetch 必然失败 → 走 IDB → API → 词库内置释义兜底，
+  并提示「离线模式下暂无详情」。
+- **例句出处（偏差注明）**：两个数据源均为 MIT，**不存在获授权的 CET-4 真题例句来源**，
+  例句一律按语料自带 `source` 字段如实标注（如 `business report`、`literary description`），
+  不伪造年份或“真题”出处。
+- 构建与部署接入：`build.mjs` 将 `src/data/vocab-detail/*.json` 拷入 `dist/vocab-detail/`；
+  `prepare-deploy.mjs` 拷贝该目录并为 `/vocab-detail/*` 声明 1 小时缓存；
+  分片**不进 SW 预缓存**（>500KB 按 spec 拆分 + 按需缓存），看过一次即离线可用。
+- `.gitignore` 追加 `.cache/`、`backups/`、`dist-offline/`。
+
+### 文档
+
+- README：新增「界面布局与视觉（v1.6 布局重构 + 水墨微光）」章节、核心功能表补「单词详情」行、
+  项目结构补 `vocab-detail.ts` / `build-vocab-detail.mjs` / `src/data/vocab-detail/`、版本徽标升 1.6.0。
+
 ## [1.5.0] - 2026-10-03
 
 ### 部署：P2.11 + P2.12 上线 + D1 配置（2026-10-03 10:54 +08:00）

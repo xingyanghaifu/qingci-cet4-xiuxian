@@ -12,7 +12,7 @@
  * 说明：esbuild 需要拉起自身二进制（子进程），在受限沙箱中可能被拒绝，
  *       普通开发环境与 CI 不受影响。
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, readdirSync, copyFileSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -175,6 +175,24 @@ if (bankFresh) {
   bankDecision = decideDelivery(bankBytes);
 }
 
+// —— 7.5. 词库详情分片（任务 D）：src/data/vocab-detail/*.json → dist/vocab-detail/ ——
+//      由 scripts/build-vocab-detail.mjs 生成（4540 词白名单）；运行时按需 fetch，
+//      Service Worker 对同源资源 stale-while-revalidate，看过一次即离线可用。
+const vdDir = join(root, 'src', 'data', 'vocab-detail');
+let vdFiles = 0;
+let vdBytes = 0;
+if (existsSync(vdDir)) {
+  const outVd = join(OUT_DIR, 'vocab-detail');
+  if (existsSync(outVd)) rmSync(outVd, { recursive: true, force: true });
+  mkdirSync(outVd, { recursive: true });
+  for (const f of readdirSync(vdDir)) {
+    if (!f.endsWith('.json')) continue;
+    copyFileSync(join(vdDir, f), join(outVd, f));
+    vdFiles++;
+    vdBytes += statSync(join(outVd, f)).size;
+  }
+}
+
 console.log('');
 console.log('✅ 构建成功');
 console.log('   产物: dist/cet4-xiuxian.html + dist/index.html（同一份内容）');
@@ -185,4 +203,5 @@ console.log('   PWA : manifest.webmanifest + sw.js（缓存版本 ' + cacheVersi
 console.log('   日志: changelog.html（' + changelog.versions + ' 个版本）');
 console.log('   题库: ' + (bankBytes / 1024 / 1024).toFixed(2) + ' MB · ' + bankDecision.mode
   + (bankFresh ? '（复用上次产物）' : '（本次重新生成）'));
+console.log('   词典: ' + (vdFiles ? vdFiles + ' 个详情分片 · ' + (vdBytes / 1024 / 1024).toFixed(2) + ' MB（按需加载）' : '未生成详情分片（node scripts/build-vocab-detail.mjs）'));
 console.log('   说明: 单文件自包含，零运行时依赖，可直接双击打开');

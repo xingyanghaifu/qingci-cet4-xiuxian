@@ -62,7 +62,7 @@ test('theme：applyTheme 写入 data-theme；auto 时移除属性交回 CSS', ()
 
 test('theme：偏好读写（含存储不可用的降级）', () => {
   const store = fakeStorage();
-  assert.equal(theme.readPreference(store), 'auto');
+  assert.equal(theme.readPreference(store), 'dark', '无存储（首次访问）回落暗色默认');
   assert.equal(theme.writePreference('dark', store), true);
   assert.equal(store._map.get(theme.THEME_STORAGE_KEY), 'dark');
   assert.equal(theme.readPreference(store), 'dark');

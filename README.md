@@ -2,7 +2,7 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.5.0-0e6b53)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.6.0-0e6b53)](CHANGELOG.md)
 [![tests](https://img.shields.io/badge/tests-190%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
@@ -44,6 +44,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 | 模块 | 内容 |
 |---|---|
 | **背单词** | 六种记忆题型轮换：中译英 / 英译中 / 形近辨析 / 听音辨词 / 拼写默写 / 词性判断 |
+| **单词详情** | 词性释义（中英）/ 例句（带出处徽标）/ 搭配短语 / 同义反义 / 词根词缀与词源 / 易混词 / 助记与用法场景；本地分片离线可用，缺失时联网 Free Dictionary API 并缓存 |
 | **多考试备考** | 初中 / 高中 / PETS-3 / CET-4 / CET-6 五类模式：题量、时长、总分、及格线按考试类型配置；整套作答达线才记一次境界突破 |
 | **试炼殿** | 六套 CET-4 模拟卷（125 分钟 57 题），710 分制折算；难度按考试等级与境界动态取 1–5 |
 | **斗法场** | 回合制对战：血条、15 秒倒计时、连击、命中率 |
@@ -51,7 +52,21 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 | **心魔本** | 错词归集 + 艾宾浩斯间隔重复（0.25/1/3/7 天） |
 | **游戏化** | 境界（炼气→地仙）、灵气、灵石商店、每日任务、成就 |
 
+## 界面布局与视觉（v1.6 布局重构 + 水墨微光）
+
+| 断点 | 结构 |
+|---|---|
+| 桌面 ≥1025px | 「左侧边栏 280px + 右侧主内容」应用外壳。侧栏自上而下：品牌（青字标 + 版本号）与紧凑修为进度条 → 八模块导航（图标 + 文字）→ 题型速捷（九宫格）→ 今日功课 / 今日 / 学情看板 / 最近斩获 / 本卷 / 成就 → 设置与主题页脚（吸底）。主区：当前模块标题 + 「开考这一卷」操作位 + 模块内容；主区与概览各自内滚，导航与页脚常驻 |
+| 平板 768–1024px | 侧栏收成 60px 图标轨（文字裁剪为 0 但保留在无障碍树；悬停或键盘聚焦展开 236px 浮层），概览面板移到主区下方通栏 |
+| 手机 <768px | 导航变固定底部标签栏（**8 个入口全部保留**，横向滑动不隐藏）；概览与题型速捷收进顶部抽屉（「概览 ▾」按钮开合，Esc 与「收起概览」关闭，关闭时 `visibility:hidden` 保证脱离 Tab 序，焦点在开合间往返） |
+
+- **导航选中态**：选中项左侧 3px 金砂竖线 + 背景加深 + 文字金砂；悬停微光；模块切换时内容 200ms 淡入；当前模块标题在主区顶部 24px 展示——由 `@supports (selector(:has(*)))` 按面板可见性驱动，**零 JS**，不支持 `:has()` 的浏览器降级为全部标题可见（功能不丢）。
+- **水墨微光主题**：暗色为默认（墨青 `#0d1117` 底、金砂 `#d4a853` / 青绿 / 朱砂点缀、1px 细边框、卡片顶部径向灵光、等宽数字）；浅色为暖白底 + 深墨字，点缀色同族；动效 150–300ms `cubic-bezier(.4,0,.2,1)`，全面尊重 `prefers-reduced-motion` 与高对比度、字号档位等既有无障碍能力。
+- **主题三档**：侧栏页脚「主题」按钮循环 深色 → 浅色 → 跟随系统；**v1.6 起无存储时默认深色**（行为变更见 CHANGELOG）。
+- **单词详情页**：背单词题面「详解」按钮（键盘可达）或词谱列表点击单词 → 详情弹层，七段式：词性释义（中英分组）→ 例句（带出处徽标）→ 搭配与短语 → 同义/反义 → 词根词缀与词源 → 易混词 → 记忆辅助与用法场景；顶部可发音（SpeechSynthesis，英式优先）。数据本地分片离线可用；本地无数据时联网 Free Dictionary API 并写入 IndexedDB 缓存；再失败则提示「离线模式下暂无详情」并展示词库内置释义兜底。
+
 ## 技术特色
+
 
 - **运行时零依赖**：产出的单文件不加载任何 CDN、不 import 任何包，断网可用；
   构建期使用 `esbuild`（打包）与 `typescript`（类型检查）两个 devDependency
@@ -88,6 +103,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── services/vocab-grades.ts   分级读取与查询（档位 / 优先级 / 来源标注）
 │   ├── services/vocab-srs.ts      词汇 SM-2 队列（IDB vocab 仓库 + 旧档迁移）
 │   ├── services/vocab-enrich.ts   单词增强：词缀 / 易混词 / 搭配框架
+│   ├── services/vocab-detail.ts   单词详情：分片加载 / IDB 缓存 / Free Dictionary 回退 / TTS 发音
 │   ├── services/vocab-question.ts 由单词生成复习题（id 与题库一致）
 │   ├── services/study-plan.ts     动态学习计划（每日量 / 题型配比 / 热力图）
 │   ├── types/report.ts           报告契约：作答流水 / 薄弱点（Wilson 下界）/ 趋势
@@ -121,7 +137,9 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 ├── scripts/verify-pwa.mjs     PWA 产物一致性校验（图标尺寸 / sw 预缓存清单 / 页面引用）
 ├── scripts/build-question-bank.mjs  固化题库生成（复用应用生成器，确定性输出）
 ├── scripts/build-vocab-grades.mjs   词汇分级生成（启发式 / 可换真实词频表）
+├── scripts/build-vocab-detail.mjs   词典详情分片生成（4540 白名单 · 三源回退 · >1.5MB 自动拆分并断言）
 ├── src/data/vocab-grades.json       四档分级数据（构建时内联）
+├── src/data/vocab-detail/           词典详情分片（manifest + 按首字母分片，构建时拷入 dist/vocab-detail/）
 ├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
 ├── worker/index.mjs           Cloudflare Workers 入口（同构接口）

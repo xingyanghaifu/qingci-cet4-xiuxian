@@ -28,12 +28,15 @@ export function resolveTheme(preference: ThemePreference, systemDark: boolean): 
   return systemDark ? 'dark' : 'light';
 }
 
-/** 读取偏好（存储不可用时回落 auto） */
+/** 读取偏好（存储不可用时回落 auto；v1.6 起无存储即首次访问回落 dark，暗色为默认） */
 export function readPreference(storage?: { getItem(key: string): string | null } | null): ThemePreference {
   try {
     const store = storage === undefined ? (typeof localStorage !== 'undefined' ? localStorage : null) : storage;
     if (!store) return 'auto';
-    return normalizePreference(store.getItem(THEME_STORAGE_KEY));
+    const raw = store.getItem(THEME_STORAGE_KEY);
+    // 行为变更（v1.6）：无存储 → 暗色默认；脏值仍规范化为 auto（跟随系统）；显式 'auto' 照旧跟随系统
+    if (raw === null || raw === undefined) return 'dark';
+    return normalizePreference(raw);
   } catch {
     return 'auto';
   }

@@ -29,6 +29,7 @@ import { normalizeBank, selectPracticeSet, questionType, questionPart, seededRng
 import { createVocabSrsStore, planLegacyVocabMigration, rateVocabRecord, createVocabRecord } from './vocab-srs';
 import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, gradesSource } from './vocab-grades';
 import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
+import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_SCHEMA, FREE_DICT_API } from './vocab-detail';
 import { buildVocabQuestion, buildReviewQuestions, bankIdFor } from './vocab-question';
 import { planStudyLoad, adjustPlan, heatmap, describePlan, daysUntil, intensityFor, DEFAULT_EXAM_DATE } from './study-plan';
 import { createReportStore, attemptFromQuestion, partOfKind } from './report-store';
@@ -120,6 +121,13 @@ const QingciServices = {
     resolve: resolveTheme,
     read: readPreference,
     options: THEME_OPTIONS,
+  },
+  vocabDetail: {
+    get: getVocabDetail,
+    speak: speakWord,
+    base: VOCAB_DETAIL_BASE,
+    schema: VOCAB_DETAIL_SCHEMA,
+    freeDictApi: FREE_DICT_API,
   },
   shortcuts: {
     resolve: resolveShortcut,

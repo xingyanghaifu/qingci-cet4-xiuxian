@@ -1,0 +1,290 @@
+/**
+ * 单词详情服务（任务 D1 / D3 / D4）
+ *
+ * 数据链路（离线优先，逐级回退）：
+ *   1. 内存（本次会话已取过的分片与条目）
+ *   2. 本地分片  vocab-detail/<shard>.json —— 构建产出、按需 fetch，
+ *      Service Worker 对同源静态资源做 stale-while-revalidate，看过一次即离线可用
+ *   3. IndexedDB —— 复用无 schema 的 datasets 仓库，键前缀 `vocabdetail:`
+ *      （Free Dictionary API 的联网结果也缓存在这里，避免重复请求）
+ *   4. Free Dictionary API（联网回退，无 Key、无速率限制）
+ *   5. 全部失败 → 返回 null，由界面提示「离线模式下暂无详情」
+ *
+ * file:// 双击打开时 fetch 分片必然失败，直接走 3→5，不会抛错。
+ */
+import { storeOf, promisify, type MinimalObjectStore } from './idb';
+
+/* ---------- D3 数据模型 ---------- */
+export interface VocabDefinition {
+  english: string;
+  chinese: string;
+  example?: string;
+  exampleSource?: string;
+}
+export interface VocabMeaning {
+  partOfSpeech: string;
+  definitions: VocabDefinition[];
+}
+export interface VocabExample {
+  sentence: string;
+  translation: string;
+  source: string;
+}
+export interface VocabDetail {
+  word: string;
+  phonetic: { british?: string; american?: string };
+  audioUrl?: { british?: string; american?: string };
+  meanings: VocabMeaning[];
+  collocations: string[];
+  phrases: string[];
+  synonyms: string[];
+  antonyms: string[];
+  etymology?: string;
+  memoryAid?: string;
+  confusionWords?: string[];
+  /** 用法场景（语料领域 / 语域）——D3 模型的可选扩展 */
+  usage?: string;
+  /** 形态变化（过去式/分词/复数） */
+  forms?: string;
+  /** 例句（含出处；MIT 语料无 CET-4 真题标注，按语料自带 source 如实呈现） */
+  examples?: VocabExample[];
+  /** true = 仅由词库自带释义生成的兜底条目 */
+  offline?: boolean;
+  /** 数据来源标记：corpus / ecdict / lexicon / api */
+  __src?: string;
+}
+export interface VocabDetailResult {
+  detail: VocabDetail;
+  source: 'local' | 'cache' | 'api';
+}
+
+/* ---------- 常量 ---------- */
+export const VOCAB_DETAIL_BASE = 'vocab-detail/';
+export const VOCAB_DETAIL_SCHEMA = 'qingci-vocab-detail/1';
+export const FREE_DICT_API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+export const VOCAB_DETAIL_CACHE_KEY = 'vocabdetail:';
+
+interface Manifest {
+  schema: string;
+  count: number;
+  /** 运行时用：按最长前缀匹配（生成器已排为长前缀在前） */
+  prefixes: string[];
+  files: Record<string, string>;
+}
+
+/* ---------- 模块级缓存 ---------- */
+let manifestPromise: Promise<Manifest | null> | null = null;
+const shardCache = new Map<string, Record<string, VocabDetail>>();
+const detailCache = new Map<string, VocabDetail>();
+
+async function idbStore(mode: 'readonly' | 'readwrite'): Promise<MinimalObjectStore | null> {
+  try {
+    return await storeOf('datasets', mode);
+  } catch {
+    return null;
+  }
+}
+
+async function idbGet(key: string): Promise<VocabDetail | null> {
+  try {
+    const store = await idbStore('readonly');
+    if (!store) return null;
+    const value = await promisify<unknown>(store.get(key));
+    const detail = value as VocabDetail | undefined;
+    return detail && typeof detail === 'object' && detail.word ? detail : null;
+  } catch {
+    return null;
+  }
+}
+
+async function idbPut(key: string, detail: VocabDetail): Promise<void> {
+  try {
+    const store = await idbStore('readwrite');
+    if (!store) return;
+    await promisify<unknown>(store.put(detail, key));
+  } catch {
+    /* 缓存失败静默：不影响详情展示 */
+  }
+}
+
+/** 分片清单（失败返回 null：file:// 或未部署分片时安全降级） */
+function loadManifest(): Promise<Manifest | null> {
+  if (!manifestPromise) {
+    manifestPromise = (async () => {
+      try {
+        const res = await fetch(VOCAB_DETAIL_BASE + 'manifest.json', { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const data = (await res.json()) as Manifest;
+        if (!data || !Array.isArray(data.prefixes) || !data.files) return null;
+        return data;
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return manifestPromise;
+}
+
+/** 最长前缀匹配：manifest.prefixes 已按长度降序 */
+function prefixFor(manifest: Manifest, word: string): string {
+  const w = word.toLowerCase();
+  for (const p of manifest.prefixes) {
+    if (w.startsWith(p)) return p;
+  }
+  return '';
+}
+
+/** 取本地分片（内存 → 网络/SW 缓存） */
+async function loadShard(manifest: Manifest, word: string): Promise<Record<string, VocabDetail> | null> {
+  const prefix = prefixFor(manifest, word);
+  if (!prefix) return null;
+  const file = manifest.files[prefix];
+  if (!file) return null;
+  if (shardCache.has(prefix)) return shardCache.get(prefix) || null;
+  try {
+    const res = await fetch(VOCAB_DETAIL_BASE + file);
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, VocabDetail>;
+    shardCache.set(prefix, data);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/* ---------- Free Dictionary API 归一化（联网回退） ---------- */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function normalizeApiEntry(word: string, entry: any): VocabDetail | null {
+  if (!entry || !Array.isArray(entry.meanings)) return null;
+  const detail: VocabDetail = {
+    word: entry.word || word,
+    phonetic: {},
+    meanings: [],
+    collocations: [],
+    phrases: [],
+    synonyms: [],
+    antonyms: [],
+    examples: [],
+    __src: 'api',
+  };
+  if (entry.phonetic) detail.phonetic.british = String(entry.phonetic);
+  const phonetics = Array.isArray(entry.phonetics) ? entry.phonetics : [];
+  for (const p of phonetics) {
+    if (!p) continue;
+    if (p.text && !detail.phonetic.british) detail.phonetic.british = String(p.text);
+    if (p.audio) {
+      detail.audioUrl = detail.audioUrl || {};
+      const isUk = /uk/i.test(String(p.audio));
+      if (isUk && !detail.audioUrl.british) detail.audioUrl.british = String(p.audio);
+      if (!isUk && !detail.audioUrl.american) detail.audioUrl.american = String(p.audio);
+      if (!detail.audioUrl.british && !detail.audioUrl.american) detail.audioUrl.british = String(p.audio);
+    }
+  }
+  const syn = new Set<string>();
+  const ant = new Set<string>();
+  for (const m of entry.meanings.slice(0, 5)) {
+    if (!m || !Array.isArray(m.definitions)) continue;
+    const group: VocabMeaning = { partOfSpeech: String(m.partOfSpeech || ''), definitions: [] };
+    for (const def of m.definitions.slice(0, 4)) {
+      if (!def || !def.definition) continue;
+      const item: VocabDefinition = { english: String(def.definition), chinese: '' };
+      if (def.example) {
+        item.example = String(def.example);
+        item.exampleSource = 'Free Dictionary';
+      }
+      group.definitions.push(item);
+      if (Array.isArray(def.synonyms)) def.synonyms.slice(0, 4).forEach((s: string) => syn.add(String(s)));
+      if (Array.isArray(def.antonyms)) def.antonyms.slice(0, 3).forEach((s: string) => ant.add(String(s)));
+    }
+    if (group.definitions.length) detail.meanings.push(group);
+    if (Array.isArray(m.synonyms)) m.synonyms.slice(0, 6).forEach((s: string) => syn.add(String(s)));
+    if (Array.isArray(m.antonyms)) m.antonyms.slice(0, 4).forEach((s: string) => ant.add(String(s)));
+  }
+  detail.synonyms = Array.from(syn).slice(0, 8);
+  detail.antonyms = Array.from(ant).slice(0, 6);
+  return detail.meanings.length || detail.phonetic.british ? detail : null;
+}
+
+async function fetchApiDetail(word: string): Promise<VocabDetail | null> {
+  try {
+    const res = await fetch(FREE_DICT_API + encodeURIComponent(word), { cache: 'force-cache' });
+    if (!res.ok) return null;
+    const data = (await res.json()) as any[];
+    if (!Array.isArray(data) || !data.length) return null;
+    const detail = normalizeApiEntry(word, data[0]);
+    if (detail) await idbPut(VOCAB_DETAIL_CACHE_KEY + word.toLowerCase(), detail);
+    return detail;
+  } catch {
+    return null;
+  }
+}
+
+/* ---------- 对外接口 ---------- */
+
+/**
+ * 取单词详情（离线优先）。
+ * @returns null 表示本地与联网均无详情（界面提示离线兜底文案）
+ */
+export async function getVocabDetail(word: string): Promise<VocabDetailResult | null> {
+  const key = String(word || '').trim().toLowerCase();
+  if (!key) return null;
+
+  const mem = detailCache.get(key);
+  if (mem) return { detail: mem, source: 'local' };
+
+  // 1) 本地分片（构建产出，4540 词白名单）
+  const manifest = await loadManifest();
+  if (manifest) {
+    const shard = await loadShard(manifest, key);
+    const hit = shard && (shard[key] || shard[String(word).trim()]);
+    if (hit && hit.word) {
+      detailCache.set(key, hit);
+      void idbPut(VOCAB_DETAIL_CACHE_KEY + key, hit);
+      return { detail: hit, source: 'local' };
+    }
+  }
+
+  // 2) IndexedDB 缓存（含 API 联网结果）
+  const cached = await idbGet(VOCAB_DETAIL_CACHE_KEY + key);
+  if (cached) {
+    detailCache.set(key, cached);
+    return { detail: cached, source: 'cache' };
+  }
+
+  // 3) 联网回退：Free Dictionary API（结果写回 IDB，下次离线可用）
+  const online = typeof navigator !== 'undefined' && navigator.onLine !== false;
+  if (online) {
+    const api = await fetchApiDetail(word);
+    if (api) {
+      detailCache.set(key, api);
+      return { detail: api, source: 'api' };
+    }
+  }
+  return null;
+}
+
+/** TTS 发音：优先浏览器语音合成（离线可用），英式优先、美式次之 */
+export function speakWord(word: string, prefer: 'british' | 'american' = 'british'): boolean {
+  try {
+    if (typeof speechSynthesis === 'undefined' || !word) return false;
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = prefer === 'british' ? 'en-GB' : 'en-US';
+    const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+    const exact = voices.find((v) => v.lang === utter.lang);
+    const loose = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('en'));
+    if (exact || loose) utter.voice = (exact || loose) as SpeechSynthesisVoice;
+    utter.rate = 0.9;
+    speechSynthesis.speak(utter);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** 仅测试/诊断用：清空模块级缓存 */
+export function __resetVocabDetailCache(): void {
+  manifestPromise = null;
+  shardCache.clear();
+  detailCache.clear();
+}

@@ -21,7 +21,7 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 [vars]
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.6.0"
 
 # 反馈与道友小组的 D1 绑定（Pages 部署时由 scripts/deploy-pages.mjs 写入同样的绑定）
 # 建库与建表：

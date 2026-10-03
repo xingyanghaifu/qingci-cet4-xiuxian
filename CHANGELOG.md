@@ -7,27 +7,61 @@
 
 ## [未发布]
 
-仓库清理：移除隧道时代遗留的保活 / 守护设施，线上巡检统一走 `prod-probe`。
-本次不改动任何业务代码，也不影响线上 v1.3.1 运行。
+### 新增：TypeScript 构建基座
 
-### 移除
+- 引入 `esbuild` + `typescript` 两个 devDependency（**运行时依赖仍为 0**）：
+  `npm run build` 先打包 `src/entry/services.ts`，再把结果内联进
+  `src/index.template.html` 的 `<!-- build:services -->` 注入点，产出仍是零运行时依赖、
+  双击可开的单文件 `dist/cet4-xiuxian.html`（478.0 KB，其中服务层 2.9 KB）。
+- 新增 `tsconfig.json`（strict、`verbatimModuleSyntax`、无 `@types` 依赖）与
+  `npm run typecheck`（`tsc --noEmit`），并纳入 `npm run verify` / `verify:prod`。
+- 测试侧新增 `tests/helpers/load-ts.mjs`：用 esbuild 把 TS 模块打包成临时 ESM 后再 import，
+  使测试与构建共用同一条编译链（项目根为 commonjs，Node 不能直接 import `.ts`）。
 
-- `npm run keepalive`、`npm run supervise`、`npm run watchdog` 三个脚本入口。
+### 新增：AI 批改接口预留（P0.4，未接入真实模型）
+
+- `src/config/features.ts`：前端 Feature Flag，`AI_GRADING_ENABLED` 默认 `false`；
+  支持 `window.__QINGCI_FEATURE_OVERRIDES__` 做灰度/排障覆盖。
+- `src/types/grading.ts`：批改数据契约——`gradeStatus`
+  （`not_submitted` / `pending` / `graded` / `failed` / `not_implemented`）、
+  `GradeResult`（15 分制总分 + 内容/连贯/语言/丰富四维 + 批注 + 建议）、`gradeVersion`。
+- `src/services/grading.ts`：`gradeSubmission()`——开关关闭时**不发起任何请求**，
+  20s 超时、错误归一、结构自检，永不抛异常。
+- `functions/api/grade.ts`：Pages Function 占位端点，固定返回
+  `{ status: 'not_implemented', message: 'AI 批改功能尚未开放' }`；预留
+  `AI_GRADING_ENABLED` / `DEEPSEEK_API_KEY` / `AI_GRADING_DAILY_LIMIT` 读取位置，
+  **不调用任何外部 API、不读取密钥、不产生费用**。
+- 应用侧：「提交 AI 批改」入口 + 批改报告占位卡片（未批改不显示任何虚拟评分）、
+  「洞府」页新增「AI 批改与数据使用」用户开关（默认关闭）与隐私条款占位。
+- 测试：新增 `tests/grading.test.mjs` 10 条用例（开关关闭零请求、501 归一化、
+  脏结构丢弃、网络异常、Function 200/400/405/204 契约）。
+
+### 变更：仓库清理（隧道时代遗留）
+
+移除保活 / 守护设施，线上巡检统一走 `prod-probe`；不改动任何业务代码。
+
+- 移除 `npm run keepalive`、`npm run supervise`、`npm run watchdog` 三个脚本入口：
   前两者依赖免账号 Cloudflare 快速隧道（已弃用）；后者按 README 中记录的
   `*.trycloudflare.com` 地址工作，README 清理后已解析不到目标地址。
-- `scripts/supervisor.mjs`（守护本地服务与 cloudflared 进程）与
+- 删除 `scripts/supervisor.mjs`（守护本地服务与 cloudflared 进程）与
   `scripts/watchdog.mjs`（隧道保活 + 单次巡检），二者均无其他引用。
-
-### 变更
-
-- `npm run probe:prod` 新增 `--strict`：任一采样非 200 或超阈值即以退出码 1 结束；
-  另提供 `npm run probe:prod:strict` 便捷入口。
-- `npm run verify:prod` 的线上巡检由 `scripts/watchdog.mjs` 改为
-  `node scripts/prod-probe.mjs --strict`，保留「不达标即非零退出」的发布门禁语义，
-  采样覆盖由 3 个端点扩到 4 个（`/healthz`、`/api/meta`、`/status`、`/`）。
+- `npm run probe:prod` 新增 `--strict`（任一采样非 200 或超阈值即退出码 1），
+  另提供 `npm run probe:prod:strict`；`verify:prod` 的线上巡检随之改用它，
+  保留门禁语义并把采样覆盖由 3 个端点扩到 4 个。
 - `docs/部署说明.md`：删除整节 Cloudflare 快速隧道配置与实测，隧道方案压缩为一句
-  「已弃用」；部署方式总览中的隧道行改为「其他静态托管」；澄清纯静态平台无动态接口、
-  而 Cloudflare Pages 通过 `functions/` 提供三个动态接口；常见问题按 Pages 形态重写。
+  「已弃用」；总览中的隧道行改为「其他静态托管」；澄清纯静态平台无动态接口、
+  Pages 通过 `functions/` 提供动态接口；常见问题按 Pages 形态重写。
+
+### 校验
+
+- `tsc --noEmit` 通过；自动化测试 66/66 通过；文档示例核验 26/26 通过。
+- 核心源码（`src/core`、`functions/`、`worker/`）行覆盖率 100%，
+  统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%。
+
+### 已知边界
+
+- 前端产物体积由 469.4 KB 增至 478.0 KB（服务层 2.9 KB + 批改集成脚本）。
+- `src/core/*.js` 与 `functions/*.js` 尚未迁移为 TypeScript，属后续增量迁移范围。
 
 ---
 

@@ -10,20 +10,21 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "prepare:deploy:workers": "node scripts/prepare-deploy.mjs --workers",
     "deploy": "node scripts/deploy-workers.mjs",
     "deploy:dev": "npm run prepare:deploy:workers && wrangler dev --local",
     "test": "node --test tests/*.test.js tests/*.test.mjs",
-    "test:coverage": "node --experimental-test-coverage --test tests/*.test.js tests/*.test.mjs",
+    "test:coverage": "node --experimental-test-coverage --test-coverage-exclude='dist/**' --test tests/*.test.js tests/*.test.mjs",
     "start": "node server.mjs",
     "deploy:pages": "node scripts/deploy-pages.mjs",
     "healthcheck": "node scripts/healthcheck.mjs",
     "probe:prod": "node scripts/prod-probe.mjs",
     "probe:prod:strict": "node scripts/prod-probe.mjs --strict",
     "test:docs": "node scripts/verify-docs.js",
-    "verify": "npm run build && npm test && npm run test:docs && npm run healthcheck",
-    "verify:prod": "npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
+    "verify": "npm run typecheck && npm run build && npm test && npm run test:docs && npm run healthcheck",
+    "verify:prod": "npm run typecheck && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
   },
   "keywords": [
     "cet4",
@@ -33,5 +34,8 @@
     "single-file-app"
   ],
   "license": "MIT",
-  "devDependencies": {}
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
 }

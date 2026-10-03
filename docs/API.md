@@ -161,7 +161,59 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4173/
 
 输出：`200`
 
-### 1.5 错误响应
+### 1.5 POST /api/grade — 写作 / 翻译 AI 批改（占位）
+
+> **当前为占位实现**：不调用任何外部 API、不读取密钥、不产生费用，固定返回
+> `{ "status": "not_implemented" }`。前端开关 `src/config/features.ts` 的
+> `AI_GRADING_ENABLED` 为 `false` 时甚至不会发起本请求。
+
+**请求**
+
+```bash
+curl -s -X POST https://qingci-cet4-xiuxian.pages.dev/api/grade \
+  -H "Content-Type: application/json" \
+  -d '{"type":"writing","questionId":"paper:2:作文","userAnswer":"Campus life is ...","prompt":"Write 120-180 words."}'
+```
+
+**响应 200（占位阶段）**
+
+```json
+{
+  "status": "not_implemented",
+  "message": "AI 批改功能尚未开放"
+}
+```
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `type` | `"writing" \| "translation"` | 批改类型 |
+| `questionId` | string | 题目稳定 ID（固化题库提供，用于错题本关联） |
+| `userAnswer` | string | 用户作答正文（必填，否则 400） |
+| `prompt` | string? | 题干 / 写作要求，便于后端构造 Prompt |
+
+**状态码**
+
+| 码 | 含义 |
+|---|---|
+| 200 | 占位阶段固定返回 `not_implemented`；接入后返回 `success` / `error` |
+| 400 | 请求体非 JSON 或缺少 `userAnswer` |
+| 405 | 非 POST 方法 |
+| 204 | `OPTIONS` 预检 |
+
+**接入后的返回契约**（前后端共用，见 `src/types/grading.ts`）
+
+```ts
+type GradeResponse =
+  | { status: 'not_implemented'; message: string }
+  | { status: 'success'; result: GradeResult }   // 15 分制总分 + 四维得分 + 批注
+  | { status: 'error'; message: string };
+```
+
+> 路由说明：Pages 的 `_routes.json` 使用 `/api/*` 通配，新增 `/api/` 下的端点无需改配置；
+> 但**非 `/api/` 前缀的新端点（如 `/status`）必须显式加入 include 白名单**，
+> 否则会走 SPA 回退返回应用页面（HTTP 200 + HTML），监控会误判为正常。
+
+### 1.6 错误响应
 
 本地 `server.mjs` 与 Workers 对未匹配路径返回 404：
 

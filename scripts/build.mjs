@@ -1,21 +1,30 @@
 #!/usr/bin/env node
 /**
- * 构建脚本：把 src/index.template.html 构建为可发布的 dist/cet4-xiuxian.html
- * 构建内容：
- *   1. 校验模板完整性（词库、关键脚本）
- *   2. 注入构建元信息（版本号、构建时间）
- *   3. 输出自包含单文件（零外部依赖，可离线双击打开）
+ * 构建脚本：把 src/ 构建为可发布的 dist/
+ *
+ * 流程：
+ *   1. 用 esbuild 打包 src/entry/services.ts（TypeScript）为一段 IIFE 脚本
+ *   2. 校验模板完整性（词库、关键脚本、服务注入点）
+ *   3. 把打包结果内联进模板的 <!-- build:services --> 注入点
+ *   4. 注入构建元信息（版本号、构建时间）并输出自包含单文件 dist/cet4-xiuxian.html
+ *
+ * 产物特征：零运行时依赖、断网可用、双击可开。
+ * 说明：esbuild 需要拉起自身二进制（子进程），在受限沙箱中可能被拒绝，
+ *       普通开发环境与 CI 不受影响。
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { build as esbuild } from 'esbuild';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 const SRC = join(root, 'src', 'index.template.html');
+const SERVICES_ENTRY = join(root, 'src', 'entry', 'services.ts');
+const SERVICES_MARKER = '<!-- build:services -->';
 const OUT_DIR = join(root, 'dist');
 const OUT = join(OUT_DIR, 'cet4-xiuxian.html');
 
@@ -25,12 +34,39 @@ function fail(msg) {
 }
 
 console.log('🔨 构建 青词天路 v' + pkg.version);
-console.log('   源文件: src/index.template.html');
+console.log('   源文件: src/index.template.html + src/entry/services.ts');
 
 if (!existsSync(SRC)) fail('找不到源模板 ' + SRC);
+
+// —— 1. 打包 TypeScript 服务层 ——
+if (!existsSync(SERVICES_ENTRY)) fail('找不到服务入口 ' + SERVICES_ENTRY);
+let servicesCode = '';
+try {
+  const result = await esbuild({
+    entryPoints: [SERVICES_ENTRY],
+    bundle: true,
+    write: false,
+    format: 'iife',
+    target: ['es2020'],
+    platform: 'browser',
+    minify: true,
+    legalComments: 'none',
+    charset: 'utf8',
+    logLevel: 'silent',
+  });
+  servicesCode = result.outputFiles.map((f) => f.text).join('\n');
+} catch (e) {
+  fail('esbuild 打包失败：' + (e.message || e));
+}
+if (!servicesCode.trim()) fail('服务层打包结果为空');
+for (const token of ['QingciServices', 'gradeSubmission', 'AI_GRADING_ENABLED']) {
+  if (!servicesCode.includes(token)) fail('服务层打包结果缺少关键符号：' + token);
+}
+console.log('   ✓ 打包 src/ → 服务层 ' + (Buffer.byteLength(servicesCode) / 1024).toFixed(1) + ' KB');
+
+// —— 2. 读取并校验模板 ——
 let html = readFileSync(SRC, 'utf8');
 
-// —— 1. 完整性校验 ——
 const lexiconMatch = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
 if (!lexiconMatch) fail('模板缺少词库 <script id="lexicon">');
 let words;
@@ -45,6 +81,8 @@ const required = [
   ['题型：拼写默写', 'function submitSpell(){'],
   ['对战结算', 'function answerDuel('],
   ['健康检查钩子', 'id="lexicon"'],
+  ['服务注入点', SERVICES_MARKER],
+  ['写作批改入口', 'id="gradeBox"'],
 ];
 const missing = [];
 for (const [name, token] of required) {
@@ -56,7 +94,10 @@ for (const [name, token] of required) {
 }
 if (missing.length) fail('模板缺少关键结构：' + missing.join('、'));
 
-// —— 2. 注入构建元信息（时间戳取自上一次产物，保证重复构建产物确定一致）——
+// —— 3. 内联服务层 ——
+html = html.replace(SERVICES_MARKER, '<script>\n' + servicesCode + '\n</script>');
+
+// —— 4. 注入构建元信息（时间戳取自上一次产物，保证重复构建产物确定一致）——
 const metaRe = /<!-- build: qingci-cet4-xiuxian v[\d.]+ @ ([0-9T:.\-Z]+) -->/;
 let stamp = null;
 if (existsSync(OUT)) {
@@ -67,7 +108,7 @@ if (!stamp) stamp = new Date().toISOString(); // 首次构建才生成
 const meta = '<!-- build: qingci-cet4-xiuxian v' + pkg.version + ' @ ' + stamp + ' -->';
 html = metaRe.test(html) ? html.replace(metaRe, meta) : html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + meta);
 
-// —— 3. 输出 ——
+// —— 5. 输出 ——
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(OUT, html, 'utf8');
 
@@ -76,7 +117,7 @@ const sha = createHash('sha256').update(html, 'utf8').digest('hex').slice(0, 16)
 console.log('');
 console.log('✅ 构建成功');
 console.log('   产物: dist/cet4-xiuxian.html');
-console.log('   大小: ' + (size / 1024).toFixed(1) + ' KB');
+console.log('   大小: ' + (size / 1024).toFixed(1) + ' KB（其中服务层 ' + (Buffer.byteLength(servicesCode) / 1024).toFixed(1) + ' KB）');
 console.log('   词库: ' + words.length + ' 条');
 console.log('   校验: sha256:' + sha);
-console.log('   说明: 单文件自包含，零外部依赖，可直接双击打开');
+console.log('   说明: 单文件自包含，零运行时依赖，可直接双击打开');

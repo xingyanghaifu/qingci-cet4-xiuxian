@@ -4,6 +4,9 @@ dist/
 deploy/
 deploy-pages/
 
+# 本地 npm 缓存（受限环境用 --cache .npm-cache 安装依赖，避免写入用户目录）
+.npm-cache/
+
 # Wrangler 本地缓存与运行态（含 sqlite 状态库，不应入库）
 .wrangler/
 .dev.vars

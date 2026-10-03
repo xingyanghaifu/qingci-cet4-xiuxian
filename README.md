@@ -3,9 +3,9 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-56%20passing-176b3f)](tests/)
-[![coverage](https://img.shields.io/badge/coverage-100%25%20lines-176b3f)](tests/)
-[![deps](https://img.shields.io/badge/dependencies-0-a56d22)](#技术特色)
+[![tests](https://img.shields.io/badge/tests-66%20passing-176b3f)](tests/)
+[![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
+[![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![license](https://img.shields.io/badge/license-MIT-8b7360)](LICENSE)
 
 ---
@@ -13,8 +13,8 @@
 ## 这是什么
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
-CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。整个应用就是一个
-469 KB 的 HTML 文件，**零外部依赖，断网可用**。
+CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
+构建后是一个 478 KB 的 HTML 文件，**运行时零依赖，断网可用**。
 
 ## 快速开始
 
@@ -26,14 +26,15 @@ CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看�
 npm start                 # 访问 http://127.0.0.1:4173
 
 # 方式三：从源码构建
-npm install               # 零外部依赖，秒完成
-npm run build             # 构建产物到 dist/
-npm test                  # 运行 56 个自动化测试
+npm install               # 安装构建期依赖（esbuild + typescript）
+npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
+npm run build             # esbuild 打包 src/ → 单文件 dist/cet4-xiuxian.html
+npm test                  # 运行 66 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
 npm run healthcheck       # 健康检查（校验状态码与响应时间）
-npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检查
+npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核验 + 健康检查
 ```
 
 ## 核心功能
@@ -50,10 +51,15 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ## 技术特色
 
-- **零依赖**：运行时不加载任何 CDN，构建脚本只用 Node 内置模块
+- **运行时零依赖**：产出的单文件不加载任何 CDN、不 import 任何包，断网可用；
+  构建期使用 `esbuild`（打包）与 `typescript`（类型检查）两个 devDependency
 - **确定性随机**：同一套卷子每次题序一致，便于重做对比
+- **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
+  esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：56 个用例，行覆盖率 100%、分支 82.26%、函数 96.55%
+- **可测试**：66 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+  （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
+  esbuild 打包后执行，由 10 条行为用例覆盖，暂未计入行覆盖率）
 - **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
@@ -61,19 +67,27 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ```text
 ├── src/
-│   ├── core/utils.js          纯工具：哈希/随机/间隔重复/境界/五类考试配置
-│   ├── core/quiz.js           业务核心：题型生成、判分、统计
+│   ├── core/utils.js          纯工具：哈希/随机/间隔重复/境界/五类考试配置（待迁 TS）
+│   ├── core/quiz.js           业务核心：题型生成、判分、统计（待迁 TS）
+│   ├── config/features.ts     前端 Feature Flag（AI 批改等开关，默认全关）
+│   ├── services/grading.ts    写作/翻译批改服务：开关关闭时不发任何请求
+│   ├── services/index.ts      服务统一出口（构建时挂载全局 QingciServices）
+│   ├── types/grading.ts       批改数据契约：状态 / 四维评分 / 批注 / 版本号
+│   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
 │   └── index.template.html    应用外壳：DOM 渲染与交互
-├── tests/                     自动化测试（node:test，核心 + Worker + Functions）
-├── scripts/build.mjs          构建：校验 → 注入版本 → 输出 dist
+├── functions/                 Cloudflare Pages Functions（ESM/TS）
+│   ├── healthz.js · status.js · api/meta.js
+│   └── api/grade.ts           AI 批改占位端点（不调用外部 API）
+├── tests/                     自动化测试（node:test：核心 + Worker + Functions + 批改）
+│   └── helpers/load-ts.mjs    用 esbuild 把 TS 模块打包后再 import
+├── scripts/build.mjs          构建：校验 → esbuild 打包 → 内联 → 输出 dist
 ├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
-├── functions/                 Cloudflare Pages Functions：/healthz、/status、/api/meta
 ├── worker/index.mjs           Cloudflare Workers 入口（同构接口）
 ├── server.mjs                 本地 HTTP 服务 + /healthz + /status + /api/meta
 ├── docs/                      产品方案 / 使用文档 / API 文档 / 架构图
 ├── CHANGELOG.md               版本发布记录
-└── dist/                      构建产物
+└── dist/                      构建产物（单文件 HTML）
 ```
 
 ## 接口
@@ -83,6 +97,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | `GET /healthz` | 健康检查，返回状态、版本、词库条数、运行时长 | ✅ | ✅ | ✅ |
 | `GET /status` | 人类可读状态页（纯内联样式，无外部资源） | ✅ | ✅ | ✅ |
 | `GET /api/meta` | 应用元信息（版本、题型、五类备考、题源边界） | ✅ | ✅ | ✅ |
+| `POST /api/grade` | 写作/翻译 AI 批改——**占位实现**：返回 `not_implemented`，不调用外部服务 | — | ✅ | — |
 | `GET /` | 应用页面 | ✅ | ✅ | ✅ |
 
 健康检查响应示例：
@@ -170,6 +185,10 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 | 本地预览 | `npm start` → `http://127.0.0.1:4173`（**仅本机可访问**，关掉服务或关机即失效） |
 | 重新部署 | `npm run deploy:pages`（**需要开机并联网**；改完代码或词库后执行，线上才会更新） |
 
+> **源码为 TypeScript，构建后为单文件 HTML，部署产物形态不变**：
+> `src/**/*.ts` 经 esbuild 打包成一段内联脚本注入 `src/index.template.html`，
+> 产出的 `dist/cet4-xiuxian.html` 依旧是零运行时依赖、双击可开的单文件。
+
 > 旧 Cloudflare 快速隧道方案已弃用（地址每次重启都会变化，且回源到本机），
 > 对应的保活 / 守护脚本不再需要，本文档已移除相关说明。
 
@@ -195,6 +214,34 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | GitHub Pages | 推送 `deploy/` 内容后开启 Pages | 需 GitHub 账号 |
 | Netlify | `npx netlify deploy --dir=deploy --prod` | 需 Netlify 账号 |
 | Vercel | `npx vercel --prod deploy` | 需 Vercel 账号 |
+
+## AI 批改（接口预留，尚未接入）
+
+写作与翻译已经有完整的「提交批改」入口，但**当前是占位实现**：
+前端开关关闭时界面直接显示占位提示，**不发起任何网络请求**；
+`functions/api/grade.ts` 也不调用任何外部 API、不读取密钥、不产生费用。
+
+| 位置 | 作用 |
+|---|---|
+| `src/config/features.ts` | 前端开关 `AI_GRADING_ENABLED`（默认 `false`） |
+| `src/services/grading.ts` | `gradeSubmission()`：开关关闭直接返回 `not_implemented`，永不抛异常 |
+| `src/types/grading.ts` | 数据契约：`gradeStatus` / `gradeResult`（四维 15 分制）/ `gradeVersion` |
+| `functions/api/grade.ts` | Pages Function 占位端点，固定返回 `{ status: 'not_implemented' }` |
+| 「洞府」页 | 用户开关「允许 AI 批改我的作文 / 翻译」（默认关闭）+ 隐私占位条款 |
+
+**后期接入步骤**（前端无需改动）：
+
+1. 在 Cloudflare Pages → Settings → Environment variables 配置 `DEEPSEEK_API_KEY`（Secret 类型）
+2. 将 `AI_GRADING_ENABLED` 设为 `true`，并把 `src/config/features.ts` 的前端开关同步置 `true` 后重新构建
+3. 替换 `functions/api/grade.ts` 中 `TODO(接入)` 标记处的占位逻辑，改为调用 DeepSeek API
+4. Prompt 按四级评分标准构造：内容切题 40% / 逻辑连贯 30% / 语言准确 20% / 表达丰富 10%
+5. 返回结构必须与前端 `GradeResponse` 一致（`{ status: 'success', result: GradeResult }`）
+6. 补上限流（`AI_GRADING_DAILY_LIMIT`）、超时（20s，与前端 `GRADE_TIMEOUT_MS` 对齐）、
+   错误处理与 token 成本记录
+7. 前端无需改动：开关打开后即走 `POST /api/grade`
+
+> 密钥只存在于 Cloudflare 环境变量中；仓库、前端代码、构建产物里都不会出现任何 Key。
+> 未完成授权核验前，界面不会展示任何虚拟评分或雷达图。
 
 ## 文档
 

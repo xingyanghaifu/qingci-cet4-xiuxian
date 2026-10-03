@@ -1,0 +1,4 @@
+{
+  "type": "module",
+  "//": "Pages Functions 使用 ESM 语法（export async function onRequestGet）；项目根 package.json 为 commonjs，故在此就近声明，使 Node 测试可直接 import 这些文件。"
+}

@@ -2,8 +2,8 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.3.0-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-49%20passing-176b3f)](tests/)
+[![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
+[![tests](https://img.shields.io/badge/tests-56%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines-176b3f)](tests/)
 [![deps](https://img.shields.io/badge/dependencies-0-a56d22)](#技术特色)
 [![license](https://img.shields.io/badge/license-MIT-8b7360)](LICENSE)
@@ -28,7 +28,7 @@ npm start                 # 访问 http://127.0.0.1:4173
 # 方式三：从源码构建
 npm install               # 零外部依赖，秒完成
 npm run build             # 构建产物到 dist/
-npm test                  # 运行 49 个自动化测试
+npm test                  # 运行 56 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -53,7 +53,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 - **零依赖**：运行时不加载任何 CDN，构建脚本只用 Node 内置模块
 - **确定性随机**：同一套卷子每次题序一致，便于重做对比
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：49 个用例，行覆盖率 100%、分支 83.02%、函数 98.08%
+- **可测试**：56 个用例，行覆盖率 100%、分支 82.26%、函数 96.55%
 - **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
@@ -61,13 +61,16 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ```text
 ├── src/
-│   ├── core/utils.js          纯工具：哈希/随机/间隔重复/境界
+│   ├── core/utils.js          纯工具：哈希/随机/间隔重复/境界/五类考试配置
 │   ├── core/quiz.js           业务核心：题型生成、判分、统计
 │   └── index.template.html    应用外壳：DOM 渲染与交互
-├── tests/                     自动化测试（node:test）
+├── tests/                     自动化测试（node:test，核心 + Worker + Functions）
 ├── scripts/build.mjs          构建：校验 → 注入版本 → 输出 dist
+├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
-├── server.mjs                 HTTP 服务 + /healthz + /api/meta
+├── functions/                 Cloudflare Pages Functions：/healthz、/status、/api/meta
+├── worker/index.mjs           Cloudflare Workers 入口（同构接口）
+├── server.mjs                 本地 HTTP 服务 + /healthz + /status + /api/meta
 ├── docs/                      产品方案 / 使用文档 / API 文档 / 架构图
 ├── CHANGELOG.md               版本发布记录
 └── dist/                      构建产物
@@ -75,11 +78,12 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 ## 接口
 
-| 端点 | 说明 |
-|---|---|
-| `GET /healthz` | 健康检查，返回状态、版本、词库条数、运行时长 |
-| `GET /api/meta` | 应用元信息（版本、题型、特性清单） |
-| `GET /` | 应用页面 |
+| 端点 | 说明 | 本地 | Pages | Workers |
+|---|---|---|---|---|
+| `GET /healthz` | 健康检查，返回状态、版本、词库条数、运行时长 | ✅ | ✅ | ✅ |
+| `GET /status` | 人类可读状态页（纯内联样式，无外部资源） | ✅ | ✅ | ✅ |
+| `GET /api/meta` | 应用元信息（版本、题型、五类备考、题源边界） | ✅ | ✅ | ✅ |
+| `GET /` | 应用页面 | ✅ | ✅ | ✅ |
 
 健康检查响应示例：
 
@@ -99,41 +103,37 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 |---|---|
 | `https://qingci-cet4-xiuxian.pages.dev/` | 应用页面 |
 | `https://qingci-cet4-xiuxian.pages.dev/healthz` | 健康检查（JSON，动态） |
+| `https://qingci-cet4-xiuxian.pages.dev/status` | 状态页（HTML，动态） |
 | `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON，含五类备考与题源说明） |
 
-实测结果（2026-10-03 部署 v1.3.0 后，每路径 10 次采样，`npm run probe:prod`）：
+实测结果（2026-10-03 部署 v1.3.1 后，每路径 10 次采样 × 2 轮，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
-/healthz    271ms    212ms     719ms    10/10     0    ✅
-/api/meta   577ms    231ms     1112ms   10/10     0    ✅
-/status     852ms    572ms     2651ms    9/10     1    ⚠️
-/          1121ms    879ms     2309ms    9/10     1    ⚠️
+/healthz    235ms    208ms     773ms    10/10     0    ✅
+/api/meta   255ms    204ms     1079ms   10/10     0    ✅
+/status     323ms    193ms     722ms    10/10     0    ✅
+/          399ms    324ms     658ms    10/10     0    ✅
 ```
 
-> **两次采样合计 80 次请求全部返回 HTTP 200**（`/healthz` 与 `/api/meta` 20/20 在阈值内），
-> 但 `/status` 与 `/` 各有 2–3 次采样超过 2000ms：`/` 需要传输 469 KB 入口页，
-> `/status` 在 Pages 上走 SPA 回退同样返回该入口页，两者耗时取决于本机到 SEA 边缘的带宽抖动。
-> 纯 JSON 的动态接口（`/healthz`、`/api/meta`）稳定在阈值内。
+> **两轮合计 80/80 采样全部返回 HTTP 200 且低于 2000ms 阈值。**
+> `/status` 上版曾因缺少 Function 走 SPA 回退，实际传输 469 KB 入口页导致偶发超时；
+> v1.3.1 补上 `functions/status.js` 后该路径只返回 1.2 KB 状态页，中位 323ms。
 
-> ⚠️ **`/status` 的线上行为**：Pages 未部署 `/status` 对应的 Function，
-> 未匹配路径会按 SPA 回退返回应用页面（HTTP 200 + HTML），因此该路径不代表独立状态页。
-> 人类可读状态页目前仅由本地 `server.mjs` 与 Cloudflare Workers 提供。
-
-`/healthz` 返回的真实响应（2026-10-03 部署 v1.3.0 后实测）：
+`/healthz` 返回的真实响应（2026-10-03 部署 v1.3.1 后实测）：
 
 ```json
 {
   "status": "ok",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "staticAsset": { "ok": true, "artifact": "index.html" }
   },
   "runtime": { "colo": "SEA", "country": "CN" },
-  "latencyMs": 140,
-  "timestamp": "2026-10-02T16:46:44.358Z"
+  "latencyMs": 8,
+  "timestamp": "2026-10-03T00:03:18.823Z"
 }
 ```
 
@@ -143,7 +143,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.3.0（五类备考），动静接口齐全 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.3.1（五类备考 + 状态页），动静接口齐全 |
 | Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构，当前仍为 v1.2.0 构建 |
 
 > **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
@@ -152,7 +152,7 @@ npm run verify            # 一键：构建 + 测试 + 文档核验 + 健康检�
 > 功能基本一致，因此以可达性更好的 Pages 地址作为线上验收入口。
 > Workers 侧此前已完成部署，并通过 Cloudflare API 确认为生产环境运行
 > （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）；
-> 该通道**未随本次 v1.3.0 的 Pages 部署一起更新**。
+> 该通道**未随 v1.3.0 / v1.3.1 的 Pages 部署一起更新**。
 
 > 复采命令：`node scripts/watchdog.mjs`（单次巡检）或 `npm run probe:prod`（多轮采样）。
 

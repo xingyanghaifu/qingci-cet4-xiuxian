@@ -15,7 +15,7 @@ export async function onRequestGet(context) {
   const ok = lexiconCount > 0;
   const body = {
     status: ok ? 'ok' : 'degraded',
-    version: env.APP_VERSION || '1.1.0',
+    version: env.APP_VERSION || '1.3.1',
     platform: 'cloudflare-pages',
     checks: {
       lexicon: { ok: ok, count: lexiconCount, expected: 4540 },

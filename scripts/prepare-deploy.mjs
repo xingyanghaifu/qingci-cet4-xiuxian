@@ -76,13 +76,15 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
 // 因此仅在非 Workers 模式（Pages / Netlify 等纯静态托管）下生成该文件。
 const forWorkers = process.env.DEPLOY_TARGET === 'workers' || process.argv.includes('--workers');
 if (forPages) {
-  // Pages 模式：Functions 负责 /healthz 与 /api/meta，其余全部走静态资源。
+  // Pages 模式：Functions 负责 /healthz、/status 与 /api/meta，其余全部走静态资源。
   // 不能写 /* -> /index.html 的 _redirects，否则会把接口请求也重写成 HTML。
+  // 注意：未列入 include 的路径会走 SPA 回退返回应用页（200 + HTML），
+  // 因此 functions/ 下有实现的路径必须同步登记，否则监控会拿到假的 200。
   const stale = path.join(OUT, '_redirects');
   if (fs.existsSync(stale)) fs.unlinkSync(stale);
   fs.writeFileSync(path.join(OUT, '_routes.json'), JSON.stringify({
     version: 1,
-    include: ['/healthz', '/api/*'],
+    include: ['/healthz', '/status', '/api/*'],
     exclude: [],
   }, null, 2) + '\n');
 } else if (!forWorkers) {
@@ -97,6 +99,6 @@ console.log('   index.html      ' + (Buffer.byteLength(html) / 1024).toFixed(1) 
 console.log('   healthz.json    版本 v' + pkg.version + ' 词库 ' + words + ' 条');
 console.log('   api-meta.json   元信息（机型/版本/特性）');
 console.log('   _headers        缓存与安全响应头');
-console.log(forPages ? '   _routes.json   Functions 路由（/healthz、/api/*）' : (forWorkers ? '   _redirects      已跳过（Workers 模式由 Worker 处理路由）' : '   _redirects      SPA 回退'));
+console.log(forPages ? '   _routes.json   Functions 路由（/healthz、/status、/api/*）' : (forWorkers ? '   _redirects      已跳过（Workers 模式由 Worker 处理路由）' : '   _redirects      SPA 回退'));
 console.log('   产物指纹: sha256:' + sha);
 

@@ -5,6 +5,48 @@
 
 ---
 
+## [1.3.1] - 2026-10-03
+
+本次为**线上接口一致性修复版本**：补齐 Pages 侧缺失的 `/status` 端点，并让该端点
+在监控中不再被 SPA 回退伪装成正常。
+
+### 新增
+
+- `functions/status.js`：Pages 侧的人类可读状态页，与本地 `server.mjs`、
+  Workers `worker/index.mjs` 三处同构（版本、词库条数、运行环境、接口入口链接）。
+- `_routes.json` 的 include 白名单加入 `/status`，使该路径真正命中 Function。
+- `tests/functions.test.mjs`：Pages Functions 单元测试 7 条，覆盖
+  `/healthz`、`/status`、`/api/meta` 的正常、静态元数据缺失与绑定抛异常三条分支。
+- `functions/package.json`：就近声明 `type: module`，使项目根为 commonjs 时
+  Node 测试仍可直接 import 这些 ESM Function 文件。
+
+### 修复
+
+- **`/status` 在 Pages 上并不存在**：未列入 `_routes.json` 的路径会走 SPA 回退，
+  返回应用页面（HTTP 200 + 469 KB HTML），因此 `npm run probe:prod` 里
+  `/status` 的采样只是重复下载首页，且偶发超过 2 秒阈值——监控看似正常，实则被骗过。
+  补齐后该路径只返回约 1.2 KB 状态页，中位耗时由 852ms 降至 323ms。
+- 版本号同步至 1.3.1（`package.json`、`wrangler.toml`、Functions 默认回退值）。
+- 文档中原先把 `/status` 当作线上可用端点的表述、以及「未匹配路径返回 404」
+  的笼统说法，已按三处入口的实际行为分别标注。
+
+### 验证
+
+- 自动化测试：56/56 通过（新增 7 条 Functions 用例）。
+- 覆盖率：行 100%、分支 82.26%、函数 96.55%。
+- 文档示例核验：26/26 通过（版本号示例已指向线上 v1.3.1）。
+
+### 部署
+
+- 2026-10-03 部署到 Cloudflare Pages 生产环境（`https://qingci-cet4-xiuxian.pages.dev`）。
+- 线上验收：`/healthz`、`/api/meta` 均返回 `version: 1.3.1`；
+  `/status` 返回 `text/html` 状态页（1231 B，含「服务状态」与 v1.3.1，确认非应用页回退）；
+  首页构建戳为 `v1.3.1`、469.4 KB。
+- 线上采样（每路径 10 次 × 2 轮，共 80 次请求）：**80/80 返回 HTTP 200 且低于 2000ms 阈值**，
+  中位耗时 `/healthz` 235ms · `/api/meta` 255ms · `/status` 323ms · `/` 399ms。
+
+---
+
 ## [1.3.0] - 2026-09-30
 
 ### 新增
@@ -44,7 +86,7 @@
   `/status`、`/` 因需传输 469KB 入口页偶有单次超阈值（中位 852ms / 1121ms）。
 - 记录一处线上与本地/Workers 的行为差异：Pages 未配置 `/status` 对应的 Function，
   未匹配路径按 SPA 回退返回应用页（HTTP 200 + HTML），该路径不代表独立状态页；
-  状态页目前仅由本地 `server.mjs` 与 Cloudflare Workers 提供，文档已按实际情况标注。
+  当时状态页仅由本地 `server.mjs` 与 Cloudflare Workers 提供。**该问题已在 v1.3.1 修复。**
 
 ---
 

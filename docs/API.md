@@ -1,6 +1,6 @@
 # API 文档
 
-适用版本：**v1.3.0** ｜ 更新日期：2026-09-30
+适用版本：**v1.3.1** ｜ 更新日期：2026-10-03
 
 本文档分两部分：
 
@@ -8,13 +8,11 @@
 2. **核心模块 API** — `src/core/` 可被 Node / 浏览器复用的函数
 
 > 公网实测地址：`https://qingci-cet4-xiuxian.pages.dev`
-> 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行
-> （例外：`/status` 仅由本地 `server.mjs` 与 Cloudflare Workers 提供，Pages 上未匹配路径按 SPA 回退返回应用页）。
+> 以下本地地址 `http://127.0.0.1:4173` 可整体替换为上述域名后直接执行。
 >
-> 线上验收（2026-10-03，v1.3.0，每路径 10 次采样，阈值 2000ms）：
-> **80/80 采样返回 HTTP 200** ·
-> `/healthz` 中位 271ms · `/api/meta` 中位 577ms · `/status` 中位 852ms · `/` 中位 1121ms
-> （`/healthz`、`/api/meta` 20/20 在阈值内；`/status`、`/` 因传输 469KB 入口页偶有单次超 2 秒）
+> 线上验收（2026-10-03，v1.3.1，每路径 10 次采样 × 2 轮，阈值 2000ms）：
+> **80/80 采样全部返回 HTTP 200 且低于阈值** ·
+> `/healthz` 中位 235ms · `/api/meta` 中位 255ms · `/status` 中位 323ms · `/` 中位 399ms
 
 ---
 
@@ -51,14 +49,14 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "uptimeSeconds": 27,
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "build": { "ok": true, "artifact": "dist/cet4-xiuxian.html" }
   },
   "runtime": { "node": "v24.18.0", "platform": "win32" },
-  "timestamp": "2026-10-02T15:47:57.408Z"
+  "timestamp": "2026-10-03T00:03:18.823Z"
 }
 ```
 
@@ -67,15 +65,15 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/healthz
 ```json
 {
   "status": "ok",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "platform": "cloudflare-pages",
   "checks": {
     "lexicon": { "ok": true, "count": 4540, "expected": 4540 },
     "staticAsset": { "ok": true, "artifact": "index.html" }
   },
   "runtime": { "colo": "SEA", "country": "CN" },
-  "latencyMs": 140,
-  "timestamp": "2026-10-02T16:46:44.358Z"
+  "latencyMs": 8,
+  "timestamp": "2026-10-03T00:03:18.823Z"
 }
 ```
 
@@ -118,7 +116,7 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 ```json
 {
   "name": "青词天路 · 四级全卷修仙",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "platform": "cloudflare-pages",
   "lexiconSize": 4540,
   "memoryKinds": ["zh2en", "en2zh", "similar", "listen", "spell", "pos"],
@@ -133,10 +131,27 @@ curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta
 
 ```bash
 curl -s https://qingci-cet4-xiuxian.pages.dev/api/meta | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))"
-# 输出：1.3.0
+# 输出：1.3.1
 ```
 
-### 1.3 GET / — 应用页面
+### 1.3 GET /status — 状态页
+
+人类可读的极简状态页：纯内联样式、无外部资源，便于在慢链路下确认服务可用。
+本地 `server.mjs`、`worker/index.mjs` 与线上 `functions/status.js` 三处同构。
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://qingci-cet4-xiuxian.pages.dev/status
+# 输出：200 text/html; charset=utf-8（约 1.2 KB）
+```
+
+页面包含版本、词库条数、运行环境与 `/healthz`、`/api/meta`、应用入口链接。
+
+> **注意**：Pages 上未匹配路径会按 SPA 回退返回应用页面（HTTP 200 + HTML，
+> 见 `_routes.json` 的 include 白名单）。因此监控若只判断状态码，
+> 无法区分「真实接口」与「回退的应用页」；`/status` 必须由 `functions/status.js`
+> 命中才说明 Functions 正常，这一点已由 `tests/functions.test.mjs` 锁定。
+
+### 1.4 GET / — 应用页面
 
 返回构建产物（`dist/cet4-xiuxian.html`），`Content-Type: text/html; charset=utf-8`。
 
@@ -146,13 +161,16 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4173/
 
 输出：`200`
 
-### 1.4 错误响应
+### 1.5 错误响应
 
-未匹配路径返回 404：
+本地 `server.mjs` 与 Workers 对未匹配路径返回 404：
 
 ```json
 { "error": "not found", "path": "/nope" }
 ```
+
+> 线上 Pages 入口启用了 SPA 回退：未匹配路径返回应用页面而非 404，
+> 由前端路由自行处理（例如直接访问 `/` 之外的路径仍能进入应用）。
 
 ---
 

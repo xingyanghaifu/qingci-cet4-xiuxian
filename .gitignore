@@ -27,3 +27,10 @@ Thumbs.db
 
 # 任务辅助目录（过程文件，不参与版本管理）
 任务_*/
+
+# 数据管线缓存（build-vocab-detail.mjs 按词缓存的语料，可重跑生成）
+.cache/
+
+# 备份目录（改版前的源码备份与压缩包）
+backups/
+dist-offline/

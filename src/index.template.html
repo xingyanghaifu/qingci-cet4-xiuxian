@@ -20,6 +20,9 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <style>
+<script>/* 主题尽早生效，避免首屏闪色（与服务层 src/services/theme.ts 共用同一存储键） */
+(function(){try{var p=localStorage.getItem('qingci.theme');if(p==='dark'||p==='light'){document.documentElement.dataset.theme=p;}}catch(e){}})();
+</script>
 :root { --ink:#23170f; --soft:#5a4330; --muted:#8b7360; --bg:#f3ecdf; --bg2:#e7dccb; --card:#fffaf3; --line:#ddcfbb; --jade:#0e6b53; --jade-ink:#08382c; --gold:#a56d22; --ok:#176b3f; --bad:#922f1d; --shadow:0 18px 40px rgba(62,36,12,.08); color-scheme:light; }
 @media (prefers-color-scheme:dark) { :root { --ink:#f6ecdf; --soft:#ddcfbc; --muted:#b09b88; --bg:#12100e; --bg2:#221c17; --card:#211b16; --line:#3c3229; --jade:#8ed8bd; --jade-ink:#dffcf1; --gold:#efc98a; --ok:#b7ebc8; --bad:#ffc7bb; --shadow:0 18px 40px rgba(0,0,0,.32); color-scheme:dark; } }
 *{box-sizing:border-box} body{margin:0;color:var(--ink);background:radial-gradient(900px 380px at 0 -10%,rgba(14,107,83,.15),transparent 60%),radial-gradient(760px 360px at 100% 0,rgba(165,109,34,.16),transparent 55%),var(--bg);font-family:"PingFang SC","Microsoft YaHei","Songti SC",serif} button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer}
@@ -123,6 +126,28 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .duel-float.dmg{color:var(--bad)}.duel-float.heal{color:var(--jade)}
 @media(max-width:640px){.exam-select{grid-template-columns:1fr}.exam-meta{grid-column:1}.exam-select select{width:100%;min-width:0}.duel-board{grid-template-columns:1fr;gap:10px}.duel-vs:before,.duel-vs:after{display:none}.duel-choices{grid-template-columns:1fr}.duel-tip{margin-left:0;width:100%}}
 .reward{display:flex;gap:8px;align-items:center;color:var(--gold);font-weight:700}.paper-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.paper-card:hover,.gate:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(62,36,12,.08)}.paper-card.on{border-color:var(--gold);outline:0;box-shadow:0 0 0 2px rgba(165,109,34,.18)} @media (max-width:860px){.hero,.layout,.shelf,.entry{grid-template-columns:1fr}.road{grid-template-columns:repeat(3,1fr)}} @media (max-width:600px){.app{width:calc(100% - 20px);padding-bottom:calc(28px + env(safe-area-inset-bottom))}.hero{gap:12px}.hero h1{font-size:clamp(34px,12vw,48px)}.panel{padding:14px;border-radius:15px}.road{gap:6px}.gate{min-height:72px;padding:8px 7px}.gate b{font-size:14px}.gate small,.gate em{font-size:11px}.tabs{position:sticky;top:0;z-index:5;padding:8px 0;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px)}.tabs button{min-height:42px;padding:8px 11px}.choice,.btn{min-height:44px}.audio-dock{align-items:stretch}.audio-dock button,.audio-dock label{flex:1}.audio-dock input[type=range]{width:100%;flex-basis:100%}.tools{gap:7px}.tools .btn{flex:1}.prompt{font-size:clamp(30px,10vw,46px)}textarea{min-height:140px}.toast{bottom:calc(16px + env(safe-area-inset-bottom))}} @media (max-width:380px){.road{grid-template-columns:repeat(2,1fr)}.tabs button{font-size:13px;padding:7px 9px}.seal{padding:13px}.shelf{gap:8px}}
+/* ===== P0.5：手动主题（覆盖系统偏好）+ 三档响应式断点 ===== */
+:root[data-theme="light"] { --ink:#23170f; --soft:#5a4330; --muted:#8b7360; --bg:#f3ecdf; --bg2:#e7dccb; --card:#fffaf3; --line:#ddcfbb; --jade:#0e6b53; --jade-ink:#08382c; --gold:#a56d22; --ok:#176b3f; --bad:#922f1d; --shadow:0 18px 40px rgba(62,36,12,.08); color-scheme:light; }
+:root[data-theme="dark"] { --ink:#f6ecdf; --soft:#ddcfbc; --muted:#b09b88; --bg:#12100e; --bg2:#221c17; --card:#211b16; --line:#3c3229; --jade:#8ed8bd; --jade-ink:#dffcf1; --gold:#efc98a; --ok:#b7ebc8; --bad:#ffc7bb; --shadow:0 18px 40px rgba(0,0,0,.32); color-scheme:dark; }
+:root[data-theme="dark"] .tabs button.on,:root[data-theme="dark"] .btn.solid{color:#10241c}
+:root[data-theme="dark"] .choice.good{background:#173428;color:#e7fff1}
+:root[data-theme="dark"] .choice.bad{background:#3c241e;color:#ffe4dc}
+:root[data-theme="dark"] .audio-dock button.primary{color:#10241c}
+/* 桌面 >1024px：选项两列，减少滚动 */
+@media (min-width:1025px){ .choices{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* 平板 768–1024px：单列主区 + 更紧凑的侧栏 */
+@media (min-width:768px) and (max-width:1024px){ .layout{grid-template-columns:minmax(0,1fr)} .shelf{grid-template-columns:repeat(2,1fr)} .road{grid-template-columns:repeat(3,1fr)} }
+/* 手机 <768px：全宽选项卡片、点击区 ≥44px、计时器吸顶、播放条贴底 */
+@media (max-width:767px){
+  .choices{grid-template-columns:1fr;gap:10px}
+  .choice,.btn,.tabs button{min-height:44px}
+  .choice{width:100%;padding:14px 12px;font-size:16px;line-height:1.35;text-align:left}
+  .tools .btn{flex:1 1 auto}
+  .clock-row{position:sticky;top:0;z-index:6;padding:8px 0;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(10px)}
+  .audio-dock{position:fixed;left:0;right:0;bottom:0;margin:0;z-index:20;border-radius:16px 16px 0 0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--card);box-shadow:0 -10px 28px rgba(0,0,0,.22)}
+  .app{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+}
 </style>
 </head>
 <body>
@@ -137,12 +162,12 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
   <nav class="tabs" role="tablist" aria-label="修炼模块"><button role="tab" aria-selected="true" aria-controls="panel-paper" class="on" data-tab="paper">试炼殿</button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial" data-mode="words">背单词</button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial">单题</button><button role="tab" aria-selected="false" aria-controls="panel-speak" data-tab="speak">口语</button><button role="tab" aria-selected="false" aria-controls="panel-book" data-tab="book">心魔</button><button role="tab" aria-selected="false" aria-controls="panel-codex" data-tab="codex">词谱</button><button role="tab" aria-selected="false" aria-controls="panel-map" data-tab="map">卷面</button><button role="tab" aria-selected="false" aria-controls="panel-duel" data-tab="duel">斗法场</button></nav>
   <div class="layout"><main id="main">
     <section class="panel" id="panel-missions"><p class="section-label">今日功课 · DAILY QUESTS</p><div class="mission-list" id="missionList"></div><div class="study-summary" id="studySummary" aria-live="polite"></div><div class="assessment-card" id="assessmentCard"><b id="assessmentTitle">先做一次词汇摸底</b><p id="assessmentText">用 10 题估算当前词汇量，再自动生成每日背词目标。</p><div class="tools"><button class="btn solid" id="startAssessment">开始摸底</button><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn" id="saveDailyTarget">保存目标</button></div></div></section>
-    <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · DAILY TRIAL</p><div class="row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn solid" id="startPaper">开考这一卷</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
+    <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · DAILY TRIAL</p><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn solid" id="startPaper">开考这一卷</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
     <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="muted" id="poolLabel"></span></div><div class="prompt" id="prompt"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices"></div><div id="writeBox" class="hidden"><textarea id="essay"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。"></textarea></section>
     <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><h2>心魔本</h2><p class="muted" id="bookLead"></p><button class="btn solid" id="drillWrong">只练这些</button><div class="dict" id="bookList"></div></section>
     <section class="panel hidden" id="panel-codex"><p class="section-label">词谱 · 4540 WORDS</p><h2>词谱</h2><div class="tools"><input id="q" placeholder="搜单词或中文"><select id="letter"></select><select id="mastery"><option value="all">全部掌握度</option><option value="new">未学过</option><option value="known">已斩获</option><option value="wrong">心魔词</option></select></div><div class="dict" id="codexList"></div></section>
-    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button></div></div><div class="scroll" id="mapTable"></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div></section>
+    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button></div></div><div class="scroll" id="mapTable"></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div></section>
   </main><aside><section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section></aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
 </div><div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -421,6 +446,107 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
 
   if (consentBox) consentBox.addEventListener('change', function () { writeConsent(consentBox.checked); refreshConsent(); });
   refreshConsent();
+})();
+</script>
+<script>
+/* 移动端适配增强（P0.5 第二批）：手动主题、方向键切题、Media Session
+   数字键 / Enter / 空格沿用应用原有的全局按键处理，这里只补方向键与系统媒体控制。 */
+(function () {
+  var S = window.QingciServices;
+  if (!S) return;
+  var byId = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  /* —— 1) 外观：跟随系统 / 固定浅色 / 固定深色 —— */
+  var themeSel = byId('themeSel');
+  var themeState = byId('themeState');
+  function syncThemeUI() {
+    var pref = S.theme.read();
+    var resolved = S.theme.apply(pref, { persist: false });
+    if (themeSel) themeSel.value = pref;
+    if (themeState) {
+      themeState.textContent = pref === 'auto'
+        ? '跟随系统（当前' + (resolved === 'dark' ? '深色' : '浅色') + '）'
+        : (resolved === 'dark' ? '深色' : '浅色');
+    }
+  }
+  if (themeSel) themeSel.addEventListener('change', function () { S.theme.apply(themeSel.value); syncThemeUI(); });
+  syncThemeUI();
+
+  /* —— 2) 方向键切题：→ 下一题，← 只读回看上一题 —— */
+  var recent = [];
+  var lastPrompt = '';
+  function snapshot() {
+    var el = byId('prompt');
+    var text = el ? String(el.textContent || '').trim() : '';
+    if (!text || text === lastPrompt) return;
+    lastPrompt = text;
+    recent.push({ prompt: text, sub: (byId('subline') || {}).textContent || '' });
+    if (recent.length > 8) recent.shift();
+  }
+  var promptEl = byId('prompt');
+  if (promptEl && window.MutationObserver) {
+    new MutationObserver(snapshot).observe(promptEl, { childList: true, characterData: true, subtree: true });
+  }
+
+  function clickIfVisible(id) {
+    var el = byId(id);
+    if (el && !el.classList.contains('hidden') && !el.disabled) { el.click(); return true; }
+    return false;
+  }
+  function goNext() { return clickIfVisible('next') || clickIfVisible('skip'); }
+  function showPrev() {
+    var fb = byId('feedback');
+    if (!fb) return;
+    var prev = recent.length > 1 ? recent[recent.length - 2] : null;
+    if (!prev) { fb.innerHTML = '<b>回看</b><div class="muted">还没有上一题可以回看。</div>'; return; }
+    fb.innerHTML = '<b>回看上一题</b><div>' + esc(prev.prompt) + '</div>'
+      + (prev.sub ? '<div class="muted">' + esc(prev.sub) + '</div>' : '')
+      + '<div class="muted">只读回看，不影响本卷作答与计分。</div>';
+  }
+  document.addEventListener('keydown', function (e) {
+    var target = e.target;
+    var inEditable = !!(target && target.closest && target.closest('input,textarea,select,[contenteditable="true"]'));
+    var action = S.shortcuts.resolve(e.key, {
+      inEditable: inEditable,
+      hasModifier: e.ctrlKey || e.metaKey || e.altKey,
+      hasChoices: true,
+      hasAudio: true,
+    });
+    if (!action) return;
+    if (action.type === 'next') { if (goNext()) e.preventDefault(); }
+    else if (action.type === 'prev') { showPrev(); e.preventDefault(); }
+  }, true);
+
+  /* —— 3) Media Session：听力可在锁屏 / 通知栏 / 耳机上控制 —— */
+  if (S.media.supported()) {
+    var playBtn = byId('audioPlay');
+    var mediaBound = false;
+    if (playBtn) {
+      playBtn.addEventListener('click', function () {
+        if (mediaBound) return;
+        mediaBound = true;
+        var title = String((byId('prompt') || {}).textContent || '听力练习').trim();
+        S.media.bind({ title: title.slice(0, 40) || '听力练习' }, {
+          play: function () {
+            var ss = window.speechSynthesis;
+            if (!ss || !ss.speaking || ss.paused) playBtn.click();
+            S.media.setPlaybackState('playing');
+          },
+          pause: function () {
+            var ss = window.speechSynthesis;
+            if (ss && ss.speaking && !ss.paused) playBtn.click();
+            S.media.setPlaybackState('paused');
+          },
+          stop: function () {
+            try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (err) { /* 忽略 */ }
+            S.media.setPlaybackState('none');
+          },
+        });
+        S.media.setPlaybackState('playing');
+      });
+    }
+  }
 })();
 </script>
 </body></html>

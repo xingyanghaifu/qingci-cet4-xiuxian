@@ -18,6 +18,9 @@ import {
   DATASET_KEYS,
 } from './offline-store';
 import { initPwa, canRegisterSw } from './pwa';
+import { initTheme, applyTheme, resolveTheme, readPreference, THEME_OPTIONS } from './theme';
+import { resolveShortcut } from './shortcuts';
+import { bindMediaSession, setPlaybackState, supportsMediaSession } from './media-session';
 import {
   GRADE_DIMENSION_WEIGHTS,
   GRADE_VERSION,
@@ -56,6 +59,21 @@ const QingciServices = {
   pwa: {
     init: initPwa,
     canRegister: canRegisterSw,
+  },
+  theme: {
+    init: initTheme,
+    apply: applyTheme,
+    resolve: resolveTheme,
+    read: readPreference,
+    options: THEME_OPTIONS,
+  },
+  shortcuts: {
+    resolve: resolveShortcut,
+  },
+  media: {
+    bind: bindMediaSession,
+    setPlaybackState,
+    supported: supportsMediaSession,
   },
 };
 

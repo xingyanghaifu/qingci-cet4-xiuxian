@@ -11,10 +11,14 @@
  */
 import { QingciServices } from './../services/index';
 import { initPwa } from './../services/pwa';
+import { initTheme } from './../services/theme';
 import { cacheInlineDatasets, createOfflineStore } from './../services/offline-store';
 import { APP_VERSION } from './../config/app-version';
 
 (globalThis as unknown as { QingciServices?: typeof QingciServices }).QingciServices = QingciServices;
+
+// 主题要在首屏尽早应用，避免闪一下系统默认配色
+initTheme();
 
 function boot(): void {
   // 1) Service Worker：离线外壳 + 静态资源缓存

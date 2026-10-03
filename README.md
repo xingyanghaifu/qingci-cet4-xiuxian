@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-73%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-80%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 481.6 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 491.1 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 73 个自动化测试
+npm test                  # 运行 80 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：73 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：80 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -244,6 +244,18 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 构建产物（`dist/`）：`index.html` + `cet4-xiuxian.html`（同一份内容）、
 `manifest.webmanifest`、`sw.js`、`icons/`（4 个 PNG）。
 `npm run verify:pwa` 会校验图标尺寸、sw 预缓存清单与页面引用三者是否一致。
+
+## 移动端与键盘
+
+| 场景 | 行为 |
+|---|---|
+| 响应式断点 | 手机 `<768px`、平板 `768–1024px`、桌面 `>1024px` 三档 |
+| 手机做题 | 选项改为全宽卡片、点击区 ≥44px；桌面端选项两列排布 |
+| 听力播放条 | 手机端固定在屏幕底部（含 `safe-area-inset` 适配），滚动时不消失 |
+| 模考计时器 | 手机端随题目区吸顶，滚动时始终可见 |
+| 手动主题 | 「洞府 → 外观」可选 跟随系统 / 浅色 / 深色；首屏内联脚本先行应用，避免闪色 |
+| 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
+| 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
 
 ## AI 批改（接口预留，尚未接入）
 

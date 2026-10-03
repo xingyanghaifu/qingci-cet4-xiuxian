@@ -71,10 +71,23 @@ for (const dir of pwaDirs) {
   if (!fs.existsSync(from)) continue;
   const to = path.join(OUT, dir);
   fs.mkdirSync(to, { recursive: true });
-  for (const entry of fs.readdirSync(from)) {
-    fs.copyFileSync(path.join(from, entry), path.join(to, entry));
-    pwaCopied.push(dir + '/' + entry);
-  }
+  // 递归拷贝：icons/ 与 vocab-detail/ 是纯文件，audio/ 下还有 tts/、voa/ 子目录
+  // （上一版用 copyFileSync 直接拷目录在 Windows 上会 EPERM，部署中止过一次）
+  const copyRec = (srcDir, dstDir, rel) => {
+    for (const entry of fs.readdirSync(srcDir)) {
+      const s = path.join(srcDir, entry);
+      const d = path.join(dstDir, entry);
+      const r = rel ? `${rel}/${entry}` : entry;
+      if (fs.statSync(s).isDirectory()) {
+        fs.mkdirSync(d, { recursive: true });
+        copyRec(s, d, r);
+      } else {
+        fs.copyFileSync(s, d);
+        pwaCopied.push(`${dir}/${r}`);
+      }
+    }
+  };
+  copyRec(from, to, '');
 }
 
 // 4) Netlify / Cloudflare Pages 头部：入口不缓存，资源长缓存，声明压缩

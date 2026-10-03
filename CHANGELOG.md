@@ -7,6 +7,37 @@
 
 ## [未发布] - 2026-10-03
 
+### 部署：音频版上线（2026-10-03）
+
+- 线上地址 `https://qingci-cet4-xiuxian.pages.dev`，**音频版沿用 v1.6.0**（本轮不改业务逻辑），
+  产物指纹 `sha256:916386b4d809b12f`（应用 HTML 743.4 KB，服务层 130.8 KB），
+  sw 缓存版本 `1.6.0-916386b4`；上传 4695/4729 文件（30 秒），47.8 MB 听力音频随包上线。
+- 部署硬闸日志：`✅ 音频产物就绪：count=4690，manifest=dist/audio/tts/manifest.json`。
+- **端点验收（10/10 通过）**：
+
+  | # | 端点 | 结果 |
+  |---|---|---|
+  | 1 | `/` | 200 · 647,123 字符 · 音频版 5 标记齐全（audioSrcOverlay/audioSrcBtn/realAudioBtn/voaBlock/audioSources） |
+  | 2 | `/healthz` | 200 · `version=1.6.0` `status=ok`（音频版沿用 v1.6.0） |
+  | 3 | `/api/meta` | 200 · `version=1.6.0` |
+  | 4 | `/audio/tts/manifest.json` | 200 · `count=4690` · `cache-control: public, max-age=2592000` |
+  | 5 | 抽查 3 条音频 | 全部 200 · `audio/mpeg` · ID3 头有效（news_01 28512B / vocab_0000 8496B / passage_01 29808B） |
+  | 6 | `/changelog.html` | 200 · 含「听力音频方案落地」记录（19 版本） |
+  | 7 | `/sw.js` | 200 · `CACHE_VERSION=1.6.0-916386b4`（已更新） |
+  | 8 | 音频来源声明弹窗 | 静态核验：`role=dialog` 结构 + 三段文案齐全（交互项见真机清单 7.1） |
+
+- **部署路径加固与修复（本轮改动原因）**：
+  - `deploy-pages.mjs` 新增音频产物硬闸：`dist/audio/tts/manifest.json` 缺失 / 解析失败 /
+    `count=0` 即中止并提示「请先执行 npm run build:audio（需要 Python 3.9+ 与 pip install edge-tts）」。
+    原因：审查确认 Cloudflare 端零构建（项目 Git Provider=No），Python 依赖仅落本地，
+    需要硬闸把「新克隆无音频」的失败拦在上传之前。
+  - `prepare-deploy.mjs` 目录拷贝改为**递归**：`audio/` 下含 `tts/` 子目录，原实现对目录
+    `copyFileSync` 在 Windows 报 `EPERM`，首次部署在 `[2/5]` 中止（未上传、无半态）。
+    原因：`pwaDirs` 原只面向纯文件目录（icons、vocab-detail）。
+  - 已知环境现象：wrangler 4.147 上传并打印 `Deployment complete` 后偶发 daemon 挂起不退出，
+    本次手动终止其子进程收尾（脚本重试候选 2/3 缺 workerd 而误报失败；`[5/5]` 配置正常还原、
+    备份已清理，**上传本身成功**，以上表线上验收为准）。
+
 ### 听力音频方案落地（Edge TTS + VOA 脚本骨架 + 来源声明）
 
 **任务 A · Edge TTS 生成管线（构建期）**
@@ -69,6 +100,18 @@
 **其他**
 
 - `.gitignore` 追加 `dist/audio/`（音频构建期生成，不进仓库）。
+
+### 未完成事项（本轮仅记录，不执行）
+
+1. **长对话 48 条无对话轮次标记**：`voiceRole` 按约定留空、统一 Aria 音色；
+   需人工标注对话轮次（或按 `Man:`/`Woman:`/`A:`/`B:` 前缀的启发式拆分）后重跑
+   `npm run build:audio`，即可自动升级为 Aria + Guy 分声（textHash 增量只重生成这 48 条）。
+2. **VOA 素材仍为空清单**：待在可访问 learningenglish.voanews.com 的网络环境下，
+   按 `docs/VOA素材筛选指南.md` 填写 `scripts/voa-seeds.json` 后执行 `npm run fetch:voa`；
+   本轮未下载任何素材、未伪造任何 URL。
+3. **edge-tts-generator 403（已知偏差）**：npm 后端被微软 Sec-MS-GEC 校验拒绝，
+   当前构建依赖 Python edge-tts（`pip install edge-tts`）作为合成后端；
+   探测链会自动回退，脚本与 README 已注明双后端与本地构建要求。
 
 ## [1.6.0] - 2026-10-03
 

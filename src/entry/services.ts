@@ -15,17 +15,22 @@ import { initPwa } from './../services/pwa';
 import { initTheme } from './../services/theme';
 import { cacheInlineDatasets, createOfflineStore } from './../services/offline-store';
 import { createMistakeStore } from './../services/mistake-store';
+import { createBankService } from './../services/question-bank';
 import { runLegacyMigration, describeMigration, LEGACY_STATE_KEY } from './../services/migrate';
 import { APP_VERSION } from './../config/app-version';
 
 const host = globalThis as unknown as {
   QingciServices?: typeof QingciServices;
   __QINGCI_MISTAKES__?: ReturnType<typeof createMistakeStore>;
+  __QINGCI_BANK__?: ReturnType<typeof createBankService>;
   __QINGCI_MIGRATION__?: unknown;
   __QINGCI_OFFLINE_BOOT__?: unknown;
 };
 
 host.QingciServices = QingciServices;
+
+// 固化题库服务：单例，供随机练习入口复用（含 IndexedDB 缓存与防重复窗口）
+host.__QINGCI_BANK__ = createBankService();
 
 // 主题要在首屏尽早应用，避免闪一下系统默认配色
 initTheme();

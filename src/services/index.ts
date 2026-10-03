@@ -24,6 +24,8 @@ import { bindMediaSession, setPlaybackState, supportsMediaSession } from './medi
 import { createMistakeStore } from './mistake-store';
 import { applyReview, dueQueue, forecast, mistakeTrend, describeInterval, QUALITY_BY_RATING, nextEase, nextIntervalDays } from './srs';
 import { runLegacyMigration, planLegacyMigration, describeMigration, LEGACY_STATE_KEY, MIGRATION_META_KEY } from './migrate';
+import { createBankService, BANK_URL, RECENT_IDS_KEY, RECENT_WINDOW } from './question-bank';
+import { normalizeBank, selectPracticeSet, questionType, questionPart, seededRng } from '../types/question-bank';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -104,6 +106,17 @@ const QingciServices = {
     describe: describeMigration,
     legacyStateKey: LEGACY_STATE_KEY,
     markKey: MIGRATION_META_KEY,
+  },
+  bank: {
+    createService: createBankService,
+    bankUrl: BANK_URL,
+    recentKey: RECENT_IDS_KEY,
+    recentWindow: RECENT_WINDOW,
+    normalize: normalizeBank,
+    select: selectPracticeSet,
+    typeOf: questionType,
+    partOf: questionPart,
+    rng: seededRng,
   },
 };
 

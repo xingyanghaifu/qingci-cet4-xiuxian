@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { build as esbuild } from 'esbuild';
 import { makeIcons } from './make-icons.mjs';
+import { buildQuestionBank, serializeBank, decideDelivery } from './build-question-bank.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -154,6 +155,22 @@ writeFileSync(join(OUT_DIR, 'sw.js'), swOut, 'utf8');
 
 const icons = makeIcons(OUT_DIR);
 
+// —— 7. 固化题库（P0.3）：模板未变时复用已有产物，避免每次构建都重算 1.8 万题 ——
+const bankPath = join(OUT_DIR, 'question-bank.json');
+let bankBytes = 0;
+let bankDecision = { mode: 'separate', reason: '' };
+const bankFresh = existsSync(bankPath) && statSync(bankPath).mtimeMs >= statSync(SRC).mtimeMs;
+if (bankFresh) {
+  bankBytes = statSync(bankPath).size;
+  bankDecision = decideDelivery(bankBytes);
+} else {
+  const bank = buildQuestionBank();
+  const text = serializeBank(bank);
+  writeFileSync(bankPath, text, 'utf8');
+  bankBytes = Buffer.byteLength(text, 'utf8');
+  bankDecision = decideDelivery(bankBytes);
+}
+
 console.log('');
 console.log('✅ 构建成功');
 console.log('   产物: dist/cet4-xiuxian.html + dist/index.html（同一份内容）');
@@ -161,4 +178,6 @@ console.log('   大小: ' + (size / 1024).toFixed(1) + ' KB（其中服务层 ' 
 console.log('   词库: ' + words.length + ' 条');
 console.log('   校验: sha256:' + sha);
 console.log('   PWA : manifest.webmanifest + sw.js（缓存版本 ' + cacheVersion + '）+ ' + icons.length + ' 个图标');
+console.log('   题库: ' + (bankBytes / 1024 / 1024).toFixed(2) + ' MB · ' + bankDecision.mode
+  + (bankFresh ? '（复用上次产物）' : '（本次重新生成）'));
 console.log('   说明: 单文件自包含，零运行时依赖，可直接双击打开');

@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-100%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-115%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 512.4 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 520.8 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 100 个自动化测试
+npm test                  # 运行 115 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：100 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：115 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -83,6 +83,8 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── services/index.ts      服务统一出口（构建时挂载全局 QingciServices）
 │   ├── types/grading.ts       批改数据契约：状态 / 四维评分 / 批注 / 版本号
 │   ├── types/mistakes.ts      错题模型：题型 / 熟练度 / 稳定 id / 汇总
+│   ├── types/question-bank.ts 题库类型与组卷算法（筛选 + 加权随机 + 防重复）
+│   ├── services/question-bank.ts  题库加载（IDB 缓存）/ 近期题目窗口 / 题目适配
 │   ├── services/mistake-store.ts  错题仓库（IndexedDB CRUD + 复习日志）
 │   ├── services/migrate.ts    旧存档（v3/v4 心魔本）到错题本的一次性迁移
 │   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
@@ -96,6 +98,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 ├── scripts/build.mjs          构建：校验 → esbuild 打包 → 内联 → 输出 dist + PWA 资源
 ├── scripts/make-icons.mjs     零依赖生成 PWA PNG 图标（自写 PNG 编码）
 ├── scripts/verify-pwa.mjs     PWA 产物一致性校验（图标尺寸 / sw 预缓存清单 / 页面引用）
+├── scripts/build-question-bank.mjs  固化题库生成（复用应用生成器，确定性输出）
 ├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
 ├── worker/index.mjs           Cloudflare Workers 入口（同构接口）
@@ -261,6 +264,24 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | 手动主题 | 「洞府 → 外观」可选 跟随系统 / 浅色 / 深色；首屏内联脚本先行应用，避免闪色 |
 | 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
 | 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
+
+## 随机练习与固化题库（P0.3）
+
+六套固定卷保留为**模考模式**，另有**随机练习**：从固化题库按约束抽题，避免背答案。
+
+| 能力 | 实现 |
+|---|---|
+| 题库生成 | `scripts/build-question-bank.mjs`：**直接抽取并运行应用自身的生成器**（`makeQuestion` / `makeMemoryQuestion` 等），内容不会与运行时漂移 |
+| 题目规模 | 18,502 题 = 词汇 18,160（en2zh / listen / similar / spell 各 4540）+ 六套卷快照 342（每套 57 题） |
+| 稳定 ID | `q_vocab_<词序>_<题型>`、`q_paper_<卷 id>_<门类>_<序号>`，与内容一一对应，错题本以它为主键 |
+| 标签与难度 | `difficulty` 0.2–0.8（词长 + 题型系数 / 门类基准）、`discrimination` 先验、`knowledgeTags`（cet4 / w: / len: / kind: / paper: / gate:）、听力题带 `audioMeta` |
+| 组卷算法 | `src/types/question-bank.ts`：先按题型分布 / 难度区间 / 部分 / 卷别筛候选集，再做**加权随机**（权重 = 区分度 × 难度贴合 × 标签命中），最后按难度升序排布成由易到难 |
+| 防重复 | `src/services/question-bank.ts`：近期做过的题记入 300 题窗口（`qingci.bank.recent`），组卷时自动排除 |
+| 交付方式 | 6.23 MB（gzip 761 KB / br 536 KB）超过 1.5 MB 阈值 ⇒ **独立 JSON**，SW 按需缓存 + IndexedDB 落盘；不拖慢首屏 520 KB 单文件 |
+| 入口 | 试炼殿「随机练习（20 题）」：载入题库 → 组卷 → 复用既有答题 / 判分 / 错题本链路 |
+
+> 首次使用随机练习需联网载入一次题库（之后由 Service Worker 与 IndexedDB 兜底，可离线组卷）；
+> 题库不可用时按钮会给出提示，其余功能不受影响。
 
 ## 错题本与间隔复习（SM-2）
 

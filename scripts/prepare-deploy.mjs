@@ -51,9 +51,10 @@ fs.writeFileSync(path.join(OUT, 'api-meta.json'), JSON.stringify({
   features: ['六种记忆题型', '试卷模拟', '斗法对战', '学情看板', '间隔重复', '离线可用'],
 }, null, 2) + '\n');
 
-// 3.5) PWA 资源：manifest、Service Worker、图标（构建产物 → 部署目录）
-//      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝。
-const pwaAssets = ['manifest.webmanifest', 'sw.js'];
+// 3.5) PWA 资源与固化题库：构建产物 → 部署目录
+//      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝；
+//      题库体积 >1.5MB，按独立 JSON 交付、由 SW 与页面按需缓存。
+const pwaAssets = ['manifest.webmanifest', 'sw.js', 'question-bank.json'];
 const pwaDirs = ['icons'];
 const pwaCopied = [];
 for (const file of pwaAssets) {
@@ -97,6 +98,11 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
   '',
   '/icons/*',
   '  Cache-Control: public, max-age=604800, immutable',
+  '',
+  // 固化题库：体积大、按版本更新，1 小时缓存 + SW 后台revalidate
+  '/question-bank.json',
+  '  Content-Type: application/json; charset=utf-8',
+  '  Cache-Control: public, max-age=3600',
   '',
   '/healthz.json',
   '  Content-Type: application/json; charset=utf-8',

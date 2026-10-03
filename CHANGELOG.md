@@ -83,10 +83,32 @@
   （SM-2 数学、队列/预测/趋势、模型与汇总、仓库 CRUD 与复习日志、迁移幂等与降级），
   并新增 `tests/helpers/fake-idb.mjs` 最小 IndexedDB 桩件。
 
+### 新增：随机练习与固化题库（P0.3）
+
+- **固化题库** `scripts/build-question-bank.mjs`：从模板中抽取并**运行应用自身的生成器**
+  （`rng / hash / pick / bankFor / makeQuestion / makeMemoryQuestion` 等，沙箱求值），
+  因此题库内容与运行时生成的内容不会漂移；输出 18,502 题 =
+  词汇 18,160（en2zh / listen / similar / spell 各 4540）+ 六套卷快照 342（每套 57 题）。
+- **稳定 ID**：`q_vocab_<词序>_<题型>` 与 `q_paper_<卷 id>_<门类>_<序号>`，
+  与内容一一对应；六套卷的题目 id 列表记录在 `papers` 字段中。
+- **标签与难度**：`difficulty` 0.2–0.8（词长 + 题型系数 / 门类基准 + 序号抖动）、
+  `discrimination` 启发式先验（模型版本记在 `discriminationModel`，待真实作答统计校准）、
+  `knowledgeTags`（cet4 / w: / len: / kind: / paper: / gate:）、听力题带 `audioMeta`。
+- **组卷算法** `src/types/question-bank.ts`：按题型分布、难度区间、部分、卷别筛候选集，
+  再在候选集内**加权随机**（权重 = 区分度 × 难度贴合 × 标签命中），最后按难度升序；
+  抽题用带种子的 mulberry32，同种子可复现。
+- **防重复** `src/services/question-bank.ts`：300 题近期窗口（`qingci.bank.recent`），
+  组卷时自动排除；题库加载走 内存 → IndexedDB → 网络，并回写缓存以支持离线组卷。
+- **交互**：试炼殿新增「随机练习（20 题）」，复用既有答题 / 判分 / 错题本链路
+  （`ask()` 优先向题库会话取题）；题库题目带 `questionId`，错题本以此为主键关联题库。
+- **交付**：题库 6.23 MB（gzip 761 KB / br 536 KB）超过 1.5 MB 阈值 ⇒ 独立 JSON 交付，
+  由 Service Worker 与 IndexedDB 按需缓存，不拖慢 520 KB 的单文件首屏。
+
 ### 校验（覆盖上面全部未发布改动）
 
-- `tsc --noEmit` 通过；自动化测试 **100/100** 通过
-  （新增 10 条批改用例、7 条离线/PWA 用例、7 条主题与快捷键用例、20 条 SM-2 与错题本用例）；
+- `tsc --noEmit` 通过；自动化测试 **115/115** 通过
+  （批改 10 条、离线/PWA 7 条、主题与快捷键 7 条、SM-2 与错题本 20 条、题库与组卷 15 条
+  等，另含既有的核心 / Worker / Functions 用例）；
   文档示例核验 26/26 通过；`verify:pwa` 通过；本地健康检查 4 端点 200。
 - 本地服务端到端：`/manifest.webmanifest` 200（application/manifest+json，no-cache）、
   `/sw.js` 200（application/javascript，no-cache）、`/icons/*.png` 200（immutable）。
@@ -95,6 +117,10 @@
 - 产物核验（P0.2，13 项）：错题本面板与筛选/卡片/统计容器、翻转卡样式、
   `settle()` 记录钩子与用户答案捕获、SM-2/错题模型/迁移服务内联、
   迁移完成事件、旧心魔本保留、四类题型标签齐全，全部通过。
+- 产物核验（P0.3，14 项）：题库结构合法、题数 18502、六套卷快照各 57 题、
+  词汇四题型各 4540、id 全局唯一、难度区间 0.2–0.8、区分度与标签齐全、
+  听力 audioMeta、题库服务内联、随机练习入口与会话钩子、`ask()` 接入、
+  错题本与题库 id 打通，全部通过。
 - 核心源码（`src/core`、`functions/`、`worker/`）行覆盖率 100%，
   统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%。
 
@@ -132,10 +158,13 @@
 
 ### 已知边界
 
-- 前端产物体积 469.4 KB → **512.4 KB**（TypeScript 服务层 20.2 KB + 批改 / PWA / 移动端 / 错题本集成脚本）。
+- 前端产物体积 469.4 KB → **520.8 KB**（TypeScript 服务层 25.7 KB）；另有 6.23 MB 固化题库按需加载。
 - `src/core/*.js` 与 `functions/*.js` 尚未迁移为 TypeScript，属后续增量迁移范围。
-- 错题本的知识点标签目前只有「题型 + 试卷门类」粒度，细粒度标签要等 P0.3 的固化题库
-  （`knowledgeTags` 由题库提供）；复习曲线也依赖后续 P0.2+ 的答题历史积累。
+- 错题本的知识点标签目前是「题型 + 门类 / 题库 kind」粒度；细粒度知识点标签需要
+  人工或模型标注，属 P1「内容质量」范围。
+- 题库的 `discrimination` 是启发式先验，尚未用真实作答数据校准；难度也来自公式而非
+  实测通过率，后续可依据作答统计回归校准。
+- 随机练习首次使用需联网载入一次题库（之后 SW + IndexedDB 可离线组卷）。
 - 真机验收（iOS Safari 添加到主屏、Android Chrome 安装、锁屏媒体控制）尚未执行。
 
 ---

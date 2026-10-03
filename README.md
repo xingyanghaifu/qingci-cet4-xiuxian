@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-159%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-168%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 638.7 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 649.2 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 159 个自动化测试
+npm test                  # 运行 168 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：159 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：168 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -98,6 +98,9 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── services/plan-settings.ts 学习计划设置（考试日期 / 每日时长）持久化
 │   ├── types/audio.ts            精听元数据：逐句时间戳 / 切句 / 听写比对
 │   ├── services/audio-provider.ts 音频提供方（TTS 占位 + 真实音频）与精听播放器
+│   ├── services/feedback.ts      反馈提交（校验 / 离线队列 / 自动重试）
+├── db/schema.sql                    反馈库 D1 建表脚本
+├── scripts/build-changelog.mjs      CHANGELOG.md → 静态更新日志页
 │   ├── services/mistake-store.ts  错题仓库（IndexedDB CRUD + 复习日志）
 │   ├── services/migrate.ts    旧存档（v3/v4 心魔本）到错题本的一次性迁移
 │   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
@@ -279,6 +282,33 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | 手动主题 | 「洞府 → 外观」可选 跟随系统 / 浅色 / 深色；首屏内联脚本先行应用，避免闪色 |
 | 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
 | 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
+
+## 反馈入口与更新日志（P1 任务 E）
+
+### 反馈（前端 + Cloudflare Pages Function + D1）
+
+| 环节 | 实现 |
+|---|---|
+| 入口 | 「洞府 → 反馈」按钮 → 覆盖层表单：类型（报错/建议/内容/其它）、描述（5–2000 字）、可选截图（≤512KB，PNG/JPEG/WebP）、可选联系方式 |
+| 反垃圾 | 表单内隐藏 honeypot 字段（填了返回 202 但**不入库**）；同 IP 哈希每小时最多 5 条（查 D1，不需要 KV） |
+| 隐私 | 只保存填写的文字、截图、页面位置、版本号与 UA；**IP 不落库**，只存加盐 SHA-256 前 16 位用于限流（盐来自 `FEEDBACK_SALT`，建议配置） |
+| 离线兜底 | 网络失败或服务未配置（503）时内容留在本机队列（最多 10 条），打开页面 / 恢复网络自动重试 |
+| 服务端 | `functions/api/feedback.ts`：POST 校验 → 限流 → 写 D1；GET 等其它方法 405，OPTIONS 204；未绑定 DB 时返回 503 与可读原因 |
+| 建库 | `db/schema.sql`（`feedback` 表 + 时间/类型/IP 索引） |
+
+```bash
+npx wrangler d1 create qingci-feedback
+npx wrangler d1 execute qingci-feedback --remote --file=db/schema.sql
+# Pages 项目绑定：DB → qingci-feedback；可选加密盐：
+npx wrangler pages secret put FEEDBACK_SALT
+```
+
+### 公开更新日志
+
+- `scripts/build-changelog.mjs` 在构建期把 `CHANGELOG.md` 渲染成静态页 `dist/changelog.html`
+  （17 个版本、51.8 KB、**无脚本、无外部资源**），随部署发布；
+- 应用内「更新日志」按钮在新窗口打开该页；`changelog.html` 已加入 Service Worker 预缓存，**离线也能看**；
+- 只实现 Markdown 的最小子集（标题/列表/粗体/行内代码/链接），链接协议白名单，其余一律转义。
 
 ## 听力精听（P1 任务 D）
 

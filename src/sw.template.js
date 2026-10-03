@@ -26,6 +26,7 @@ const KEEP = new Set([SHELL_CACHE, RUNTIME_CACHE, AUDIO_CACHE]);
 const SHELL_ASSETS = [
   './',
   './index.html',
+  './changelog.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

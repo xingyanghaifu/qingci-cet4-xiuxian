@@ -54,7 +54,7 @@ fs.writeFileSync(path.join(OUT, 'api-meta.json'), JSON.stringify({
 // 3.5) PWA 资源与固化题库：构建产物 → 部署目录
 //      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝；
 //      题库体积 >1.5MB，按独立 JSON 交付、由 SW 与页面按需缓存。
-const pwaAssets = ['manifest.webmanifest', 'sw.js', 'question-bank.json'];
+const pwaAssets = ['manifest.webmanifest', 'sw.js', 'question-bank.json', 'changelog.html'];
 const pwaDirs = ['icons'];
 const pwaCopied = [];
 for (const file of pwaAssets) {

@@ -49,6 +49,10 @@ import {
 import {
   createTtsProvider, createElementProvider, pickProvider, createIntensivePlayer,
 } from './audio-provider';
+import {
+  submitFeedback, validateFeedback, flushFeedbackQueue, loadQueue, saveQueue, readImageFile,
+  FEEDBACK_API_PATH, FEEDBACK_KINDS, FEEDBACK_LIMITS, FEEDBACK_QUEUE_KEY,
+} from './feedback';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -237,6 +241,18 @@ const QingciServices = {
     providerLabel(id: string): string {
       return id === 'element' ? '真实音频' : '语音合成（占位）';
     },
+  },
+  feedback: {
+    submit: submitFeedback,
+    validate: validateFeedback,
+    flush: flushFeedbackQueue,
+    loadQueue,
+    saveQueue,
+    readImageFile,
+    apiPath: FEEDBACK_API_PATH,
+    kinds: FEEDBACK_KINDS,
+    limits: FEEDBACK_LIMITS,
+    queueKey: FEEDBACK_QUEUE_KEY,
   },
 };
 

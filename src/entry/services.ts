@@ -16,6 +16,7 @@ import { initTheme } from './../services/theme';
 import { cacheInlineDatasets, createOfflineStore } from './../services/offline-store';
 import { createMistakeStore } from './../services/mistake-store';
 import { createBankService } from './../services/question-bank';
+import { createVocabSrsStore } from './../services/vocab-srs';
 import { runLegacyMigration, describeMigration, LEGACY_STATE_KEY } from './../services/migrate';
 import { APP_VERSION } from './../config/app-version';
 
@@ -23,6 +24,7 @@ const host = globalThis as unknown as {
   QingciServices?: typeof QingciServices;
   __QINGCI_MISTAKES__?: ReturnType<typeof createMistakeStore>;
   __QINGCI_BANK__?: ReturnType<typeof createBankService>;
+  __QINGCI_VOCAB__?: ReturnType<typeof createVocabSrsStore>;
   __QINGCI_MIGRATION__?: unknown;
   __QINGCI_OFFLINE_BOOT__?: unknown;
 };
@@ -31,6 +33,18 @@ host.QingciServices = QingciServices;
 
 // 固化题库服务：单例，供随机练习入口复用（含 IndexedDB 缓存与防重复窗口）
 host.__QINGCI_BANK__ = createBankService();
+
+// 词汇 SRS 仓库：与错题本共用 SM-2 引擎，但队列分开（vocab 仓库）
+host.__QINGCI_VOCAB__ = createVocabSrsStore();
+
+/** 读取旧存档（localStorage），兼容缺失与损坏 */
+function readLegacyState(): Record<string, unknown> | null {
+  try {
+    return JSON.parse(localStorage.getItem(LEGACY_STATE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
 
 // 主题要在首屏尽早应用，避免闪一下系统默认配色
 initTheme();
@@ -57,17 +71,26 @@ async function bootMistakes(): Promise<void> {
   const store = createMistakeStore();
   host.__QINGCI_MISTAKES__ = store;
   if (!store.available()) return;
-  let legacy: unknown = null;
-  try {
-    legacy = JSON.parse(localStorage.getItem(LEGACY_STATE_KEY) || 'null');
-  } catch {
-    legacy = null;
-  }
+  const legacy = readLegacyState();
   const result = await runLegacyMigration(store, legacy as never, { lookupWord: makeLexiconLookup() });
   host.__QINGCI_MIGRATION__ = { ...result, message: describeMigration(result) };
   // 迁移完成后通知界面刷新（界面监听该事件即可，无需轮询）
   try {
     window.dispatchEvent(new CustomEvent('qingci:mistakes-ready', { detail: host.__QINGCI_MIGRATION__ }));
+  } catch {
+    /* 忽略 */
+  }
+}
+
+/** 词汇 SRS：把旧存档的固定间隔进度（state.schedule）一次性迁移到 SM-2 队列 */
+async function bootVocabSrs(): Promise<void> {
+  const store = host.__QINGCI_VOCAB__;
+  if (!store || !store.available()) return;
+  const legacy = readLegacyState();
+  const schedule = (legacy && typeof legacy === 'object' ? (legacy as { schedule?: Record<string, { level?: string; next?: number; tries?: number }> }).schedule : null) || null;
+  const result = await store.migrateLegacy(schedule);
+  try {
+    window.dispatchEvent(new CustomEvent('qingci:vocab-ready', { detail: result }));
   } catch {
     /* 忽略 */
   }
@@ -85,6 +108,9 @@ function boot(): void {
 
   // 3) 错题本：建库 + 旧存档迁移
   void bootMistakes();
+
+  // 4) 词汇 SRS：建库 + 旧固定间隔进度迁移
+  void bootVocabSrs();
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {

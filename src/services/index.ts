@@ -26,6 +26,11 @@ import { applyReview, dueQueue, forecast, mistakeTrend, describeInterval, QUALIT
 import { runLegacyMigration, planLegacyMigration, describeMigration, LEGACY_STATE_KEY, MIGRATION_META_KEY } from './migrate';
 import { createBankService, BANK_URL, RECENT_IDS_KEY, RECENT_WINDOW } from './question-bank';
 import { normalizeBank, selectPracticeSet, questionType, questionPart, seededRng } from '../types/question-bank';
+import { createVocabSrsStore, planLegacyVocabMigration, rateVocabRecord, createVocabRecord } from './vocab-srs';
+import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, gradesSource } from './vocab-grades';
+import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
+import { buildVocabQuestion, buildReviewQuestions, bankIdFor } from './vocab-question';
+import { planStudyLoad, adjustPlan, heatmap, describePlan, daysUntil, intensityFor, DEFAULT_EXAM_DATE } from './study-plan';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -117,6 +122,37 @@ const QingciServices = {
     typeOf: questionType,
     partOf: questionPart,
     rng: seededRng,
+  },
+  vocab: {
+    createStore: createVocabSrsStore,
+    planLegacyMigration: planLegacyVocabMigration,
+    rateRecord: rateVocabRecord,
+    createRecord: createVocabRecord,
+    grades: VOCAB_GRADES,
+    tiers: VOCAB_TIERS,
+    tierOf,
+    tierLabel,
+    tierCounts,
+    wordsOfTier,
+    gradesSource,
+    enrich: enrichWord,
+    describeEnrichment,
+    splitAffixes,
+    confusables: findConfusables,
+    collocations: collocationsFor,
+    editDistance,
+    buildQuestion: buildVocabQuestion,
+    buildReviewQuestions,
+    bankIdFor,
+  },
+  plan: {
+    build: planStudyLoad,
+    adjust: adjustPlan,
+    heatmap,
+    describe: describePlan,
+    daysUntil,
+    intensityFor,
+    defaultExamDate: DEFAULT_EXAM_DATE,
   },
 };
 

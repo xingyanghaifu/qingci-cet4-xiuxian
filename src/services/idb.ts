@@ -6,18 +6,20 @@
  * 因此所有对象仓库都在这里声明，业务模块只通过 openAppDatabase() 拿连接。
  *
  * 版本历史：
- *   v1  datasets                     —— 内联词库 / 试卷缓存
+ *   v1  datasets                     —— 内联词库 / 试卷 / 题库缓存
  *   v2  + mistakes / reviews / meta  —— 错题本与复习记录（P0.2）
+ *   v3  + vocab                      —— 词汇 SRS 状态（P1 任务 A）
  */
 
 export const IDB_NAME = 'qingci-offline';
-export const IDB_VERSION = 2;
+export const IDB_VERSION = 3;
 
 export const IDB_STORES = {
   datasets: 'datasets',
   mistakes: 'mistakes',
   reviews: 'reviews',
   meta: 'meta',
+  vocab: 'vocab',
 } as const;
 
 export type IdbStoreName = (typeof IDB_STORES)[keyof typeof IDB_STORES];
@@ -95,6 +97,11 @@ export function upgradeSchema(db: MinimalDatabase): void {
   }
   if (!db.objectStoreNames.contains(IDB_STORES.meta)) {
     db.createObjectStore(IDB_STORES.meta);
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.vocab)) {
+    const store = db.createObjectStore(IDB_STORES.vocab, { keyPath: 'w' });
+    store.createIndex?.('nextReviewAt', 'nextReviewAt');
+    store.createIndex?.('tier', 'tier');
   }
 }
 

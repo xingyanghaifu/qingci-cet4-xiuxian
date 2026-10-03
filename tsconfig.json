@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
     "noEmit": true
   },
   "include": ["src/**/*.ts", "functions/**/*.ts"],

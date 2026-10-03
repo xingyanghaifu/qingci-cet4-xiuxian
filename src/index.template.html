@@ -177,7 +177,7 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
   <div class="road" id="road"></div>
   <nav class="tabs" role="tablist" aria-label="修炼模块"><button role="tab" aria-selected="true" aria-controls="panel-paper" class="on" data-tab="paper">试炼殿</button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial" data-mode="words">背单词</button><button role="tab" aria-selected="false" aria-controls="panel-trial" data-tab="trial">单题</button><button role="tab" aria-selected="false" aria-controls="panel-speak" data-tab="speak">口语</button><button role="tab" aria-selected="false" aria-controls="panel-book" data-tab="book">心魔</button><button role="tab" aria-selected="false" aria-controls="panel-codex" data-tab="codex">词谱</button><button role="tab" aria-selected="false" aria-controls="panel-map" data-tab="map">卷面</button><button role="tab" aria-selected="false" aria-controls="panel-duel" data-tab="duel">斗法场</button></nav>
   <div class="layout"><main id="main">
-    <section class="panel" id="panel-missions"><p class="section-label">今日功课 · DAILY QUESTS</p><div class="mission-list" id="missionList"></div><div class="study-summary" id="studySummary" aria-live="polite"></div><div class="assessment-card" id="assessmentCard"><b id="assessmentTitle">先做一次词汇摸底</b><p id="assessmentText">用 10 题估算当前词汇量，再自动生成每日背词目标。</p><div class="tools"><button class="btn solid" id="startAssessment">开始摸底</button><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn" id="saveDailyTarget">保存目标</button></div></div></section>
+    <section class="panel" id="panel-missions"><p class="section-label">今日功课 · DAILY QUESTS</p><div class="mission-list" id="missionList"></div><div class="study-summary" id="studySummary" aria-live="polite"></div><div class="assessment-card" id="assessmentCard"><b id="assessmentTitle">先做一次词汇摸底</b><p id="assessmentText">用 10 题估算当前词汇量，再自动生成每日背词目标。</p><div class="tools"><button class="btn solid" id="startAssessment">开始摸底</button><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn" id="saveDailyTarget">保存目标</button></div></div><div class="shop-card" id="vocabSrsCard"><div class="row" style="justify-content:space-between"><b>词汇间隔复习（SM-2）</b><span class="muted" id="vsrsSummary">加载中…</span></div><p class="muted" id="vsrsPlan">按考试日期与掌握度动态安排每日学习量。</p><div class="tools" id="vsrsTiers"></div><div class="tools"><button class="btn solid" id="vsrsStart">开始今日复习</button><button class="btn" id="vsrsNew">学新词（按分级）</button><span class="muted" id="vsrsHint"></span></div><div class="mk-bars" id="vsrsStats"></div></div></section>
     <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · DAILY TRIAL</p><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn solid" id="startPaper">开考这一卷</button><button class="btn" id="randomPractice">随机练习（20 题）</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
     <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="muted" id="poolLabel"></span></div><div class="prompt" id="prompt"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices"></div><div id="writeBox" class="hidden"><textarea id="essay"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。"></textarea></section>
@@ -307,7 +307,7 @@ function makeMemoryQuestion(kind, meta, index){
 }
 function memoryQuestion(kind){ const meta={id:'mem-'+dayKey(),name:'背词',scene:'campus',focus:'daily study',seeds:[]}; const k=kind||MEMORY_KINDS[(state.memKind||0)%MEMORY_KINDS.length]; return makeMemoryQuestion(k,meta,(state.seen||0)+1); }function looseQuestion(){ const wrongList=Object.keys(state.wrong); if(state.pool==='wrong'&&!wrongList.length){ return {kind:'empty',title:'心魔本 · 已清空',prompt:'暂时没有需要重修的词',sub:'答错的词会自动来到这里',choices:[],answer:'',explain:'',write:false}; } const meta={id:"loose-"+dayKey(),name:"单题",scene:"campus",focus:"daily study",seeds:WORDS.map(w=>w.w)}; if(state.pool==='words') return memoryQuestion(); const map={wrong:"words",listen:["news","talk","passage"][state.seen%3],read:["bank","match","detail"][state.seen%3],write:"write",trans:"trans",mix:["words","news","talk","bank","match","detail","write","trans"][state.seen%8]}; return makeQuestion(map[state.pool]||"words", meta, state.seen+1); }
 function show(q){ current=q; locked=false; if(paper&&q.examKind){ q.source=q.source||paper.source; q.sub=(q.sub||'')+' · '+(q.source||'原创练习'); } const assessmentMode=q.kind==='assessment'; $("studyModeBadge").textContent=assessmentMode?'词汇摸底':q.memKind?({zh2en:'中译英',en2zh:'英译中',similar:'形近辨析',listen:'听音辨词',spell:'拼写默写',pos:'词性判断'}[q.memKind]||'记忆模式'):state.pool==='words'?'背词模式':state.pool==='wrong'?'心魔复习':'试炼模式'; $("ratingLabel").classList.toggle('hidden',assessmentMode||!q.word); document.querySelectorAll('.rating-btn').forEach(b=>b.classList.toggle('hidden',assessmentMode||!q.word)); $("trialTitle").setAttribute('tabindex','-1'); $("trialTitle").focus({preventScroll:true}); if(q.kind==='empty'){ $("trialTitle").textContent=q.title; $("prompt").textContent=q.prompt; $("subline").textContent=q.sub; $("choices").innerHTML=""; $("feedback").innerHTML=""; $("writeBox").classList.add('hidden'); $("submitWrite").classList.add('hidden'); $("next").classList.add('hidden'); return; } $("trialTitle").textContent=q.title; $("prompt").textContent=q.prompt; $("subline").textContent=q.sub||""; $("passage").textContent=q.passage||""; $("passage").classList.toggle("hidden",!q.passage); const audioText=q.speak||((q.kind==="words"&&q.word)?q.word:""); $("audioDock").classList.toggle("hidden",!audioText); $("audioProgress").value=0; $("audioStatus").textContent=audioText?"待播放":"无音频"; $("audioPlay").textContent="▶ 播放听力"; if(window.speechSynthesis) speechSynthesis.cancel(); $("feedback").innerHTML=""; const isSpell=q.kind==='spell'; $("writeBox").classList.toggle("hidden",!q.write&&!isSpell); $("choices").classList.toggle("hidden",!!q.write||isSpell); $("essay").classList.toggle("hidden",isSpell); $("writeCount").classList.toggle("hidden",isSpell); $("spellBox").classList.toggle("hidden",!isSpell); $("submitSpell").classList.toggle("hidden",!isSpell); $("submitWrite").classList.toggle("hidden",!q.write); $("submitWrite").textContent='核对'; $("next").classList.add("hidden"); if(q.write) $("essay").value=""; if(isSpell){ $("spellHint").textContent=q.tpl||''; $("spellInput").value=""; $("spellInput").maxLength=q.answer.length+3; setTimeout(()=>$("spellInput").focus(),60); } else if(!q.write){ $("choices").innerHTML=q.choices.map((c,i)=>"<button class='choice' data-i='"+i+"'>"+esc(c)+"</button>").join(""); } countEssay(); }
-function ask(){ if(window.QingciNextBankQuestion){ const bankQ=window.QingciNextBankQuestion(); if(bankQ) return show(bankQ); } show(paper?(paper.queue[paper.cursor].kind.startsWith('exam-')?nextExamQuestion():makeQuestion(paper.queue[paper.cursor].kind,paper.meta,paper.cursor)):looseQuestion()); }
+function ask(){ if(window.QingciNextVocabQuestion){ const vq=window.QingciNextVocabQuestion(); if(vq) return show(vq); } if(window.QingciNextBankQuestion){ const bankQ=window.QingciNextBankQuestion(); if(bankQ) return show(bankQ); } show(paper?(paper.queue[paper.cursor].kind.startsWith('exam-')?nextExamQuestion():makeQuestion(paper.queue[paper.cursor].kind,paper.meta,paper.cursor)):looseQuestion()); }
 function scheduleWord(word,quality){ state.schedule=state.schedule||{}; const gaps={again:0.25,hard:1,good:3,easy:7}; const next=Date.now()+gaps[quality]*86400000; const prev=state.schedule[word]||{}; state.schedule[word]={level:quality,next,tries:(prev.tries||0)+1}; }
 function settle(ok,explain){ const d=day(); state.seen++; if(current&&current.memKind){ const ms=memStats(); const rec=ms[current.memKind]||(ms[current.memKind]={r:0,n:0}); rec.n++; if(ok) rec.r++; } if(state.pool==='words'&&ok){ resetDaily(); if(current.word&&!state.dailySeen[current.word]){ state.dailySeen[current.word]=1; state.dailyWords++; } scheduleWord(current.word,'good'); } if(ok){ d.right++; state.right++; state.streak++; state.best=Math.max(state.best,state.streak); const gain=6+Math.min(10,state.streak); state.qi+=gain; if(current.word){ delete state.wrong[current.word]; state.known[current.word]=(state.known[current.word]||0)+1; state.recent=[current.word,...state.recent.filter(w=>w!==current.word)].slice(0,12);} $("feedback").innerHTML="<b>灵气 +"+gain+"</b><div>"+esc(explain||"")+"</div>"; } else { d.wrong++; state.streak=0; if(current.word) state.wrong[current.word]=(state.wrong[current.word]||0)+1; if(window.QingciRecordMistake) window.QingciRecordMistake(current, explain||'', window.__QINGCI_LAST_ANSWER__||'', paper?{paperId:(paper.meta&&paper.meta.id)||'',gate:paper.queue[paper.cursor].kind,index:paper.cursor}:null); $("feedback").innerHTML="<b>记入心魔</b><div>"+esc(explain||"")+"</div>"; } if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+(ok?1:0); if(ok)paper.right=(paper.right||0)+1; paper.cursor++; $("paperProgress").textContent=(paper.exam?paper.exam.name:paper.meta.name)+' · '+paper.cursor+' / '+paper.queue.length+' · '+paper.source; if(paper.cursor>=paper.queue.length) return finishPaper(); saveActivePaper(); } $("next").classList.remove("hidden"); save(); renderTop(); }
 function choose(i){ if(!current||current.write||locked) return; locked=true; window.__QINGCI_LAST_ANSWER__=current.choices[i]; const ok=current.choices[i]===current.answer; if(current.kind==='assessment'){ if(ok)state.assessmentCorrect++; [...$("choices").children].forEach((b,idx)=>{b.disabled=true;if(current.choices[idx]===current.answer)b.classList.add('good');else if(idx===i)b.classList.add('bad');}); if(state.assessmentIndex<10){ state.assessmentIndex++; save(); setTimeout(()=>{const q=assessmentQuestion();show({kind:'assessment',title:'词汇摸底 · 第 '+state.assessmentIndex+' / 10 题',prompt:q.item.w,sub:q.item.ipa,choices:q.opts.map(x=>x.short),answer:q.item.short,explain:q.item.w+' '+q.item.zh,word:q.item.w});},250); } else { const estimate=Math.round((state.assessmentCorrect/10)*WORDS.length); state.assessment=estimate; state.assessmentIndex=0; state.dailyTarget=Math.min(100,Math.max(10,Math.ceil(Math.max(0,WORDS.length-estimate)/examDays()))); save(); renderTop(); $("feedback").innerHTML='<b>摸底完成 · 约 '+estimate+' 词</b><div>距离 2026-12-12 四级笔试还有 '+examDays()+' 天，建议每日背 '+state.dailyTarget+' 词。</div>'; $("next").classList.remove('hidden'); } return; } const ok2=current.choices[i]===current.answer; [...$("choices").children].forEach((b,idx)=>{ b.disabled=true; if(current.choices[idx]===current.answer) b.classList.add("good"); else if(idx===i) b.classList.add("bad"); }); settle(ok,current.explain); }
@@ -377,7 +377,7 @@ $("choices").addEventListener("click",(e)=>{ const b=e.target.closest("button");
 $("startDuel").onclick=startDuel; $("duelNext").onclick=showDuelQuestion; $("duelReset").onclick=()=>{ clearInterval(duelTick); duel=null; locked=false; $("duelTimer").classList.remove('warn'); $("duelTimer").textContent='—'; $("duelLog").textContent='每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。'; $("duelPrompt").textContent='准备好后开始斗法'; $("duelSubline").textContent=''; $("duelChoices").innerHTML=''; $("duelKind").textContent='识词 · 中译英'; renderDuel(); };
 async function startRecording(){ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ $("speakStatus").textContent='当前浏览器不支持录音，请使用朗读练习。'; return; } try{ const stream=await navigator.mediaDevices.getUserMedia({audio:true}); recordChunks=[]; recorder=new MediaRecorder(stream); recorder.ondataavailable=e=>{if(e.data.size)recordChunks.push(e.data);}; recorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop()); const blob=new Blob(recordChunks,{type:'audio/webm'}); if(recordUrl)URL.revokeObjectURL(recordUrl); recordUrl=URL.createObjectURL(blob); $("speakAudio").src=recordUrl; $("speakAudio").classList.remove('hidden'); $("speakPlay").disabled=false; $("speakStatus").textContent='录音完成，可以回放或重录。';}; recorder.start(); $("speakRecord").disabled=true; $("speakStop").disabled=false; $("speakStatus").textContent='录音中…'; }catch(e){ $("speakStatus").textContent='麦克风权限未开启，仍可使用朗读练习。'; } }
 function stopRecording(){ if(recorder&&recorder.state!=='inactive'){recorder.stop(); $("speakRecord").disabled=false; $("speakStop").disabled=true;} }
-function rateWord(level){ if(!current||!current.word||locked) return; locked=true; scheduleWord(current.word,level); if(level==='again') state.wrong[current.word]=(state.wrong[current.word]||0)+1; else if(level==='easy'||level==='good') delete state.wrong[current.word]; $("feedback").innerHTML='<b>'+({again:'记入心魔',hard:'安排明日复习',good:'三日后复习',easy:'七日后复习'}[level])+'</b><div>'+esc(current.explain||'')+'</div>'; save(); renderTop(); $("next").classList.remove('hidden'); }
+function rateWord(level){ if(!current||!current.word||locked) return; locked=true; scheduleWord(current.word,level); if(window.QingciRateVocab) window.QingciRateVocab(current.word,level,current.questionId||''); if(level==='again') state.wrong[current.word]=(state.wrong[current.word]||0)+1; else if(level==='easy'||level==='good') delete state.wrong[current.word]; $("feedback").innerHTML='<b>'+({again:'记入心魔',hard:'安排明日复习',good:'三日后复习',easy:'七日后复习'}[level])+'</b><div>'+esc(current.explain||'')+'</div>'; save(); renderTop(); $("next").classList.remove('hidden'); }
 $("againWord").onclick=()=>rateWord('again'); $("hardWord").onclick=()=>rateWord('hard'); $("goodWord").onclick=()=>rateWord('good'); $("easyWord").onclick=()=>rateWord('easy'); $("next").onclick=()=>duel&&duel.active?showDuelQuestion():(state.pool==='words'?nextMemory():ask); $("skip").onclick=()=>{ if(!locked&&!paper) ask(); else if(paper) toast('模拟卷不可跳题，请完成当前题'); }; document.addEventListener('visibilitychange',()=>{ if(document.hidden){ saveActivePaper(); savePreferences(); } }); window.addEventListener('beforeunload',()=>{ saveActivePaper(); savePreferences(); }); $("hear").onclick=()=>current&&speak(current.speak||current.word||"",$("audioRate").value); $("audioPlay").onclick=playAudio; $("audioReplay").onclick=replayAudio; $("audioRate").onchange=()=>{ audioState.rate=$("audioRate").value; if(speechSynthesis&&speechSynthesis.speaking) replayAudio(); }; $("audioProgress").oninput=()=>{ if(audioText()) replayAudio(); }; $("submitSpell").onclick=submitSpell; $("submitWrite").onclick=submitWrite; $("essay").oninput=countEssay; $("spellInput").addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); submitSpell(); } }); $("examSelect").onchange=()=>{ state.examId=$("examSelect").value; save(); renderExamMeta(); renderShelf(); $("paperProgress").textContent=selectedExam().description+' · 及格线 '+selectedExam().pass+'/'+selectedExam().total+' · '+selectedExam().source; }; $("startPaper").onclick=()=>{ if(paper){toast('当前已有进行中的试卷'); return;} startPaper(); }; $("handPaper").onclick=()=>paper?finishPaper():toast('请先开考一卷'); $("speakNext").onclick=()=>{ speakStep++; savePreferences(); renderSpeak(); }; $("speakHear").onclick=()=>speak($("speakBody").textContent); $("speakRecord").onclick=startRecording; $("speakStop").onclick=stopRecording; $("speakPlay").onclick=()=>$("speakAudio").play(); $("drillWrong").onclick=()=>{ state.pool="wrong"; save(); switchTab("trial"); ask(); }; $("q").oninput=renderCodex; $("letter").onchange=renderCodex; $("mastery")&&($("mastery").onchange=renderCodex); $("pool").onchange=()=>{ state.pool=$("pool").value; save(); renderTop(); }; $("saveDao").onclick=()=>{ state.name=$("dao").value.trim().slice(0,12); save(); renderTop(); }; $("exportBtn").onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(state)],{type:"application/json"})); a.download="青词天路-修行录.json"; a.click(); }; $("importBtn").onclick=()=>$("file").click(); $("file").onchange=async()=>{ const f=$("file").files[0]; if(!f) return; try{ const imported=validateImported(JSON.parse(await f.text())); if(!imported) throw new Error('invalid'); Object.assign(state,migrateState(imported)); save(); renderTop(); renderShelf(); toast('修行录已安全导入'); }catch(e){toast('导入失败：文件格式不正确');} }; $("resetBtn").onclick=()=>{ if(confirm("清空本机修行录？")){localStorage.removeItem(KEY); location.reload();} }; document.addEventListener("keydown",(e)=>{ if(e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!e.target.matches('button')){e.preventDefault(); playAudio();} });
 $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrstuvwxyz".split("").map(c=>"<option>"+c+"</option>").join("");renderRoad(); renderTop(); renderShelf(); renderMap(); if(state.activePaper&&restorePaper()){ if(confirm('发现未完成的 '+paper.meta.name+'，是否继续？')){ switchTab('trial'); $("paperProgress").textContent=paper.meta.name+' · '+paper.cursor+' / '+paper.queue.length; ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); } else { paper=null; delete state.activePaper; save(); } }
 
@@ -803,6 +803,174 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       });
     });
   }
+})();
+</script>
+<script>
+/* 词汇间隔复习（P1 任务 A）：分级选词 → SM-2 排程 → 复用既有答题与评分链路
+   · 到期词走「今日复习」，未学词按高频→核心→低频→认知词顺序取
+   · 评分按钮仍走应用的 rateWord()，这里通过 QingciRateVocab 回写 SRS
+   · 评分「忘记」时联动心魔 + 错题本 */
+(function () {
+  var S = window.QingciServices;
+  var lexiconEl = document.getElementById('lexicon');
+  if (!S || !lexiconEl) return;
+  var WORDS = [];
+  try { WORDS = JSON.parse(lexiconEl.textContent); } catch (e) { return; }
+  var indexOf = {};
+  WORDS.forEach(function (w, i) { indexOf[w.w] = i; });
+
+  var byId = function (id) { return document.getElementById(id); };
+  var session = null; // { questions, cursor, mode }
+  var tierFilter = 'all';
+
+  function store() {
+    return window.__QINGCI_VOCAB__ || S.vocab.createStore();
+  }
+
+  /* —— 供 ask() 取题 —— */
+  window.QingciNextVocabQuestion = function () {
+    if (!session) return null;
+    var hint = byId('vsrsHint');
+    if (session.cursor >= session.questions.length) {
+      var done = session;
+      session = null;
+      if (hint) hint.textContent = '本轮完成 · ' + done.questions.length + ' 题';
+      if (window.toast) toast('间隔复习完成 · 共 ' + done.questions.length + ' 个词');
+      render();
+      return null;
+    }
+    var q = session.questions[session.cursor++];
+    if (hint) hint.textContent = (session.mode === 'new' ? '学新词' : '今日复习') + ' · ' + session.cursor + ' / ' + session.questions.length;
+    return q;
+  };
+
+  /* —— 评分回写：与错题本共用 SM-2，但写进 vocab 队列 —— */
+  window.QingciRateVocab = function (word, rating, questionId) {
+    try {
+      store().rate(word, rating).then(function () {
+        if (rating === 'again' && window.QingciRecordMistake) {
+          // 联动心魔：SRS 复习中出错 → 错题本 + 心魔（心魔由 rateWord 内部维护）
+          window.QingciRecordMistake({
+            word: word, prompt: word, answer: '', explain: '词汇间隔复习中标记为「忘记」',
+            questionId: questionId || '', bankKind: 'spell',
+          }, '词汇间隔复习 · 忘记', '', null);
+        }
+        render();
+      });
+    } catch (e) { /* 不影响做题 */ }
+  };
+
+  /* —— 选中队列：到期优先，其次按分级取新词 —— */
+  function collectQueue(mode, plan) {
+    var s = store();
+    var want = mode === 'new' ? Math.max(5, plan.newPerDay) : Math.max(5, Math.min(60, plan.reviewTarget));
+    return s.all().then(function (rows) {
+      var seen = {};
+      rows.forEach(function (r) { seen[r.w] = r; });
+      var tierOrder = ['high', 'core', 'low', 'recognition'];
+      var candidates = [];
+      if (mode === 'review') {
+        var now = Date.now();
+        rows
+          .filter(function (r) { return new Date(r.nextReviewAt).getTime() <= now; })
+          .sort(function (a, b) { return new Date(a.nextReviewAt) - new Date(b.nextReviewAt); })
+          .forEach(function (r) {
+            if (tierFilter !== 'all' && r.tier !== tierFilter) return;
+            if (indexOf[r.w] === undefined) return;
+            candidates.push({ entry: WORDS[indexOf[r.w]], index: indexOf[r.w] });
+          });
+      } else {
+        var pool = [];
+        tierOrder.forEach(function (tier) {
+          if (tierFilter !== 'all' && tier !== tierFilter) return;
+          S.vocab.wordsOfTier(tier).forEach(function (w) {
+            if (seen[w] || indexOf[w] === undefined) return;
+            pool.push({ entry: WORDS[indexOf[w]], index: indexOf[w] });
+          });
+        });
+        candidates = pool;
+      }
+      return candidates.slice(0, want);
+    });
+  }
+
+  function startSession(mode) {
+    var s = store();
+    if (!s.available()) { if (window.toast) toast('当前浏览器不可用离线数据库，复习队列不可用'); return; }
+    var summary = window.__QINGCI_LAST_VSRS__ || { due: 0, newPerDay: 20, reviewTarget: 40 };
+    var plan = window.__QINGCI_LAST_PLAN__ || { newPerDay: 20, reviewTarget: 40 };
+    collectQueue(mode, plan).then(function (queue) {
+      if (!queue.length) {
+        if (window.toast) toast(mode === 'new' ? '该分级下暂时没有新词' : '今天没有到期复习，休息一下');
+        return;
+      }
+      var questions = S.vocab.buildReviewQuestions(queue, WORDS, { saltStart: Date.now() % 1000 });
+      session = { questions: questions, cursor: 0, mode: mode };
+      if (window.switchTab) switchTab('trial');
+      if (window.toast) toast((mode === 'new' ? '学新词' : '今日复习') + ' · ' + questions.length + ' 个词 · 题目来自词汇分级与 SM-2 队列');
+      ask();
+    });
+  }
+
+  /* —— 面板渲染 —— */
+  function render() {
+    var card = byId('vocabSrsCard');
+    if (!card) return;
+    var s = store();
+    if (!s.available()) {
+      byId('vsrsSummary').textContent = '离线数据库不可用';
+      return;
+    }
+    Promise.all([s.all(), s.stats()]).then(function (res) {
+      var rows = res[0];
+      var stats = res[1];
+      var known = Object.keys(window.state && window.state.known ? window.state.known : {}).length;
+      var plan = S.plan.build({
+        knownWords: Math.max(known, (window.state && window.state.assessment) || 0),
+        dueBacklog: stats.due,
+      });
+      window.__QINGCI_LAST_PLAN__ = plan;
+      window.__QINGCI_LAST_VSRS__ = stats;
+
+      byId('vsrsSummary').textContent = rows.length
+        ? (rows.length + ' 词入列 · 今日到期 ' + stats.due)
+        : '还没有进入复习队列的词';
+      byId('vsrsPlan').textContent = S.plan.describe(plan)
+        + (plan.notes.length ? '（' + plan.notes[0] + '）' : '');
+
+      var chips = [{ value: 'all', label: '全部 ' + rows.length }].concat(
+        S.vocab.tiers.map(function (t) {
+          var row = stats.byTier.filter(function (x) { return x.tier === t.value; })[0];
+          var total = S.vocab.tierCounts()[t.value];
+          return { value: t.value, label: t.label + ' ' + (row ? row.total : 0) + '/' + total };
+        })
+      );
+      byId('vsrsTiers').innerHTML = chips.map(function (c) {
+        return '<button class="btn' + (tierFilter === c.value ? ' solid' : '') + '" data-tier="' + c.value + '">' + c.label + '</button>';
+      }).join('');
+
+      var src = S.vocab.gradesSource();
+      byId('vsrsStats').innerHTML =
+        '<div class="mk-bar"><span>已入列</span><i style="width:' + Math.min(100, Math.round(rows.length / 45)) + '%"></i><span>' + rows.length + '</span></div>'
+        + '<div class="mk-bar"><span>今日到期</span><i style="width:' + Math.min(100, stats.due) + '%"></i><span>' + stats.due + '</span></div>'
+        + '<div class="muted" style="font-size:12px">分级来源：' + (src.isRealFrequency ? '真实词频表' : '启发式分级（可用 --frequency 替换为真实词频表）') + '</div>';
+    });
+  }
+
+  var card = byId('vocabSrsCard');
+  if (card) {
+    card.addEventListener('click', function (e) {
+      var chip = e.target.closest && e.target.closest('[data-tier]');
+      if (chip) { tierFilter = chip.getAttribute('data-tier'); render(); }
+    });
+  }
+  var startBtn = byId('vsrsStart');
+  if (startBtn) startBtn.addEventListener('click', function () { startSession('review'); });
+  var newBtn = byId('vsrsNew');
+  if (newBtn) newBtn.addEventListener('click', function () { startSession('new'); });
+
+  window.addEventListener('qingci:vocab-ready', function () { render(); });
+  render();
 })();
 </script>
 </body></html>

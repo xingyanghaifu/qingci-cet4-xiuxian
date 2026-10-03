@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-115%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-132%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 520.8 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 585.2 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 115 个自动化测试
+npm test                  # 运行 132 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：115 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：132 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -85,6 +85,11 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── types/mistakes.ts      错题模型：题型 / 熟练度 / 稳定 id / 汇总
 │   ├── types/question-bank.ts 题库类型与组卷算法（筛选 + 加权随机 + 防重复）
 │   ├── services/question-bank.ts  题库加载（IDB 缓存）/ 近期题目窗口 / 题目适配
+│   ├── services/vocab-grades.ts   分级读取与查询（档位 / 优先级 / 来源标注）
+│   ├── services/vocab-srs.ts      词汇 SM-2 队列（IDB vocab 仓库 + 旧档迁移）
+│   ├── services/vocab-enrich.ts   单词增强：词缀 / 易混词 / 搭配框架
+│   ├── services/vocab-question.ts 由单词生成复习题（id 与题库一致）
+│   ├── services/study-plan.ts     动态学习计划（每日量 / 题型配比 / 热力图）
 │   ├── services/mistake-store.ts  错题仓库（IndexedDB CRUD + 复习日志）
 │   ├── services/migrate.ts    旧存档（v3/v4 心魔本）到错题本的一次性迁移
 │   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
@@ -99,6 +104,8 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 ├── scripts/make-icons.mjs     零依赖生成 PWA PNG 图标（自写 PNG 编码）
 ├── scripts/verify-pwa.mjs     PWA 产物一致性校验（图标尺寸 / sw 预缓存清单 / 页面引用）
 ├── scripts/build-question-bank.mjs  固化题库生成（复用应用生成器，确定性输出）
+├── scripts/build-vocab-grades.mjs   词汇分级生成（启发式 / 可换真实词频表）
+├── src/data/vocab-grades.json       四档分级数据（构建时内联）
 ├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
 ├── worker/index.mjs           Cloudflare Workers 入口（同构接口）
@@ -264,6 +271,26 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | 手动主题 | 「洞府 → 外观」可选 跟随系统 / 浅色 / 深色；首屏内联脚本先行应用，避免闪色 |
 | 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
 | 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
+
+## 词汇分级与间隔复习（P1 任务 A）
+
+4540 个词按基础度分四档，并接入与错题本**同引擎、不同队列**的 SM-2 调度。
+
+| 能力 | 实现 |
+|---|---|
+| 分级数据 | `scripts/build-vocab-grades.mjs` → `src/data/vocab-grades.json`（42.5 KB，构建时内联）：高频 681 · 核心 1589 · 低频 1452 · 认知词 818 |
+| 分级依据 | 默认启发式（词长 / 词缀复杂度 / 是否出现在六套卷命题材料 / 释义长度）并按百分位分档；**可插拔**：`--frequency freq.txt` 直接按真实词频表分档 |
+| 调度引擎 | 复用 `src/services/srs.ts` 的 SM-2（`scheduleNext`）：忘记 → 0.25 天，记得 → 1 → 6 → 上次 × EF |
+| 队列隔离 | 词汇存 IndexedDB `vocab` 仓库（按单词），错题存 `mistakes`（按题目 id），互不污染 |
+| 旧档迁移 | localStorage 的 `state.schedule`（0.25/1/3/7 天）一次性换算为 SM-2 初值，幂等且只读旧数据 |
+| 单词增强 | `src/services/vocab-enrich.ts`：词缀拆分、易混词（编辑距离 + 前缀相似）、搭配框架、发音（SpeechSynthesis） |
+| 心魔联动 | 复习中评「忘记」→ 自动进入错题本与心魔；评「认识/熟练」→ 移出心魔 |
+| 每日学习量 | `src/services/study-plan.ts`：按考试日期、已掌握量、每日时长与到期量算出新词量/复习量/题型配比，并按完成率与正确率动态调整 |
+| 界面 | 「今日功课 → 词汇间隔复习」：计划摘要、分级筛选（各档已入列/总量）、今日复习与学新词两个入口、统计条 |
+
+> ⚠️ **诚实标注**：当前分级是**启发式**而非真实语料词频，产物的 `source` 字段与界面都会显示这一点；
+> 换成真实词频表只需 `node scripts/build-vocab-grades.mjs --frequency freq.txt`。
+> 例句只提供「搭配框架」；真例句需授权材料，本应用不伪造真题例句（六套卷原创材料命中时才会展示）。
 
 ## 随机练习与固化题库（P0.3）
 

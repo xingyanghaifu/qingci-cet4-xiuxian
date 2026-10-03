@@ -27,6 +27,18 @@ export const SECOND_INTERVAL_DAYS = 6;
 export const MAX_INTERVAL_DAYS = 365;
 export const DAY_MS = 86_400_000;
 
+/**
+ * 本地日期键（YYYY-MM-DD）
+ * 必须按**本地时区**取年月日：直接 `toISOString()` 会在 UTC+8 等时区把「今天」算成昨天，
+ * 导致热力图/预测的日期标签整体错位一天。
+ */
+export function localDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 /** 反馈 → SM-2 quality（0–5） */
 export const QUALITY_BY_RATING: Record<ReviewRating, number> = {
   again: 2,
@@ -64,31 +76,63 @@ export interface ReviewOutcome {
   nextReviewAt: string;
 }
 
-/** 对一条错题应用一次复习反馈（纯函数） */
-export function applyReview(record: MistakeRecord, rating: ReviewRating, now: Date = new Date()): ReviewOutcome {
+export interface ScheduleState {
+  /** SM-2 难度因子 */
+  ease: number;
+  /** 当前间隔（天，可为小数） */
+  intervalDays: number;
+  /** 连续答对次数 */
+  repetitions: number;
+}
+
+export interface ScheduleOutcome extends ScheduleState {
+  quality: number;
+  /** 下次复习时间（ISO） */
+  nextReviewAt: string;
+}
+
+/**
+ * 纯调度：给定 SM-2 状态与本次反馈，算出下一次状态
+ * （错题本与词汇复习共用一个调度引擎，只是队列与存储分开）
+ */
+export function scheduleNext(state: ScheduleState, rating: ReviewRating, now: Date = new Date()): ScheduleOutcome {
   const quality = QUALITY_BY_RATING[rating] ?? 4;
-  const ease = nextEase(record.ease || DEFAULT_EASE, quality);
+  const ease = nextEase(state.ease || DEFAULT_EASE, quality);
   const intervalDays = nextIntervalDays({
-    repetitions: record.repetitions || 0,
-    intervalDays: record.intervalDays || 0,
+    repetitions: state.repetitions || 0,
+    intervalDays: state.intervalDays || 0,
     ease,
     quality,
   });
-  const repetitions = quality < 3 ? 0 : (record.repetitions || 0) + 1;
-  const nextReviewAt = new Date(now.getTime() + intervalDays * DAY_MS).toISOString();
-
-  const updated: MistakeRecord = {
-    ...record,
+  const repetitions = quality < 3 ? 0 : (state.repetitions || 0) + 1;
+  return {
     ease,
     intervalDays,
     repetitions,
+    quality,
+    nextReviewAt: new Date(now.getTime() + intervalDays * DAY_MS).toISOString(),
+  };
+}
+
+/** 对一条错题应用一次复习反馈（纯函数） */
+export function applyReview(record: MistakeRecord, rating: ReviewRating, now: Date = new Date()): ReviewOutcome {
+  const schedule = scheduleNext(
+    { ease: record.ease || DEFAULT_EASE, intervalDays: record.intervalDays || 0, repetitions: record.repetitions || 0 },
+    rating,
+    now,
+  );
+  const updated: MistakeRecord = {
+    ...record,
+    ease: schedule.ease,
+    intervalDays: schedule.intervalDays,
+    repetitions: schedule.repetitions,
     reviewCount: (record.reviewCount || 0) + 1,
     lastReviewedAt: now.toISOString(),
-    nextReviewAt,
+    nextReviewAt: schedule.nextReviewAt,
     updatedAt: now.toISOString(),
   };
   updated.proficiency = proficiencyOf(updated);
-  return { record: updated, quality, intervalDays, nextReviewAt };
+  return { record: updated, quality: schedule.quality, intervalDays: schedule.intervalDays, nextReviewAt: schedule.nextReviewAt };
 }
 
 /** 今日到期队列：按到期时间升序（越早到期越先复习），可限制条数 */
@@ -115,7 +159,7 @@ export function forecast(records: MistakeRecord[], days = 7, now: Date = new Dat
       const ts = new Date(r.nextReviewAt).getTime();
       return ts >= day.getTime() && ts < next.getTime();
     }).length;
-    out.push({ date: day.toISOString().slice(0, 10), count });
+    out.push({ date: localDateKey(day), count });
   }
   return out;
 }
@@ -137,7 +181,7 @@ export function mistakeTrend(records: MistakeRecord[], days = 7, now: Date = new
   for (let i = days - 1; i >= 0; i--) {
     const day = new Date(start.getTime() - i * DAY_MS);
     const next = new Date(day.getTime() + DAY_MS);
-    const key = day.toISOString().slice(0, 10);
+    const key = localDateKey(day);
     const wrong = records.filter((r) => {
       const ts = new Date(r.createdAt).getTime();
       return ts >= day.getTime() && ts < next.getTime();

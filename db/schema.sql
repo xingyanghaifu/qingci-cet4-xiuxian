@@ -24,3 +24,36 @@ CREATE TABLE IF NOT EXISTS feedback (
 CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_ip ON feedback (ip_hash, created_at);
 CREATE INDEX IF NOT EXISTS idx_feedback_kind ON feedback (kind, created_at DESC);
+
+-- ============================================================
+-- 道友小组（P2.11 学习小组 / 排行榜）
+--
+-- 隐私约束（服务端强制，见 functions/api/group.ts）：
+--   · 只有昵称，没有真名/邮箱/手机号/账号 ID；
+--   · 只有聚合字段：境界档位、粗粒度进度（5 的倍数）、累计学习天数；
+--   · **不存任何逐题作答数据，也不存分数**；
+--   · member_id 是客户端随机生成的匿名 ID，与账号体系解耦。
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS study_groups (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  code         TEXT    NOT NULL UNIQUE,       -- 6 位邀请码（排除 0/O/1/I 等易混字符）
+  name         TEXT    NOT NULL,
+  created_at   TEXT    NOT NULL,
+  member_count INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id     INTEGER NOT NULL,
+  member_id    TEXT    NOT NULL,             -- 匿名 ID（客户端生成）
+  nickname     TEXT    NOT NULL,             -- 仅昵称
+  realm_index  INTEGER NOT NULL DEFAULT 0,   -- 0–4
+  progress     INTEGER NOT NULL DEFAULT 0,   -- 0–100，入库前分档为 5 的倍数
+  study_days   INTEGER NOT NULL DEFAULT 0,   -- 累计学习天数（不共享具体答题数据）
+  week_key     TEXT    NOT NULL,             -- 2026-W40
+  month_key    TEXT    NOT NULL,             -- 2026-10
+  updated_at   TEXT    NOT NULL,
+  PRIMARY KEY (group_id, member_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members (group_id, realm_index DESC, progress DESC);

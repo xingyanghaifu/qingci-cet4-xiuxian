@@ -53,6 +53,23 @@ import {
   submitFeedback, validateFeedback, flushFeedbackQueue, loadQueue, saveQueue, readImageFile,
   FEEDBACK_API_PATH, FEEDBACK_KINDS, FEEDBACK_LIMITS, FEEDBACK_QUEUE_KEY,
 } from './feedback';
+import {
+  REALMS, REALM_MAX_SCORE, realmByIndex, eligibleRealmIndex, evaluateRealm, detectBreakthrough,
+  describeRealm, realmTable,
+} from '../types/realm';
+import {
+  TITLES, evaluateTitles, newlyUnlocked, titleProgress, describeTitle,
+} from '../types/titles';
+import {
+  loadGamification, saveGamification, evaluateProgress, recordProgress, unlockedTitleDetails,
+  describeBreakthrough, EMPTY_GAMIFICATION, GAMIFICATION_KEY,
+} from './gamification';
+import {
+  createGroup, joinGroup, syncProgress, fetchBoard, leaveGroup, memberId, defaultNickname,
+  savedNickname, saveNickname, validateNickname, validateGroupName, normalizeGroupCode,
+  isValidGroupCode, bucketProgress, rememberGroup, lastGroup, describeMember,
+  GROUP_API_PATH, GROUP_MEMBER_KEY, GROUP_NICKNAME_KEY, GROUP_LAST_KEY, MAX_MEMBERS as GROUP_MAX_MEMBERS,
+} from './group';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -253,6 +270,57 @@ const QingciServices = {
     kinds: FEEDBACK_KINDS,
     limits: FEEDBACK_LIMITS,
     queueKey: FEEDBACK_QUEUE_KEY,
+  },
+  realm: {
+    list: REALMS,
+    maxScore: REALM_MAX_SCORE,
+    byIndex: realmByIndex,
+    eligibleIndex: eligibleRealmIndex,
+    evaluate: evaluateRealm,
+    detectBreakthrough,
+    describe: describeRealm,
+    table: realmTable,
+  },
+  titles: {
+    list: TITLES,
+    evaluate: evaluateTitles,
+    newlyUnlocked,
+    progress: titleProgress,
+    describe: describeTitle,
+  },
+  gamification: {
+    load: loadGamification,
+    save: saveGamification,
+    evaluate: evaluateProgress,
+    record: recordProgress,
+    unlockedDetails: unlockedTitleDetails,
+    describeBreakthrough,
+    empty: EMPTY_GAMIFICATION,
+    key: GAMIFICATION_KEY,
+  },
+  group: {
+    create: createGroup,
+    join: joinGroup,
+    sync: syncProgress,
+    board: fetchBoard,
+    leave: leaveGroup,
+    memberId,
+    defaultNickname,
+    savedNickname,
+    saveNickname,
+    validateNickname,
+    validateGroupName,
+    normalizeCode: normalizeGroupCode,
+    isValidCode: isValidGroupCode,
+    bucketProgress,
+    remember: rememberGroup,
+    last: lastGroup,
+    describeMember,
+    apiPath: GROUP_API_PATH,
+    memberKey: GROUP_MEMBER_KEY,
+    nicknameKey: GROUP_NICKNAME_KEY,
+    lastKey: GROUP_LAST_KEY,
+    maxMembers: GROUP_MAX_MEMBERS,
   },
 };
 

@@ -147,7 +147,10 @@ export async function submitFeedback(input: FeedbackInput, options: SubmitOption
   const validation = validateFeedback(input);
   if (!validation.ok) return { status: 'invalid', message: validation.errors[0] };
 
-  const doFetch = options.fetchImpl || (typeof fetch !== 'undefined' ? fetch : null);
+  // fetchImpl 显式传 null 表示「当前环境没有 fetch」；undefined 才回落到全局 fetch
+  const doFetch = options.fetchImpl === undefined
+    ? (typeof fetch !== 'undefined' ? fetch : null)
+    : options.fetchImpl;
   const enqueue = (payload: FeedbackInput): FeedbackResult => {
     if (options.skipQueue) return { status: 'error', message: '提交失败' };
     const queue = saveQueue([...loadQueue(options.storage), payload], options.storage);

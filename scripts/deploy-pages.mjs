@@ -8,8 +8,17 @@
  *
  * 流程：构建产物 → 生成 Pages 部署目录 → 切换配置 → 上传 → 还原配置 → 线上验收
  * 用法：npm run deploy:pages
+ *
+ * wrangler 解析顺序（避免每次都联网装 wrangler@latest）：
+ *   1) 本地 node_modules/.bin/wrangler
+ *   2) npx 缓存里**自带平台 workerd 二进制**的 wrangler（按安装时间取最新可用的那份）
+ *   3) 其它缓存 / `npx --yes wrangler@latest` 兜底
+ * 为什么要检查 workerd：npm 有时会漏装 optionalDependencies，
+ *   导致 `@cloudflare/workerd-windows-64` 缺失、wrangler 一启动就抛错（本次真实踩到）。
+ * 输出处理：直接 stdio: 'inherit' 透传，不捕获 stdout ——
+ *   捕获管道在受限沙箱下会因命名管道限制而 EPERM，且会吞掉 wrangler 的实时进度。
  */
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +34,78 @@ const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 function run(step, cmd, args) {
   console.log(`\n${step} ${cmd} ${args.join(' ')}`);
   return execFileSync(cmd, args, { cwd: ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
+}
+
+/**
+ * 当前平台对应的 workerd 包名
+ * 注意真实命名：x64 是 `-64`（不是 `-x64`），arm64 才是 `-arm64`
+ * （@cloudflare/workerd-windows-64 / -linux-64 / -linux-arm64 / -darwin-64 …）
+ */
+export function platformWorkerdPackage(platform = process.platform, arch = process.arch) {
+  const a = arch === 'arm64' ? 'arm64' : '64';
+  if (platform === 'win32') return `workerd-windows-${a}`;
+  if (platform === 'darwin') return `workerd-darwin-${a}`;
+  return `workerd-linux-${a}`;
+}
+
+/** wrangler 是否可用：同级 node_modules 里必须有本平台的 workerd 二进制 */
+export function hasPlatformWorkerd(wranglerJs, platform = process.platform, arch = process.arch) {
+  const nodeModules = path.resolve(path.dirname(wranglerJs), '..', '..');
+  const scope = path.join(nodeModules, '@cloudflare');
+  if (!fs.existsSync(scope)) return false;
+  const expected = platformWorkerdPackage(platform, arch);
+  const hasBin = (dir) => {
+    const binDir = path.join(dir, 'bin');
+    return fs.existsSync(binDir) && fs.readdirSync(binDir).length > 0;
+  };
+  // 优先精确匹配；同时容忍 npm 装在别处的同平台 workerd 包
+  const dirs = fs.readdirSync(scope).filter((name) => name.startsWith('workerd-'));
+  const exact = dirs.find((name) => name === expected);
+  if (exact && hasBin(path.join(scope, exact))) return true;
+  return dirs.some((name) => name.startsWith(`workerd-${platform}-`) && hasBin(path.join(scope, name)));
+}
+
+/** 收集所有候选 wrangler（本地 → npx 缓存），可用的排在前面 */
+export function collectWranglerCandidates() {
+  const candidates = [];
+  const localBin = process.platform === 'win32'
+    ? path.join(ROOT, 'node_modules', '.bin', 'wrangler.cmd')
+    : path.join(ROOT, 'node_modules', '.bin', 'wrangler');
+  if (fs.existsSync(localBin)) {
+    const localJs = path.join(ROOT, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+    candidates.push({
+      cmd: localBin,
+      prefix: [],
+      label: '本地 node_modules',
+      usable: fs.existsSync(localJs) ? hasPlatformWorkerd(localJs) : true,
+    });
+  }
+
+  const cacheRoot = process.platform === 'win32'
+    ? path.join(process.env.LOCALAPPDATA || '', 'npm-cache', '_npx')
+    : path.join(process.env.HOME || '', '.npm', '_npx');
+  if (fs.existsSync(cacheRoot)) {
+    for (const dir of fs.readdirSync(cacheRoot)) {
+      const wranglerJs = path.join(cacheRoot, dir, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+      if (!fs.existsSync(wranglerJs)) continue;
+      let version = 'unknown';
+      try {
+        version = JSON.parse(fs.readFileSync(path.join(cacheRoot, dir, 'node_modules', 'wrangler', 'package.json'), 'utf8')).version;
+      } catch { /* 忽略 */ }
+      candidates.push({
+        cmd: process.execPath,
+        prefix: [wranglerJs],
+        label: `npx 缓存 wrangler ${version}`,
+        usable: hasPlatformWorkerd(wranglerJs),
+        mtime: fs.statSync(wranglerJs).mtimeMs,
+      });
+    }
+  }
+
+  // 可用的优先，其次按安装时间从新到旧
+  candidates.sort((a, b) => (Number(b.usable) - Number(a.usable)) || ((b.mtime || 0) - (a.mtime || 0)));
+  candidates.push({ cmd: 'npx', prefix: ['--yes', 'wrangler@latest'], label: 'npx wrangler@latest（需联网安装）', usable: false });
+  return candidates;
 }
 
 /** 生成 Pages 版配置（只含 Pages 需要的字段） */
@@ -63,13 +144,31 @@ try {
   console.log('\n[3/5] 切换为 Pages 配置');
   writePagesConfig();
 
-  // 4) 上传
+  // 4) 上传（逐个候选尝试：某个缓存缺 workerd 时自动换下一个）
   console.log('\n[4/5] 上传到 Cloudflare Pages');
-  const out = execSync(
-    `npx --yes wrangler@latest pages deploy deploy-pages --project-name ${PROJECT} --branch ${BRANCH} --commit-dirty=true`,
-    { cwd: ROOT, encoding: 'utf8', stdio: ['inherit', 'pipe', 'inherit'] }
-  );
-  process.stdout.write(out);
+  const candidates = collectWranglerCandidates();
+  let uploaded = false;
+  let lastError = null;
+  for (const [index, candidate] of candidates.entries()) {
+    console.log(`     [候选 ${index + 1}/${candidates.length}] ${candidate.label}`
+      + (candidate.usable ? '（workerd 就绪）' : '（缺少本平台 workerd，可能失败）'));
+    try {
+      run('     ›', candidate.cmd, [
+        ...candidate.prefix,
+        'pages', 'deploy', 'deploy-pages',
+        '--project-name', PROJECT,
+        '--branch', BRANCH,
+        '--commit-dirty=true',
+      ]);
+      uploaded = true;
+      break;
+    } catch (error) {
+      lastError = error;
+      console.error(`     ⚠️  候选失败：${String(error.message || error).split('\n')[0]}`);
+      console.error('     继续尝试下一个候选…');
+    }
+  }
+  if (!uploaded) throw lastError || new Error('所有 wrangler 候选均失败');
 
   // 生产域名固定为 <project>.pages.dev
   deployedUrl = `https://${PROJECT}.pages.dev`;

@@ -2,7 +2,7 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.4.0-0e6b53)](CHANGELOG.md)
 [![tests](https://img.shields.io/badge/tests-168%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
@@ -157,7 +157,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 | `https://qingci-cet4-xiuxian.pages.dev/status` | 状态页（HTML，动态） |
 | `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON，含五类备考与题源说明） |
 
-实测结果（2026-10-03 部署 v1.3.1 后，每路径 10 次采样 × 2 轮，`npm run probe:prod`）：
+实测结果（2026-10-03 部署 v1.4.0 后，每路径 10 次采样 × 2 轮，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
@@ -169,9 +169,9 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 
 > **两轮合计 80/80 采样全部返回 HTTP 200 且低于 2000ms 阈值。**
 > `/status` 上版曾因缺少 Function 走 SPA 回退，实际传输 469 KB 入口页导致偶发超时；
-> v1.3.1 补上 `functions/status.js` 后该路径只返回 1.2 KB 状态页，中位 323ms。
+> v1.4.0 补上 `functions/status.js` 后该路径只返回 1.2 KB 状态页，中位 323ms。
 
-`/healthz` 返回的真实响应（2026-10-03 部署 v1.3.1 后实测）：
+`/healthz` 返回的真实响应（2026-10-03 部署 v1.4.0 后实测）：
 
 ```json
 {
@@ -194,7 +194,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.3.1（五类备考 + 状态页），动静接口齐全 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.4.0（五类备考 + 状态页），动静接口齐全 |
 | Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构，当前仍为 v1.2.0 构建 |
 
 > **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
@@ -203,7 +203,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 > 功能基本一致，因此以可达性更好的 Pages 地址作为线上验收入口。
 > Workers 侧此前已完成部署，并通过 Cloudflare API 确认为生产环境运行
 > （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）；
-> 该通道**未随 v1.3.0 / v1.3.1 的 Pages 部署一起更新**。
+> 该通道**未随 v1.3.0 / v1.4.0 的 Pages 部署一起更新**。
 
 > 复采命令：`npm run probe:prod`（每路径 10 次采样，阈值 2000ms）。
 

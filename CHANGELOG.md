@@ -5,7 +5,34 @@
 
 ---
 
-## [未发布]
+## [1.4.0] - 2026-10-03
+
+### 部署：P0 + P1 全量上线（2026-10-03 10:38 +08:00）
+
+- 线上地址 `https://qingci-cet4-xiuxian.pages.dev`（Cloudflare Pages，项目 `qingci-cet4-xiuxian`）。
+- 部署版本 **1.4.0**，产物指纹 `sha256:0c683c4c8e648f04`（应用 HTML 649.2 KB）；
+  本次上传 11 个文件 + Functions bundle + `_headers` + `_routes.json`。
+- 上线验收（8/8 通过）：
+
+  | 端点 | 结果 |
+  |---|---|
+  | `/` | 200 · text/html · 558,807 字符 |
+  | `/healthz` | 200 · `version=1.4.0` `status=ok` |
+  | `/api/meta` | 200 · `version=1.4.0` |
+  | `/status` | 200 · 1,097 字符真实 Function 输出（非 SPA 回退） |
+  | `POST /api/grade` | 200 · `status=not_implemented`（占位逻辑生效，未发外部请求） |
+  | `/changelog.html` | 200 · 35,097 字符（公开更新日志页） |
+  | `/question-bank.json` | 200 · 5,714,685 字符（固化题库） |
+  | `/sw.js` | 200 · `cache-control: no-cache, must-revalidate` |
+
+- `prod-probe --strict`：4 条路径各 10 次采样，200 比例 10/10、全部 <2000ms（中位 271–914ms）。
+- 部署目录检查：`changelog.html` / `manifest.webmanifest` / `sw.js` / `icons/`（4 个 PNG）/
+  `question-bank.json` / `index.html` / `_headers` / `_routes.json` / `healthz.json` / `api-meta.json`
+  **13/13 全部存在**；`_headers` 中 `/sw.js` 为 `no-cache, must-revalidate`，线上响应头一致。
+- 修复 `scripts/deploy-pages.mjs`：wrangler 解析改为**优先选择自带平台 workerd 二进制的缓存**，
+  失败自动切下一个候选。本次真实踩到 npm 漏装 `@cloudflare/workerd-windows-64`（wrangler 4.147.0
+  缓存损坏）导致首次部署报 `The package "@cloudflare/workerd-windows-64" could not be found`；
+  脚本现已跳过该缓存并成功部署。同时修正 workerd 包名映射（x64 是 `-64` 而非 `-x64`）。
 
 ### 新增：TypeScript 构建基座
 

@@ -15,9 +15,11 @@
  * - IDB 工厂可注入，便于在 Node 中用轻量桩件做单元测试。
  */
 
-export const OFFLINE_DB_NAME = 'qingci-offline';
-export const OFFLINE_DB_VERSION = 1;
-export const OFFLINE_STORE = 'datasets';
+import { IDB_NAME, IDB_STORES, IDB_VERSION, defaultFactory, openAppDatabase, promisify, type MinimalFactory, type MinimalObjectStore } from './idb';
+
+export const OFFLINE_DB_NAME = IDB_NAME;
+export const OFFLINE_DB_VERSION = IDB_VERSION;
+export const OFFLINE_STORE = IDB_STORES.datasets;
 
 /** 仓库键名 */
 export const DATASET_KEYS = {
@@ -82,34 +84,6 @@ export function isStale(record: OfflineRecord | null | undefined, currentVersion
   return !record || record.version !== currentVersion;
 }
 
-type RequestHost = { onsuccess: ((this: unknown, ev: unknown) => void) | null; onerror: ((this: unknown, ev: unknown) => void) | null; result?: unknown };
-
-interface MinimalObjectStore {
-  put(value: unknown, key: string): RequestHost;
-  get(key: string): RequestHost;
-  getAll(): RequestHost;
-  delete(key: string): RequestHost;
-  clear(): RequestHost;
-}
-
-interface MinimalDatabase {
-  objectStoreNames: { contains(name: string): boolean };
-  createObjectStore(name: string): unknown;
-  transaction(name: string, mode?: string): { objectStore(name: string): MinimalObjectStore };
-  close(): void;
-}
-
-interface MinimalFactory {
-  open(name: string, version: number): { onsuccess: ((ev: unknown) => void) | null; onerror: ((ev: unknown) => void) | null; onupgradeneeded: ((ev: unknown) => void) | null; result: MinimalDatabase };
-}
-
-function promisify<T>(req: RequestHost): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result as T);
-    req.onerror = () => reject(new Error('IndexedDB 请求失败'));
-  });
-}
-
 export interface OfflineStore {
   available(): boolean;
   saveDataset<T>(key: DatasetKey, value: T, options?: { version?: string }): Promise<boolean>;
@@ -124,33 +98,10 @@ export interface OfflineStore {
  * @param version  当前应用版本，写入记录时一并保存
  */
 export function createOfflineStore(factory?: MinimalFactory | null, version = 'dev'): OfflineStore {
-  const idb = factory === undefined
-    ? (typeof indexedDB !== 'undefined' ? (indexedDB as unknown as MinimalFactory) : null)
-    : factory;
+  const idb = factory === undefined ? defaultFactory() : factory;
 
-  let dbPromise: Promise<MinimalDatabase> | null = null;
-
-  function openDb(): Promise<MinimalDatabase> {
-    if (!idb) return Promise.reject(new Error('IndexedDB 不可用'));
-    if (!dbPromise) {
-      dbPromise = new Promise<MinimalDatabase>((resolve, reject) => {
-        const req = idb.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if (!db.objectStoreNames.contains(OFFLINE_STORE)) db.createObjectStore(OFFLINE_STORE);
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(new Error('打开离线数据库失败'));
-      }).catch((err) => {
-        dbPromise = null;
-        throw err;
-      });
-    }
-    return dbPromise;
-  }
-
-  async function store(mode: string): Promise<MinimalObjectStore> {
-    const db = await openDb();
+  async function store(mode: 'readonly' | 'readwrite'): Promise<MinimalObjectStore> {
+    const db = await openAppDatabase(idb);
     return db.transaction(OFFLINE_STORE, mode).objectStore(OFFLINE_STORE);
   }
 

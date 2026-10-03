@@ -21,6 +21,10 @@ import { initPwa, canRegisterSw } from './pwa';
 import { initTheme, applyTheme, resolveTheme, readPreference, THEME_OPTIONS } from './theme';
 import { resolveShortcut } from './shortcuts';
 import { bindMediaSession, setPlaybackState, supportsMediaSession } from './media-session';
+import { createMistakeStore } from './mistake-store';
+import { applyReview, dueQueue, forecast, mistakeTrend, describeInterval, QUALITY_BY_RATING, nextEase, nextIntervalDays } from './srs';
+import { runLegacyMigration, planLegacyMigration, describeMigration, LEGACY_STATE_KEY, MIGRATION_META_KEY } from './migrate';
+import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
   GRADE_VERSION,
@@ -74,6 +78,32 @@ const QingciServices = {
     bind: bindMediaSession,
     setPlaybackState,
     supported: supportsMediaSession,
+  },
+  mistakes: {
+    createStore: createMistakeStore,
+    types: MISTAKE_TYPES,
+    ratings: REVIEW_RATINGS,
+    summarize: summarizeMistakes,
+    idOf: mistakeId,
+    typeFromGate,
+    proficiencyOf,
+  },
+  srs: {
+    applyReview,
+    dueQueue,
+    forecast,
+    trend: mistakeTrend,
+    describeInterval,
+    qualityByRating: QUALITY_BY_RATING,
+    nextEase,
+    nextIntervalDays,
+  },
+  migration: {
+    run: runLegacyMigration,
+    plan: planLegacyMigration,
+    describe: describeMigration,
+    legacyStateKey: LEGACY_STATE_KEY,
+    markKey: MIGRATION_META_KEY,
   },
 };
 

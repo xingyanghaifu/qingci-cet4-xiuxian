@@ -126,6 +126,22 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .duel-float.dmg{color:var(--bad)}.duel-float.heal{color:var(--jade)}
 @media(max-width:640px){.exam-select{grid-template-columns:1fr}.exam-meta{grid-column:1}.exam-select select{width:100%;min-width:0}.duel-board{grid-template-columns:1fr;gap:10px}.duel-vs:before,.duel-vs:after{display:none}.duel-choices{grid-template-columns:1fr}.duel-tip{margin-left:0;width:100%}}
 .reward{display:flex;gap:8px;align-items:center;color:var(--gold);font-weight:700}.paper-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.paper-card:hover,.gate:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(62,36,12,.08)}.paper-card.on{border-color:var(--gold);outline:0;box-shadow:0 0 0 2px rgba(165,109,34,.18)} @media (max-width:860px){.hero,.layout,.shelf,.entry{grid-template-columns:1fr}.road{grid-template-columns:repeat(3,1fr)}} @media (max-width:600px){.app{width:calc(100% - 20px);padding-bottom:calc(28px + env(safe-area-inset-bottom))}.hero{gap:12px}.hero h1{font-size:clamp(34px,12vw,48px)}.panel{padding:14px;border-radius:15px}.road{gap:6px}.gate{min-height:72px;padding:8px 7px}.gate b{font-size:14px}.gate small,.gate em{font-size:11px}.tabs{position:sticky;top:0;z-index:5;padding:8px 0;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px)}.tabs button{min-height:42px;padding:8px 11px}.choice,.btn{min-height:44px}.audio-dock{align-items:stretch}.audio-dock button,.audio-dock label{flex:1}.audio-dock input[type=range]{width:100%;flex-basis:100%}.tools{gap:7px}.tools .btn{flex:1}.prompt{font-size:clamp(30px,10vw,46px)}textarea{min-height:140px}.toast{bottom:calc(16px + env(safe-area-inset-bottom))}} @media (max-width:380px){.road{grid-template-columns:repeat(2,1fr)}.tabs button{font-size:13px;padding:7px 9px}.seal{padding:13px}.shelf{gap:8px}}
+/* ===== P0.2：错题本卡片（翻转模式）===== */
+.mk-card{border:1px solid var(--line);border-radius:14px;padding:12px;margin:8px 0;background:var(--card);transition:border-color .18s ease,box-shadow .18s ease}
+.mk-card.mk-open{border-color:var(--gold);box-shadow:0 0 0 2px rgba(165,109,34,.14)}
+.mk-head{display:flex;gap:8px;align-items:center;justify-content:space-between;cursor:pointer}
+.mk-chip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.mk-chip.due{border-color:var(--gold);color:var(--gold)}
+.mk-prompt{font-weight:600;margin:6px 0}
+.mk-back{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.mk-back .mk-row{margin:4px 0;font-size:14px}
+.mk-ratings{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.mk-ratings .btn{flex:1 1 auto;min-height:40px}
+.mk-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.mk-bars{display:grid;gap:4px;margin-top:8px}
+.mk-bar{display:grid;grid-template-columns:52px 1fr 34px;gap:8px;align-items:center;font-size:13px}
+.mk-bar i{display:block;height:8px;border-radius:999px;background:var(--jade);opacity:.75}
+.mk-bar span{color:var(--muted)}
 /* ===== P0.5：手动主题（覆盖系统偏好）+ 三档响应式断点 ===== */
 :root[data-theme="light"] { --ink:#23170f; --soft:#5a4330; --muted:#8b7360; --bg:#f3ecdf; --bg2:#e7dccb; --card:#fffaf3; --line:#ddcfbb; --jade:#0e6b53; --jade-ink:#08382c; --gold:#a56d22; --ok:#176b3f; --bad:#922f1d; --shadow:0 18px 40px rgba(62,36,12,.08); color-scheme:light; }
 :root[data-theme="dark"] { --ink:#f6ecdf; --soft:#ddcfbc; --muted:#b09b88; --bg:#12100e; --bg2:#221c17; --card:#211b16; --line:#3c3229; --jade:#8ed8bd; --jade-ink:#dffcf1; --gold:#efc98a; --ok:#b7ebc8; --bad:#ffc7bb; --shadow:0 18px 40px rgba(0,0,0,.32); color-scheme:dark; }
@@ -165,7 +181,7 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
     <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · DAILY TRIAL</p><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn solid" id="startPaper">开考这一卷</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
     <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="muted" id="poolLabel"></span></div><div class="prompt" id="prompt"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices"></div><div id="writeBox" class="hidden"><textarea id="essay"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。"></textarea></section>
-    <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><h2>心魔本</h2><p class="muted" id="bookLead"></p><button class="btn solid" id="drillWrong">只练这些</button><div class="dict" id="bookList"></div></section>
+    <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><h2>错题本与心魔</h2><p class="muted" id="bookLead"></p><div class="shop-card" id="mistakePanel"><div class="row" style="justify-content:space-between"><b>错题本 · 间隔复习（SM-2）</b><span class="muted" id="mkSummary">加载中…</span></div><p class="muted">答错的题会自动收进来，按 SM-2 动态安排复习间隔：越熟的题间隔越长，反复错的题始终留在短间隔。</p><div class="tools" id="mkFilters"></div><div class="tools"><button class="btn solid" id="mkReviewBtn">开始今日复习</button><span class="muted" id="mkHint"></span></div><div id="mkCards"></div><div id="mkStats"></div></div><button class="btn solid" id="drillWrong">只练这些词</button><div class="dict" id="bookList"></div></section>
     <section class="panel hidden" id="panel-codex"><p class="section-label">词谱 · 4540 WORDS</p><h2>词谱</h2><div class="tools"><input id="q" placeholder="搜单词或中文"><select id="letter"></select><select id="mastery"><option value="all">全部掌握度</option><option value="new">未学过</option><option value="known">已斩获</option><option value="wrong">心魔词</option></select></div><div class="dict" id="codexList"></div></section>
     <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button></div></div><div class="scroll" id="mapTable"></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div></section>
   </main><aside><section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section></aside></div>
@@ -293,8 +309,8 @@ function memoryQuestion(kind){ const meta={id:'mem-'+dayKey(),name:'背词',scen
 function show(q){ current=q; locked=false; if(paper&&q.examKind){ q.source=q.source||paper.source; q.sub=(q.sub||'')+' · '+(q.source||'原创练习'); } const assessmentMode=q.kind==='assessment'; $("studyModeBadge").textContent=assessmentMode?'词汇摸底':q.memKind?({zh2en:'中译英',en2zh:'英译中',similar:'形近辨析',listen:'听音辨词',spell:'拼写默写',pos:'词性判断'}[q.memKind]||'记忆模式'):state.pool==='words'?'背词模式':state.pool==='wrong'?'心魔复习':'试炼模式'; $("ratingLabel").classList.toggle('hidden',assessmentMode||!q.word); document.querySelectorAll('.rating-btn').forEach(b=>b.classList.toggle('hidden',assessmentMode||!q.word)); $("trialTitle").setAttribute('tabindex','-1'); $("trialTitle").focus({preventScroll:true}); if(q.kind==='empty'){ $("trialTitle").textContent=q.title; $("prompt").textContent=q.prompt; $("subline").textContent=q.sub; $("choices").innerHTML=""; $("feedback").innerHTML=""; $("writeBox").classList.add('hidden'); $("submitWrite").classList.add('hidden'); $("next").classList.add('hidden'); return; } $("trialTitle").textContent=q.title; $("prompt").textContent=q.prompt; $("subline").textContent=q.sub||""; $("passage").textContent=q.passage||""; $("passage").classList.toggle("hidden",!q.passage); const audioText=q.speak||((q.kind==="words"&&q.word)?q.word:""); $("audioDock").classList.toggle("hidden",!audioText); $("audioProgress").value=0; $("audioStatus").textContent=audioText?"待播放":"无音频"; $("audioPlay").textContent="▶ 播放听力"; if(window.speechSynthesis) speechSynthesis.cancel(); $("feedback").innerHTML=""; const isSpell=q.kind==='spell'; $("writeBox").classList.toggle("hidden",!q.write&&!isSpell); $("choices").classList.toggle("hidden",!!q.write||isSpell); $("essay").classList.toggle("hidden",isSpell); $("writeCount").classList.toggle("hidden",isSpell); $("spellBox").classList.toggle("hidden",!isSpell); $("submitSpell").classList.toggle("hidden",!isSpell); $("submitWrite").classList.toggle("hidden",!q.write); $("submitWrite").textContent='核对'; $("next").classList.add("hidden"); if(q.write) $("essay").value=""; if(isSpell){ $("spellHint").textContent=q.tpl||''; $("spellInput").value=""; $("spellInput").maxLength=q.answer.length+3; setTimeout(()=>$("spellInput").focus(),60); } else if(!q.write){ $("choices").innerHTML=q.choices.map((c,i)=>"<button class='choice' data-i='"+i+"'>"+esc(c)+"</button>").join(""); } countEssay(); }
 function ask(){ show(paper?(paper.queue[paper.cursor].kind.startsWith('exam-')?nextExamQuestion():makeQuestion(paper.queue[paper.cursor].kind,paper.meta,paper.cursor)):looseQuestion()); }
 function scheduleWord(word,quality){ state.schedule=state.schedule||{}; const gaps={again:0.25,hard:1,good:3,easy:7}; const next=Date.now()+gaps[quality]*86400000; const prev=state.schedule[word]||{}; state.schedule[word]={level:quality,next,tries:(prev.tries||0)+1}; }
-function settle(ok,explain){ const d=day(); state.seen++; if(current&&current.memKind){ const ms=memStats(); const rec=ms[current.memKind]||(ms[current.memKind]={r:0,n:0}); rec.n++; if(ok) rec.r++; } if(state.pool==='words'&&ok){ resetDaily(); if(current.word&&!state.dailySeen[current.word]){ state.dailySeen[current.word]=1; state.dailyWords++; } scheduleWord(current.word,'good'); } if(ok){ d.right++; state.right++; state.streak++; state.best=Math.max(state.best,state.streak); const gain=6+Math.min(10,state.streak); state.qi+=gain; if(current.word){ delete state.wrong[current.word]; state.known[current.word]=(state.known[current.word]||0)+1; state.recent=[current.word,...state.recent.filter(w=>w!==current.word)].slice(0,12);} $("feedback").innerHTML="<b>灵气 +"+gain+"</b><div>"+esc(explain||"")+"</div>"; } else { d.wrong++; state.streak=0; if(current.word) state.wrong[current.word]=(state.wrong[current.word]||0)+1; $("feedback").innerHTML="<b>记入心魔</b><div>"+esc(explain||"")+"</div>"; } if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+(ok?1:0); if(ok)paper.right=(paper.right||0)+1; paper.cursor++; $("paperProgress").textContent=(paper.exam?paper.exam.name:paper.meta.name)+' · '+paper.cursor+' / '+paper.queue.length+' · '+paper.source; if(paper.cursor>=paper.queue.length) return finishPaper(); saveActivePaper(); } $("next").classList.remove("hidden"); save(); renderTop(); }
-function choose(i){ if(!current||current.write||locked) return; locked=true; const ok=current.choices[i]===current.answer; if(current.kind==='assessment'){ if(ok)state.assessmentCorrect++; [...$("choices").children].forEach((b,idx)=>{b.disabled=true;if(current.choices[idx]===current.answer)b.classList.add('good');else if(idx===i)b.classList.add('bad');}); if(state.assessmentIndex<10){ state.assessmentIndex++; save(); setTimeout(()=>{const q=assessmentQuestion();show({kind:'assessment',title:'词汇摸底 · 第 '+state.assessmentIndex+' / 10 题',prompt:q.item.w,sub:q.item.ipa,choices:q.opts.map(x=>x.short),answer:q.item.short,explain:q.item.w+' '+q.item.zh,word:q.item.w});},250); } else { const estimate=Math.round((state.assessmentCorrect/10)*WORDS.length); state.assessment=estimate; state.assessmentIndex=0; state.dailyTarget=Math.min(100,Math.max(10,Math.ceil(Math.max(0,WORDS.length-estimate)/examDays()))); save(); renderTop(); $("feedback").innerHTML='<b>摸底完成 · 约 '+estimate+' 词</b><div>距离 2026-12-12 四级笔试还有 '+examDays()+' 天，建议每日背 '+state.dailyTarget+' 词。</div>'; $("next").classList.remove('hidden'); } return; } const ok2=current.choices[i]===current.answer; [...$("choices").children].forEach((b,idx)=>{ b.disabled=true; if(current.choices[idx]===current.answer) b.classList.add("good"); else if(idx===i) b.classList.add("bad"); }); settle(ok,current.explain); }
+function settle(ok,explain){ const d=day(); state.seen++; if(current&&current.memKind){ const ms=memStats(); const rec=ms[current.memKind]||(ms[current.memKind]={r:0,n:0}); rec.n++; if(ok) rec.r++; } if(state.pool==='words'&&ok){ resetDaily(); if(current.word&&!state.dailySeen[current.word]){ state.dailySeen[current.word]=1; state.dailyWords++; } scheduleWord(current.word,'good'); } if(ok){ d.right++; state.right++; state.streak++; state.best=Math.max(state.best,state.streak); const gain=6+Math.min(10,state.streak); state.qi+=gain; if(current.word){ delete state.wrong[current.word]; state.known[current.word]=(state.known[current.word]||0)+1; state.recent=[current.word,...state.recent.filter(w=>w!==current.word)].slice(0,12);} $("feedback").innerHTML="<b>灵气 +"+gain+"</b><div>"+esc(explain||"")+"</div>"; } else { d.wrong++; state.streak=0; if(current.word) state.wrong[current.word]=(state.wrong[current.word]||0)+1; if(window.QingciRecordMistake) window.QingciRecordMistake(current, explain||'', window.__QINGCI_LAST_ANSWER__||'', paper?{paperId:(paper.meta&&paper.meta.id)||'',gate:paper.queue[paper.cursor].kind,index:paper.cursor}:null); $("feedback").innerHTML="<b>记入心魔</b><div>"+esc(explain||"")+"</div>"; } if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+(ok?1:0); if(ok)paper.right=(paper.right||0)+1; paper.cursor++; $("paperProgress").textContent=(paper.exam?paper.exam.name:paper.meta.name)+' · '+paper.cursor+' / '+paper.queue.length+' · '+paper.source; if(paper.cursor>=paper.queue.length) return finishPaper(); saveActivePaper(); } $("next").classList.remove("hidden"); save(); renderTop(); }
+function choose(i){ if(!current||current.write||locked) return; locked=true; window.__QINGCI_LAST_ANSWER__=current.choices[i]; const ok=current.choices[i]===current.answer; if(current.kind==='assessment'){ if(ok)state.assessmentCorrect++; [...$("choices").children].forEach((b,idx)=>{b.disabled=true;if(current.choices[idx]===current.answer)b.classList.add('good');else if(idx===i)b.classList.add('bad');}); if(state.assessmentIndex<10){ state.assessmentIndex++; save(); setTimeout(()=>{const q=assessmentQuestion();show({kind:'assessment',title:'词汇摸底 · 第 '+state.assessmentIndex+' / 10 题',prompt:q.item.w,sub:q.item.ipa,choices:q.opts.map(x=>x.short),answer:q.item.short,explain:q.item.w+' '+q.item.zh,word:q.item.w});},250); } else { const estimate=Math.round((state.assessmentCorrect/10)*WORDS.length); state.assessment=estimate; state.assessmentIndex=0; state.dailyTarget=Math.min(100,Math.max(10,Math.ceil(Math.max(0,WORDS.length-estimate)/examDays()))); save(); renderTop(); $("feedback").innerHTML='<b>摸底完成 · 约 '+estimate+' 词</b><div>距离 2026-12-12 四级笔试还有 '+examDays()+' 天，建议每日背 '+state.dailyTarget+' 词。</div>'; $("next").classList.remove('hidden'); } return; } const ok2=current.choices[i]===current.answer; [...$("choices").children].forEach((b,idx)=>{ b.disabled=true; if(current.choices[idx]===current.answer) b.classList.add("good"); else if(idx===i) b.classList.add("bad"); }); settle(ok,current.explain); }
 function submitWrite(){ if(!current||!current.write||locked) return; const text=$("essay").value.trim(); const n=wordsOf(text); if(!n) return toast("先写一句"); locked=true; const inRange=n>=current.min&&n<=current.max; const hasSeed=current.seeds?current.seeds.filter(w=>new RegExp('\\b'+w.w+'\\b','i').test(text)).length:0; const quality=current.sample?'本题为翻译自评：请对照参考句检查语序、时态和拼写。':'本题为写作自评：系统只检查字数和题目词覆盖，不将它冒充人工评分。'; $("feedback").innerHTML="<b>提交完成 · "+(inRange?'字数合格':'字数未达标')+"</b><div>字数 "+n+"；题目词覆盖 "+hasSeed+"。"+quality+(current.sample?" 参考："+esc(current.sample):"")+"</div>"; if(window.QingciGradingEntry) window.QingciGradingEntry({type:current.sample?'translation':'writing',questionId:((paper&&paper.id)||'paper')+':'+((paper&&paper.cursor)!=null?paper.cursor:0)+':'+(current.title||''),userAnswer:text,prompt:current.prompt||''}); if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+ (inRange?1:0); paper.cursor++; saveActivePaper(); if(paper.cursor>=paper.queue.length) return finishPaper(); } save(); $("next").classList.remove('hidden'); }
 function countEssay(){ $("writeCount").textContent=wordsOf($("essay").value)+" 词"; }
 function memStats(){ state.memStats=state.memStats||{}; return state.memStats; }
@@ -547,6 +563,182 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       });
     }
   }
+})();
+</script>
+<script>
+/* 错题本（P0.2）：答错自动入库、SM-2 复习、卡片翻转、按题型与知识点统计 */
+(function () {
+  var S = window.QingciServices;
+  if (!S) return;
+  var byId = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var TYPE_LABEL = {};
+  S.mistakes.types.forEach(function (t) { TYPE_LABEL[t.value] = t.label; });
+
+  var storeRef = null;
+  var filter = 'all';
+  var reviewMode = false;
+  var openIds = {};
+
+  function store() {
+    if (!storeRef) storeRef = window.__QINGCI_MISTAKES__ || S.mistakes.createStore();
+    return storeRef;
+  }
+
+  function typeLabel(type) { return TYPE_LABEL[type] || type; }
+
+  /* 应用侧答错时调用（见 settle()）：写入错题本 */
+  window.QingciRecordMistake = function (current, explain, userAnswer, paperRef) {
+    try {
+      if (!current) return;
+      var type = current.word ? 'vocab' : S.mistakes.typeFromGate(current.kind || (paperRef && paperRef.gate), current.title);
+      var prompt = current.word || current.prompt || current.title || '（无题干）';
+      var correct = current.answer || current.sample || (current.word ? '' : '（主观题，无标准答案）');
+      var tags = [type];
+      if (paperRef && paperRef.gate) tags.push(String(paperRef.gate));
+      store().recordWrong({
+        type: type,
+        prompt: String(prompt),
+        userAnswer: String(userAnswer || ''),
+        correctAnswer: String(correct || ''),
+        explanation: String(explain || ''),
+        sourceRef: paperRef
+          ? { kind: 'paper', paperId: paperRef.paperId, gate: paperRef.gate, index: paperRef.index, excerpt: String(prompt).slice(0, 80) }
+          : { kind: current.word ? 'word' : 'free', word: current.word, excerpt: String(prompt).slice(0, 80) },
+        knowledgeTags: tags,
+      }).then(function () { render(); });
+    } catch (e) { /* 错题本失败不影响做题 */ }
+  };
+
+  function cardHtml(record) {
+    var due = new Date(record.nextReviewAt).getTime() <= Date.now();
+    var open = !!openIds[record.id];
+    var back = open
+      ? '<div class="mk-back">'
+        + '<div class="mk-row"><span class="muted">你的答案：</span>' + (record.userAnswer ? esc(record.userAnswer) : '<span class="muted">（未记录）</span>') + '</div>'
+        + '<div class="mk-row"><span class="muted">正确答案：</span>' + esc(record.correctAnswer || '—') + '</div>'
+        + (record.explanation ? '<div class="mk-row"><span class="muted">解析：</span>' + esc(record.explanation) + '</div>' : '')
+        + (record.sourceRef && record.sourceRef.excerpt ? '<div class="mk-row"><span class="muted">原文定位：</span>' + esc(record.sourceRef.excerpt) + (record.sourceRef.paperId ? '（试卷 ' + esc(record.sourceRef.paperId) + ' · ' + esc(record.sourceRef.gate || '') + ' 第 ' + ((record.sourceRef.index || 0) + 1) + ' 题）' : '') + '</div>' : '')
+        + '<div class="mk-tags">' + record.knowledgeTags.map(function (t) { return '<span class="mk-chip">' + esc(t) + '</span>'; }).join('') + '</div>'
+        + '<div class="mk-ratings">'
+        + S.mistakes.ratings.map(function (r) { return '<button class="btn" data-rate="' + r.value + '">' + esc(r.label) + '</button>'; }).join('')
+        + '</div></div>'
+      : '<div class="muted" style="font-size:13px">点击卡片查看答案与解析</div>';
+    return '<article class="mk-card' + (open ? ' mk-open' : '') + '" data-id="' + esc(record.id) + '">'
+      + '<div class="mk-head">'
+      + '<span class="mk-chip' + (due ? ' due' : '') + '">' + esc(typeLabel(record.type)) + (due ? ' · 今日到期' : '') + '</span>'
+      + '<span class="muted">错 ' + record.wrongCount + ' 次 · 熟练度 ' + record.proficiency + '/5 · 复习 ' + record.reviewCount + ' 次</span>'
+      + '</div>'
+      + '<div class="mk-prompt">' + esc(String(record.prompt).slice(0, 160)) + '</div>'
+      + back
+      + '</article>';
+  }
+
+  function statsHtml(summary, forecast) {
+    var bars = summary.byType.map(function (row) {
+      var pct = row.total ? Math.round(((row.total - row.due) / row.total) * 100) : 0;
+      return '<div class="mk-bar"><span>' + esc(row.label) + '</span><i style="width:' + Math.max(4, pct) + '%"></i><span>' + row.total + ' 题</span></div>';
+    }).join('');
+    var tags = summary.weakTags.map(function (t) { return '<span class="mk-chip">' + esc(t.tag) + ' × ' + t.count + '</span>'; }).join('');
+    var max = Math.max(1, Math.max.apply(null, forecast.map(function (f) { return f.count; })));
+    var days = forecast.map(function (f) {
+      return '<div class="mk-bar"><span>' + esc(f.date.slice(5)) + '</span><i style="width:' + Math.round((f.count / max) * 100) + '%"></i><span>' + f.count + '</span></div>';
+    }).join('');
+    return '<div class="tools" style="margin-top:12px"><b>按题型</b></div><div class="mk-bars">' + (bars || '<span class="muted">暂无数据</span>') + '</div>'
+      + '<div class="tools" style="margin-top:10px"><b>薄弱知识点</b></div><div class="mk-tags">' + (tags || '<span class="muted">暂无标签</span>') + '</div>'
+      + '<div class="tools" style="margin-top:10px"><b>未来 7 天复习量</b></div><div class="mk-bars">' + days + '</div>';
+  }
+
+  function render() {
+    var panel = byId('mistakePanel');
+    if (!panel) return;
+    store().all().then(function (all) {
+      var now = new Date();
+      var dueList = S.srs.dueQueue(all, now, 50);
+      var list = reviewMode ? dueList : all;
+      if (filter !== 'all') list = list.filter(function (r) { return r.type === filter; });
+      list = list.slice().sort(function (a, b) { return new Date(a.nextReviewAt) - new Date(b.nextReviewAt); });
+
+      var summary = S.mistakes.summarize(all, now);
+      var mkSummary = byId('mkSummary');
+      if (mkSummary) mkSummary.textContent = all.length ? (all.length + ' 条错题 · 今日到期 ' + summary.due) : '还没有错题';
+
+      var filters = byId('mkFilters');
+      if (filters) {
+        var options = [{ value: 'all', label: '全部 ' + all.length }].concat(summary.byType.map(function (row) {
+          return { value: row.type, label: row.label + ' ' + row.total + (row.due ? '（到期 ' + row.due + '）' : '') };
+        }));
+        filters.innerHTML = options.map(function (o) {
+          return '<button class="btn' + (filter === o.value ? ' solid' : '') + '" data-filter="' + o.value + '">' + esc(o.label) + '</button>';
+        }).join('');
+      }
+
+      var cards = byId('mkCards');
+      if (cards) {
+        cards.innerHTML = list.length
+          ? list.map(cardHtml).join('')
+          : '<p class="muted">' + (reviewMode ? '今天没有到期错题，休息一下。' : '还没有错题：答错的题会自动收进来。') + '</p>';
+      }
+      var stats = byId('mkStats');
+      if (stats) stats.innerHTML = statsHtml(summary, S.srs.forecast(all, 7, now));
+    });
+  }
+
+  function flash(msg) {
+    var hint = byId('mkHint');
+    if (!hint) return;
+    hint.textContent = msg;
+    setTimeout(function () { if (hint.textContent === msg) hint.textContent = ''; }, 6000);
+  }
+
+  var panel = byId('mistakePanel');
+  if (panel) {
+    panel.addEventListener('click', function (e) {
+      var target = e.target;
+      var rateBtn = target.closest && target.closest('[data-rate]');
+      var card = target.closest && target.closest('.mk-card');
+      if (rateBtn && card) {
+        var id = card.getAttribute('data-id');
+        var rating = rateBtn.getAttribute('data-rate');
+        store().rate(id, rating).then(function (outcome) {
+          if (!outcome) return;
+          openIds[id] = false;
+          flash('已记录：' + S.srs.describeInterval(outcome));
+          render();
+        });
+        return;
+      }
+      var filterBtn = target.closest && target.closest('[data-filter]');
+      if (filterBtn) {
+        filter = filterBtn.getAttribute('data-filter');
+        reviewMode = false;
+        render();
+        return;
+      }
+      if (card) {
+        var cardId = card.getAttribute('data-id');
+        openIds[cardId] = !openIds[cardId];
+        render();
+      }
+    });
+  }
+
+  var reviewBtn = byId('mkReviewBtn');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', function () {
+      reviewMode = !reviewMode;
+      reviewBtn.textContent = reviewMode ? '查看全部错题' : '开始今日复习';
+      render();
+    });
+  }
+
+  window.addEventListener('qingci:mistakes-ready', function (e) {
+    var detail = (e && e.detail) || window.__QINGCI_MIGRATION__;
+    if (detail && detail.message) flash(detail.message);
+    render();
+  });
+
+  render();
 })();
 </script>
 </body></html>

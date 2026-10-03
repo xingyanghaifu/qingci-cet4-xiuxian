@@ -17,6 +17,7 @@ import { cacheInlineDatasets, createOfflineStore } from './../services/offline-s
 import { createMistakeStore } from './../services/mistake-store';
 import { createBankService } from './../services/question-bank';
 import { createVocabSrsStore } from './../services/vocab-srs';
+import { createReportStore } from './../services/report-store';
 import { runLegacyMigration, describeMigration, LEGACY_STATE_KEY } from './../services/migrate';
 import { APP_VERSION } from './../config/app-version';
 
@@ -25,6 +26,7 @@ const host = globalThis as unknown as {
   __QINGCI_MISTAKES__?: ReturnType<typeof createMistakeStore>;
   __QINGCI_BANK__?: ReturnType<typeof createBankService>;
   __QINGCI_VOCAB__?: ReturnType<typeof createVocabSrsStore>;
+  __QINGCI_REPORT__?: ReturnType<typeof createReportStore>;
   __QINGCI_MIGRATION__?: unknown;
   __QINGCI_OFFLINE_BOOT__?: unknown;
 };
@@ -36,6 +38,22 @@ host.__QINGCI_BANK__ = createBankService();
 
 // 词汇 SRS 仓库：与错题本共用 SM-2 引擎，但队列分开（vocab 仓库）
 host.__QINGCI_VOCAB__ = createVocabSrsStore();
+
+// 模考报告仓库：作答流水 + 每次模考的报告（P1 任务 B）
+host.__QINGCI_REPORT__ = createReportStore();
+
+/** 图表样式：随服务层一起内联，避免往模板里塞 CSS */
+function injectChartStyles(): void {
+  try {
+    if (document.getElementById('qingci-chart-style')) return;
+    const style = document.createElement('style');
+    style.id = 'qingci-chart-style';
+    style.textContent = QingciServices.report.chartCss;
+    document.head.appendChild(style);
+  } catch {
+    /* 忽略 */
+  }
+}
 
 /** 读取旧存档（localStorage），兼容缺失与损坏 */
 function readLegacyState(): Record<string, unknown> | null {
@@ -97,6 +115,9 @@ async function bootVocabSrs(): Promise<void> {
 }
 
 function boot(): void {
+  // 0) 图表样式（报告卡用）
+  injectChartStyles();
+
   // 1) Service Worker：离线外壳 + 静态资源缓存
   void initPwa();
 

@@ -9,6 +9,7 @@
  * 题型与题库一致：en2zh / zh2en / listen / similar / spell（按需选择）。
  */
 import { seededRng } from '../types/question-bank';
+import { tierOf } from './vocab-grades';
 import type { LexiconEntry } from './vocab-enrich';
 
 export type VocabQuestionKind = 'en2zh' | 'zh2en' | 'listen' | 'similar' | 'spell';
@@ -29,6 +30,8 @@ export interface VocabQuestion {
   questionId: string;
  /** 复习会话用它回写 SRS */
   vocabWord: string;
+  /** 知识点标签（供报告做薄弱点分析） */
+  tags: string[];
 }
 
 /** 由词库下标生成与题库一致的题目 id */
@@ -98,6 +101,8 @@ export function buildVocabQuestion(
   const ipa = entry.ipa || '';
   const gloss = String(entry.short || entry.zh || '');
   const questionId = bankIdFor(index, kind);
+  // 标签透传给报告做薄弱点分析（题型 + 分级档位）
+  const tags = [kind, `tier:${tierOf(entry.w)}`];
 
   if (kind === 'spell') {
     const head = entry.w[0];
@@ -116,6 +121,7 @@ export function buildVocabQuestion(
       hint: entry.w.length,
       questionId,
       vocabWord: entry.w,
+      tags,
     };
   }
 
@@ -135,6 +141,7 @@ export function buildVocabQuestion(
       word: entry.w,
       questionId,
       vocabWord: entry.w,
+      tags,
     };
   }
 
@@ -154,6 +161,7 @@ export function buildVocabQuestion(
       speak: entry.w,
       questionId,
       vocabWord: entry.w,
+      tags,
     };
   }
 
@@ -172,6 +180,7 @@ export function buildVocabQuestion(
     word: entry.w,
     questionId,
     vocabWord: entry.w,
+    tags,
   };
 }
 

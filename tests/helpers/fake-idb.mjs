@@ -24,7 +24,12 @@ export function makeFakeIdb() {
 
   const makeStore = (map, meta) => ({
     put: (value, key) => request(() => {
-      const storeKey = key !== undefined ? key : (meta.keyPath ? value[meta.keyPath] : undefined);
+      let storeKey = key;
+      if (storeKey === undefined) {
+        if (meta.keyPath) storeKey = value[meta.keyPath];
+        // 自增主键（attempts 仓库用）：桩件也要模拟，否则多条记录会互相覆盖
+        else if (meta.autoIncrement) storeKey = String(++meta.counter);
+      }
       map.set(String(storeKey), value);
       return storeKey;
     }),
@@ -38,7 +43,10 @@ export function makeFakeIdb() {
   const db = {
     objectStoreNames: { contains: (name) => stores.has(name) },
     createObjectStore: (name, options = {}) => {
-      stores.set(name, { map: new Map(), meta: { keyPath: options.keyPath } });
+      stores.set(name, {
+        map: new Map(),
+        meta: { keyPath: options.keyPath, autoIncrement: !!options.autoIncrement, counter: 0 },
+      });
       return { createIndex: () => ({}) };
     },
     transaction: (name) => ({

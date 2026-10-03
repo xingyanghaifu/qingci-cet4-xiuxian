@@ -9,10 +9,11 @@
  *   v1  datasets                     —— 内联词库 / 试卷 / 题库缓存
  *   v2  + mistakes / reviews / meta  —— 错题本与复习记录（P0.2）
  *   v3  + vocab                      —— 词汇 SRS 状态（P1 任务 A）
+ *   v4  + attempts / reports         —— 作答流水与模考报告（P1 任务 B）
  */
 
 export const IDB_NAME = 'qingci-offline';
-export const IDB_VERSION = 3;
+export const IDB_VERSION = 4;
 
 export const IDB_STORES = {
   datasets: 'datasets',
@@ -20,6 +21,8 @@ export const IDB_STORES = {
   reviews: 'reviews',
   meta: 'meta',
   vocab: 'vocab',
+  attempts: 'attempts',
+  reports: 'reports',
 } as const;
 
 export type IdbStoreName = (typeof IDB_STORES)[keyof typeof IDB_STORES];
@@ -102,6 +105,17 @@ export function upgradeSchema(db: MinimalDatabase): void {
     const store = db.createObjectStore(IDB_STORES.vocab, { keyPath: 'w' });
     store.createIndex?.('nextReviewAt', 'nextReviewAt');
     store.createIndex?.('tier', 'tier');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.attempts)) {
+    // 作答流水：自增主键，按时间/题型建索引，便于趋势与薄弱点聚合
+    const store = db.createObjectStore(IDB_STORES.attempts, { autoIncrement: true });
+    store.createIndex?.('at', 'at');
+    store.createIndex?.('kind', 'kind');
+    store.createIndex?.('paperId', 'paperId');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.reports)) {
+    const store = db.createObjectStore(IDB_STORES.reports, { keyPath: 'at' });
+    store.createIndex?.('paperId', 'paperId');
   }
 }
 

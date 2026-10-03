@@ -123,7 +123,10 @@ test('vocab-srs：仓库读写、到期队列、统计与迁移幂等（含 v3 s
 
   const saved = await store.rate('abandon', 'good', base);
   assert.ok(saved, '应写入一条 SRS 记录');
-  assert.deepEqual(factory._names().sort(), ['datasets', 'meta', 'mistakes', 'reviews', 'vocab'], 'v3 应含 vocab 仓库');
+  const storeNames = factory._names();
+  for (const required of ['datasets', 'meta', 'mistakes', 'reviews', 'vocab']) {
+    assert.ok(storeNames.includes(required), `schema 应包含 ${required} 仓库，实际 ${storeNames.join(',')}`);
+  }
 
   const dueLater = await store.due(10, new Date(base.getTime() + 2 * 86_400_000));
   assert.equal(dueLater.length, 1, '1 天后到期的词在 2 天后应进入队列');

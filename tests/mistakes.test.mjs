@@ -113,11 +113,11 @@ test('store：错题入库、SM-2 复习与日志', async () => {
 
   const first = await store.recordWrong({ type: 'listen', prompt: '听力第 1 题', userAnswer: 'A', correctAnswer: 'B', now: base });
   assert.ok(first, '应写入一条错题');
-  assert.deepEqual(
-    factory._names().sort(),
-    ['datasets', 'meta', 'mistakes', 'reviews', 'vocab'],
-    'v3 schema 应建齐五个仓库（vocab 为 P1 任务 A 新增）',
-  );
+  // 断言「必须包含」而非枚举全部：schema 会随版本新增仓库（v4 又加了 attempts/reports）
+  const storeNames = factory._names();
+  for (const required of ['datasets', 'meta', 'mistakes', 'reviews']) {
+    assert.ok(storeNames.includes(required), `schema 应包含 ${required} 仓库，实际 ${storeNames.join(',')}`);
+  }
   const second = await store.recordWrong({ type: 'listen', prompt: '听力第 1 题', userAnswer: 'C', correctAnswer: 'B', now: base });
   assert.equal(second.wrongCount, 2, '同题再次答错应累加而不是新建');
   assert.equal((await store.all()).length, 1);

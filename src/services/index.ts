@@ -31,6 +31,10 @@ import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, 
 import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
 import { buildVocabQuestion, buildReviewQuestions, bankIdFor } from './vocab-question';
 import { planStudyLoad, adjustPlan, heatmap, describePlan, daysUntil, intensityFor, DEFAULT_EXAM_DATE } from './study-plan';
+import { createReportStore, attemptFromQuestion, partOfKind } from './report-store';
+import { detectWeaknesses, accuracyTrend, timingByPart, buildPaperReport, compareWithTarget, describeReport, wilsonLowerBound, kindLabel, localDateKey } from '../types/report';
+import { barChart, lineChart, ringChart, heatmapGrid, CHART_CSS } from './charts';
+import { recommendPractice, buildRecommendedSet, describeRecommendation, countCandidates } from './recommend';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -153,6 +157,26 @@ const QingciServices = {
     daysUntil,
     intensityFor,
     defaultExamDate: DEFAULT_EXAM_DATE,
+  },
+  report: {
+    createStore: createReportStore,
+    attemptFromQuestion,
+    partOfKind,
+    detectWeaknesses,
+    trend: accuracyTrend,
+    timing: timingByPart,
+    buildPaperReport,
+    compareWithTarget,
+    describe: describeReport,
+    wilsonLowerBound,
+    kindLabel,
+    localDateKey,
+    charts: { bar: barChart, line: lineChart, ring: ringChart, heatmap: heatmapGrid },
+    chartCss: CHART_CSS,
+    recommend: recommendPractice,
+    buildRecommendedSet,
+    describeRecommendation,
+    countCandidates,
   },
 };
 

@@ -47,6 +47,8 @@ export interface AppQuestion {
   questionId?: string;
   bankKind?: string;
   part?: string;
+  /** 知识点标签（透传题库标签，供报告做薄弱点分析） */
+  tags?: string[];
 }
 
 export interface BankServiceOptions {
@@ -175,6 +177,7 @@ export function createBankService(options: BankServiceOptions = {}): BankService
         questionId: question.id,
         bankKind: question.kind,
         part: question.part,
+        tags: question.knowledgeTags,
       };
       const type = questionType(question);
 

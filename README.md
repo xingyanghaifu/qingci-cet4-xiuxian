@@ -680,6 +680,14 @@ IntensivePlayer（怎么练）   逐句 / 循环 / A-B / 变速 / 原文 / 听�
   VOA 素材区，无素材时区块隐藏）；主播放「▶ 播放听力」保持语音合成不变。
 - 版权声明：洞府页 →「🔊 音频来源声明」弹窗。
 
+> **构建与部署说明**：听力音频由**本地构建**生成（`npm run build:audio`），部署上传的是现成产物。
+> Cloudflare Pages 项目未接入 GitHub 集成（Git Provider=No），远端不执行任何 TTS 构建命令，
+> 因此不依赖 Python 环境。
+>
+> 新克隆仓库或换机器部署时，需先在本机安装 Python 3.9+ 和 `pip install edge-tts`，
+> 再执行 `npm run build:audio`。`dist/audio/` 已在 `.gitignore` 中，不随仓库分发。
+> 部署脚本内置产物硬闸：`dist/audio/tts/manifest.json` 缺失或 `count=0` 时中止部署并给出提示。
+
 ## 下一步待办（仅规划，均未执行）
 
 | 优先级 | 事项 | 依赖 / 说明 |

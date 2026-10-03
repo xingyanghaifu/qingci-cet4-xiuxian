@@ -150,6 +150,22 @@ try {
   // 1.5) 听力音频（增量；生成失败则中止部署——线上必须有音频）
   run('[1.5/5] 生成听力音频（build:audio）', 'node', ['scripts/build-audio-tts.mjs']);
 
+  // 1.6) 音频产物硬闸：manifest 缺失 / 解析失败 / count=0 一律中止，不绕过
+  const audioManifestPath = path.join(ROOT, 'dist', 'audio', 'tts', 'manifest.json');
+  let audioCount = 0;
+  try {
+    audioCount = Number(JSON.parse(fs.readFileSync(audioManifestPath, 'utf8')).count) || 0;
+  } catch {
+    audioCount = 0;
+  }
+  if (!fs.existsSync(audioManifestPath) || audioCount <= 0) {
+    console.error('\n❌ 听力音频产物缺失或为空。');
+    console.error('   请先执行 npm run build:audio（需要 Python 3.9+ 与 pip install edge-tts）。');
+    console.error('   详细说明见 README「听力音频」章节。');
+    process.exit(1);
+  }
+  console.log(`   ✅ 音频产物就绪：count=${audioCount}，manifest=dist/audio/tts/manifest.json`);
+
   // 2) 生成 Pages 部署目录（含 functions 复制）
   run('[2/5] 生成 Pages 部署目录', 'node', ['scripts/prepare-deploy.mjs', '--pages']);
 

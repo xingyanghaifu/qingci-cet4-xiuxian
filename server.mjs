@@ -187,6 +187,26 @@ const server = http.createServer((req, res) => {
     return send(res, 200, html, 'text/html; charset=utf-8', req);
   }
 
+  // PWA 静态资源：manifest / sw.js / 图标（由构建产出到 dist/）
+  // Service Worker 必须在 http(s) 且与页面同源同路径下才能注册，本地预览也走这里。
+  const PWA_STATIC = {
+    '/manifest.webmanifest': ['manifest.webmanifest', 'application/manifest+json; charset=utf-8', 'no-cache'],
+    '/sw.js': ['sw.js', 'application/javascript; charset=utf-8', 'no-cache'],
+  };
+  if (PWA_STATIC[p]) {
+    const [name, type, cache] = PWA_STATIC[p];
+    const file = path.join(ROOT, 'dist', name);
+    if (!fs.existsSync(file)) return send(res, 404, { error: 'not found', hint: '先执行 npm run build' });
+    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': cache, 'X-Content-Type-Options': 'nosniff' });
+    return res.end(fs.readFileSync(file));
+  }
+  if (p.startsWith('/icons/') && /^\/icons\/[a-z0-9-]+\.png$/.test(p)) {
+    const file = path.join(ROOT, 'dist', p.replace(/^\//, ''));
+    if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800, immutable' });
+    return res.end(fs.readFileSync(file));
+  }
+
   send(res, 404, { error: 'not found', path: p });
 });
 

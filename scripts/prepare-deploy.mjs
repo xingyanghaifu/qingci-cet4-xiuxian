@@ -51,6 +51,31 @@ fs.writeFileSync(path.join(OUT, 'api-meta.json'), JSON.stringify({
   features: ['六种记忆题型', '试卷模拟', '斗法对战', '学情看板', '间隔重复', '离线可用'],
 }, null, 2) + '\n');
 
+// 3.5) PWA 资源：manifest、Service Worker、图标（构建产物 → 部署目录）
+//      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝。
+const pwaAssets = ['manifest.webmanifest', 'sw.js'];
+const pwaDirs = ['icons'];
+const pwaCopied = [];
+for (const file of pwaAssets) {
+  const from = path.join(path.dirname(src), file);
+  if (!fs.existsSync(from)) {
+    console.error('❌ 未找到 ' + file + '，请先执行 npm run build（构建会产出 PWA 资源）');
+    process.exit(1);
+  }
+  fs.copyFileSync(from, path.join(OUT, file));
+  pwaCopied.push(file);
+}
+for (const dir of pwaDirs) {
+  const from = path.join(path.dirname(src), dir);
+  if (!fs.existsSync(from)) continue;
+  const to = path.join(OUT, dir);
+  fs.mkdirSync(to, { recursive: true });
+  for (const entry of fs.readdirSync(from)) {
+    fs.copyFileSync(path.join(from, entry), path.join(to, entry));
+    pwaCopied.push(dir + '/' + entry);
+  }
+}
+
 // 4) Netlify / Cloudflare Pages 头部：入口不缓存，资源长缓存，声明压缩
 fs.writeFileSync(path.join(OUT, '_headers'), [
   '/*',
@@ -59,6 +84,19 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
   '',
   '/index.html',
   '  Cache-Control: public, max-age=0, must-revalidate',
+  '',
+  // Service Worker 必须每次校验：否则发版后浏览器会长期停留在旧外壳
+  '/sw.js',
+  '  Content-Type: application/javascript; charset=utf-8',
+  '  Cache-Control: no-cache, must-revalidate',
+  '  Service-Worker-Allowed: /',
+  '',
+  '/manifest.webmanifest',
+  '  Content-Type: application/manifest+json; charset=utf-8',
+  '  Cache-Control: public, max-age=3600',
+  '',
+  '/icons/*',
+  '  Cache-Control: public, max-age=604800, immutable',
   '',
   '/healthz.json',
   '  Content-Type: application/json; charset=utf-8',
@@ -98,6 +136,7 @@ console.log('✅ 部署目录已生成目录: ' + (forPages ? 'deploy-pages/' : 
 console.log('   index.html      ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB');
 console.log('   healthz.json    版本 v' + pkg.version + ' 词库 ' + words + ' 条');
 console.log('   api-meta.json   元信息（机型/版本/特性）');
+console.log('   PWA 资源        ' + pwaCopied.length + ' 个（manifest + sw.js + 图标）');
 console.log('   _headers        缓存与安全响应头');
 console.log(forPages ? '   _routes.json   Functions 路由（/healthz、/status、/api/*）' : (forWorkers ? '   _redirects      已跳过（Workers 模式由 Worker 处理路由）' : '   _redirects      SPA 回退'));
 console.log('   产物指纹: sha256:' + sha);

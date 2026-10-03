@@ -3,9 +3,10 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-66%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-73%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
+[![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
 [![license](https://img.shields.io/badge/license-MIT-8b7360)](LICENSE)
 
 ---
@@ -14,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 478 KB 的 HTML 文件，**运行时零依赖，断网可用**。
+构建后是一个 481.6 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -28,8 +29,9 @@ npm start                 # 访问 http://127.0.0.1:4173
 # 方式三：从源码构建
 npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
-npm run build             # esbuild 打包 src/ → 单文件 dist/cet4-xiuxian.html
-npm test                  # 运行 66 个自动化测试
+npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
+npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
+npm test                  # 运行 73 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -57,9 +59,11 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：66 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：73 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
-  esbuild 打包后执行，由 10 条行为用例覆盖，暂未计入行覆盖率）
+  esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
+- **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
+  外壳预缓存、词库与试卷落 IndexedDB，断网也能继续刷题
 - **文档可执行**：`npm run test:docs` 逐条执行 API 文档中的 26 条示例并比对输出，防止文档与代码脱节
 - **容错降级**：旧存档缺字段时静默跳过，不连累主流程
 
@@ -70,24 +74,30 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── core/utils.js          纯工具：哈希/随机/间隔重复/境界/五类考试配置（待迁 TS）
 │   ├── core/quiz.js           业务核心：题型生成、判分、统计（待迁 TS）
 │   ├── config/features.ts     前端 Feature Flag（AI 批改等开关，默认全关）
+│   ├── config/app-version.ts  应用版本号（构建时注入）
 │   ├── services/grading.ts    写作/翻译批改服务：开关关闭时不发任何请求
+│   ├── services/pwa.ts        Service Worker 注册与更新提示
+│   ├── services/offline-store.ts  IndexedDB 离线数据仓库（词库 / 试卷 / 题库）
 │   ├── services/index.ts      服务统一出口（构建时挂载全局 QingciServices）
 │   ├── types/grading.ts       批改数据契约：状态 / 四维评分 / 批注 / 版本号
 │   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
+│   ├── sw.template.js         Service Worker 模板（构建注入缓存版本）
 │   └── index.template.html    应用外壳：DOM 渲染与交互
 ├── functions/                 Cloudflare Pages Functions（ESM/TS）
 │   ├── healthz.js · status.js · api/meta.js
 │   └── api/grade.ts           AI 批改占位端点（不调用外部 API）
-├── tests/                     自动化测试（node:test：核心 + Worker + Functions + 批改）
+├── tests/                     自动化测试（node:test：核心 + Worker + Functions + 批改 + 离线）
 │   └── helpers/load-ts.mjs    用 esbuild 把 TS 模块打包后再 import
-├── scripts/build.mjs          构建：校验 → esbuild 打包 → 内联 → 输出 dist
+├── scripts/build.mjs          构建：校验 → esbuild 打包 → 内联 → 输出 dist + PWA 资源
+├── scripts/make-icons.mjs     零依赖生成 PWA PNG 图标（自写 PNG 编码）
+├── scripts/verify-pwa.mjs     PWA 产物一致性校验（图标尺寸 / sw 预缓存清单 / 页面引用）
 ├── scripts/prepare-deploy.mjs 生成部署目录（deploy/ 或 deploy-pages/ + _routes.json）
 ├── scripts/healthcheck.mjs    健康检查（校验状态码与响应时间）
 ├── worker/index.mjs           Cloudflare Workers 入口（同构接口）
-├── server.mjs                 本地 HTTP 服务 + /healthz + /status + /api/meta
+├── server.mjs                 本地 HTTP 服务 + /healthz + /status + /api/meta + PWA 资源
 ├── docs/                      产品方案 / 使用文档 / API 文档 / 架构图
 ├── CHANGELOG.md               版本发布记录
-└── dist/                      构建产物（单文件 HTML）
+└── dist/                      构建产物（单文件 HTML + manifest + sw.js + icons/）
 ```
 
 ## 接口
@@ -214,6 +224,26 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | GitHub Pages | 推送 `deploy/` 内容后开启 Pages | 需 GitHub 账号 |
 | Netlify | `npx netlify deploy --dir=deploy --prod` | 需 Netlify 账号 |
 | Vercel | `npx vercel --prod deploy` | 需 Vercel 账号 |
+
+## PWA：安装到桌面与离线可用
+
+线上（`https://qingci-cet4-xiuxian.pages.dev`）已支持安装为独立应用：
+
+| 能力 | 实现 | 说明 |
+|---|---|---|
+| 安装到桌面 / 主屏 | `manifest.webmanifest`（192/512 PNG + maskable 变体） | Chrome / Edge 地址栏出现「安装」；iOS 用「添加到主屏幕」 |
+| 离线可用 | `sw.js` 预缓存应用外壳（页面、manifest、图标、静态检查 JSON） | 断网后仍能打开应用继续刷题 |
+| 数据秒开 | 词库 4540 条与六套试卷的解析结果落 IndexedDB（`src/services/offline-store.ts`） | 版本变化时才重写，避免每次启动写 ~300KB |
+| 动态接口不缓存 | `/healthz`、`/status`、`/api/*` 一律 network-only | 避免把「接口 200」伪装成离线可用 |
+| 更新提示 | 发现新 Service Worker 时页面底部出现「新版本已就绪，点击刷新」 | 避免长期停留在旧外壳上 |
+| 听力音频（预留） | `/audio/*` 走 cache-first | 当前听力用浏览器语音合成，该分支为后续真实音频预留 |
+
+> **双击打开（`file://`）时**：Service Worker 与 manifest 需要 http(s) 环境，
+> 此时自动跳过注册，不报错、不影响任何功能——单文件依旧完全离线可用。
+
+构建产物（`dist/`）：`index.html` + `cet4-xiuxian.html`（同一份内容）、
+`manifest.webmanifest`、`sw.js`、`icons/`（4 个 PNG）。
+`npm run verify:pwa` 会校验图标尺寸、sw 预缓存清单与页面引用三者是否一致。
 
 ## AI 批改（接口预留，尚未接入）
 

@@ -14,6 +14,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e6b53'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23f8f3ea'%3E%E9%9D%92%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e6b53'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23f8f3ea'%3E%E9%9D%92%3C/text%3E%3C/svg%3E">
+<!-- PWA：由构建产出 dist/manifest.webmanifest、sw.js 与 icons/。
+     file:// 双击打开时这两个文件不在同一目录也不会报错，只是不启用安装与离线。 -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <style>
 :root { --ink:#23170f; --soft:#5a4330; --muted:#8b7360; --bg:#f3ecdf; --bg2:#e7dccb; --card:#fffaf3; --line:#ddcfbb; --jade:#0e6b53; --jade-ink:#08382c; --gold:#a56d22; --ok:#176b3f; --bad:#922f1d; --shadow:0 18px 40px rgba(62,36,12,.08); color-scheme:light; }
 @media (prefers-color-scheme:dark) { :root { --ink:#f6ecdf; --soft:#ddcfbc; --muted:#b09b88; --bg:#12100e; --bg2:#221c17; --card:#211b16; --line:#3c3229; --jade:#8ed8bd; --jade-ink:#dffcf1; --gold:#efc98a; --ok:#b7ebc8; --bad:#ffc7bb; --shadow:0 18px 40px rgba(0,0,0,.32); color-scheme:dark; } }
@@ -155,20 +160,8 @@ const EXAM_CONFIGS = { junior:{id:'junior',name:'初中英语',level:1,pass:60,t
 function selectedExam(){ return EXAM_CONFIGS[state.examId]||EXAM_CONFIGS.cet4; }
 function difficultyForRealm(realmIndex){ return Math.max(1,Math.min(5,selectedExam().level+Math.floor(Number(realmIndex||0)/2))); }
 function examPassResult(correct){ const e=selectedExam(); const score=Math.round(Math.max(0,correct)/e.count*e.total); return {score,pass:score>=e.pass,passLine:e.pass,exam:e.id}; }
-// PWA：内联 manifest（保持单文件、不依赖外部资源）
-(function(){
-  try{
-    const icon="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e6b53'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23f8f3ea'%3E%E9%9D%92%3C/text%3E%3C/svg%3E";
-    const manifest={name:"青词天路 · 四级全卷修仙",short_name:"青词天路",start_url:".",display:"standalone",background_color:"#f3ecdf",theme_color:"#0e6b53",lang:"zh-CN",description:"4540 个 CET-4 单词，六种记忆题型与间隔复习，纯本地运行。",icons:[{src:icon,sizes:"any",type:"image/svg+xml",purpose:"any"}]};
-    const link=document.createElement('link'); link.rel='manifest';
-    link.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
-    document.head.appendChild(link);
-  }catch(e){}
-  // Service Worker 仅在 http(s) 下可注册；file:// 打开时静默跳过
-  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-    try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
-  }
-})();
+// PWA 与离线缓存已迁到 TypeScript 服务层（src/services/pwa.ts、offline-store.ts），
+// 由构建内联的 QingciServices 在页面 load 后自动注册 Service Worker 并缓存内联数据。
 // 全局错误兜底：异常时给出可读提示，避免白屏
 function reportError(msg, detail){
   try{

@@ -36,6 +36,39 @@
 - 测试：新增 `tests/grading.test.mjs` 10 条用例（开关关闭零请求、501 归一化、
   脏结构丢弃、网络异常、Function 200/400/405/204 契约）。
 
+### 新增：PWA 安装与离线可用（P0.5 第一批）
+
+- `manifest.webmanifest`：名称 / 图标 / `start_url` / `standalone` 展示模式，
+  含 192、512 两种尺寸与 `maskable` 变体，满足浏览器安装条件。
+- `scripts/make-icons.mjs`：**零依赖** PNG 图标生成器（自写 PNG chunk + zlib），
+  几何绘制「金色掌握度环 + 山峦」，确定性产出 4 个图标，不引入 canvas/sharp。
+- `src/sw.template.js` → 构建产出 `dist/sw.js`：外壳预缓存、导航 network-first
+  回落缓存、`/audio/*` cache-first（为后续真实听力音频预留）、
+  `/healthz`、`/status`、`/api/*` 一律 network-only（不把接口伪装成离线可用）、
+  缓存版本按「版本号-产物指纹」注入，激活时清理旧缓存。
+- `src/services/pwa.ts`：Service Worker 注册与「新版本已就绪，点击刷新」提示条；
+  `file://` 或非安全上下文自动跳过，注册失败静默降级。
+- `src/services/offline-store.ts`：IndexedDB 离线数据仓库，按版本缓存内联的词库与试卷，
+  版本未变时复用（避免每次启动写 ~300KB）；IndexedDB 不可用时全部降级、不抛异常。
+  学习进度仍以 localStorage 为唯一权威存储，本模块只缓存可再生数据，因此无需迁移。
+- 构建与部署：`dist/` 同时产出 `index.html` 与 `cet4-xiuxian.html`；
+  `prepare:deploy` 拷贝 PWA 资源；`_headers` 为 `sw.js` 声明 `no-cache`、
+  图标 `immutable`；`server.mjs` 本地服务补齐 `/manifest.webmanifest`、`/sw.js`、`/icons/*`。
+- 新增 `npm run verify:pwa`：校验 manifest 图标尺寸（含 maskable）、sw 预缓存清单文件是否
+  齐全、页面是否正确引用，已纳入 `npm run verify` 与 `verify:prod`。
+- 测试：新增 `tests/offline-pwa.test.mjs` 7 条用例（版本复用、缺失数据跳过、
+  隐私模式降级、纯函数、注册条件与失败降级）。构建期还借此发现并修复了
+  「缓存版本取自仓库创建时而非当前版本」的缺陷。
+
+### 校验
+
+- `tsc --noEmit` 通过；自动化测试 **73/73** 通过；文档示例核验 26/26 通过；
+  `verify:pwa` 通过（图标 4 个尺寸正确、sw 预缓存 9 项无缺失）。
+- 本地服务端到端：`/manifest.webmanifest` 200（application/manifest+json，no-cache）、
+  `/sw.js` 200（application/javascript，no-cache）、`/icons/*.png` 200（immutable）。
+- 核心源码（`src/core`、`functions/`、`worker/`）行覆盖率 100%，
+  统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%。
+
 ### 变更：仓库清理（隧道时代遗留）
 
 移除保活 / 守护设施，线上巡检统一走 `prod-probe`；不改动任何业务代码。
@@ -52,16 +85,13 @@
   「已弃用」；总览中的隧道行改为「其他静态托管」；澄清纯静态平台无动态接口、
   Pages 通过 `functions/` 提供动态接口；常见问题按 Pages 形态重写。
 
-### 校验
-
-- `tsc --noEmit` 通过；自动化测试 66/66 通过；文档示例核验 26/26 通过。
-- 核心源码（`src/core`、`functions/`、`worker/`）行覆盖率 100%，
-  统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%。
-
 ### 已知边界
 
-- 前端产物体积由 469.4 KB 增至 478.0 KB（服务层 2.9 KB + 批改集成脚本）。
+- 前端产物体积 469.4 KB → **481.6 KB**（TypeScript 服务层 7.1 KB + 批改与 PWA 集成脚本）。
 - `src/core/*.js` 与 `functions/*.js` 尚未迁移为 TypeScript，属后续增量迁移范围。
+- **P0.5 第二批待做**：响应式断点目前是 640/860/600/380px，尚未按 768 / 1024 规范重整；
+  底部固定播放条、顶栏吸顶计时器、桌面端方向键切题、手动主题切换、
+  Media Session 后台播放控制尚未实现。
 
 ---
 

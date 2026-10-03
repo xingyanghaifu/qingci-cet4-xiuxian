@@ -17,6 +17,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { build as esbuild } from 'esbuild';
+import { makeIcons } from './make-icons.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -24,6 +25,7 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 const SRC = join(root, 'src', 'index.template.html');
 const SERVICES_ENTRY = join(root, 'src', 'entry', 'services.ts');
+const SW_TEMPLATE = join(root, 'src', 'sw.template.js');
 const SERVICES_MARKER = '<!-- build:services -->';
 const OUT_DIR = join(root, 'dist');
 const OUT = join(OUT_DIR, 'cet4-xiuxian.html');
@@ -53,6 +55,7 @@ try {
     legalComments: 'none',
     charset: 'utf8',
     logLevel: 'silent',
+    define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   });
   servicesCode = result.outputFiles.map((f) => f.text).join('\n');
 } catch (e) {
@@ -109,15 +112,53 @@ const meta = '<!-- build: qingci-cet4-xiuxian v' + pkg.version + ' @ ' + stamp +
 html = metaRe.test(html) ? html.replace(metaRe, meta) : html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + meta);
 
 // —— 5. 输出 ——
+// 同时产出 index.html：静态托管（含本地 npm start）把 / 映射到 index.html，
+// Service Worker 的预缓存清单也以 ./index.html 为准。
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(OUT, html, 'utf8');
+writeFileSync(join(OUT_DIR, 'index.html'), html, 'utf8');
 
 const size = statSync(OUT).size;
 const sha = createHash('sha256').update(html, 'utf8').digest('hex').slice(0, 16);
+
+// —— 6. PWA 资源：manifest + Service Worker + 图标（与单文件分离，互不影响）——
+const cacheVersion = pkg.version + '-' + sha.slice(0, 8);
+
+const manifest = {
+  name: '青词天路 · 四级全卷修仙',
+  short_name: '青词天路',
+  description: '4540 个 CET-4 单词、五类备考模式、六种记忆题型与间隔复习；离线可用，学习记录只存在本机浏览器。',
+  lang: 'zh-CN',
+  dir: 'ltr',
+  start_url: './',
+  scope: './',
+  display: 'standalone',
+  orientation: 'portrait-primary',
+  background_color: '#12100e',
+  theme_color: '#0e6b53',
+  categories: ['education', 'productivity'],
+  icons: [
+    { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: 'icons/icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+    { src: 'icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+};
+writeFileSync(join(OUT_DIR, 'manifest.webmanifest'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+if (!existsSync(SW_TEMPLATE)) fail('找不到 Service Worker 模板 ' + SW_TEMPLATE);
+const swSource = readFileSync(SW_TEMPLATE, 'utf8');
+if (!swSource.includes('__CACHE_VERSION__')) fail('Service Worker 模板缺少 __CACHE_VERSION__ 占位符');
+const swOut = swSource.replace(/__CACHE_VERSION__/g, cacheVersion);
+writeFileSync(join(OUT_DIR, 'sw.js'), swOut, 'utf8');
+
+const icons = makeIcons(OUT_DIR);
+
 console.log('');
 console.log('✅ 构建成功');
-console.log('   产物: dist/cet4-xiuxian.html');
+console.log('   产物: dist/cet4-xiuxian.html + dist/index.html（同一份内容）');
 console.log('   大小: ' + (size / 1024).toFixed(1) + ' KB（其中服务层 ' + (Buffer.byteLength(servicesCode) / 1024).toFixed(1) + ' KB）');
 console.log('   词库: ' + words.length + ' 条');
 console.log('   校验: sha256:' + sha);
+console.log('   PWA : manifest.webmanifest + sw.js（缓存版本 ' + cacheVersion + '）+ ' + icons.length + ' 个图标');
 console.log('   说明: 单文件自包含，零运行时依赖，可直接双击打开');

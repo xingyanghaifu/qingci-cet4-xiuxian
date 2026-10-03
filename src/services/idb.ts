@@ -10,10 +10,14 @@
  *   v2  + mistakes / reviews / meta  —— 错题本与复习记录（P0.2）
  *   v3  + vocab                      —— 词汇 SRS 状态（P1 任务 A）
  *   v4  + attempts / reports         —— 作答流水与模考报告（P1 任务 B）
+ *   v5  + tribulations / inventory / qiLog / demons / encounters /
+ *           spiritField / cave / duels / transmissions / sect
+ *       —— 修炼生态四阶段（A 渡劫与灵石消费 / B 心魔与奇遇 / C 灵田洞府 /
+ *          D 道友互动）一次性建仓；此后各阶段只写数据，不再改 schema
  */
 
 export const IDB_NAME = 'qingci-offline';
-export const IDB_VERSION = 4;
+export const IDB_VERSION = 5;
 
 export const IDB_STORES = {
   datasets: 'datasets',
@@ -23,6 +27,17 @@ export const IDB_STORES = {
   vocab: 'vocab',
   attempts: 'attempts',
   reports: 'reports',
+  // —— 修炼生态 v5（四阶段一次性建仓）——
+  tribulations: 'tribulations',
+  inventory: 'inventory',
+  qiLog: 'qiLog',
+  demons: 'demons',
+  encounters: 'encounters',
+  spiritField: 'spiritField',
+  cave: 'cave',
+  duels: 'duels',
+  transmissions: 'transmissions',
+  sect: 'sect',
 } as const;
 
 export type IdbStoreName = (typeof IDB_STORES)[keyof typeof IDB_STORES];
@@ -116,6 +131,51 @@ export function upgradeSchema(db: MinimalDatabase): void {
   if (!db.objectStoreNames.contains(IDB_STORES.reports)) {
     const store = db.createObjectStore(IDB_STORES.reports, { keyPath: 'at' });
     store.createIndex?.('paperId', 'paperId');
+  }
+
+  /* ── 修炼生态（v5）：四个阶段一次性建仓，后续阶段只写数据不再改 schema ──
+   * inventory keyPath = id
+   *   常驻道具：id = itemId（如 'talisman'）
+   *   按词道具：id = itemId + ':' + targetId（如 'pill:about'）
+   *   读取时按 itemId 前缀查询，按 targetId 定位具体记录
+   */
+  if (!db.objectStoreNames.contains(IDB_STORES.tribulations)) {
+    db.createObjectStore(IDB_STORES.tribulations, { keyPath: 'id' });
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.inventory)) {
+    // keyPath 组装规则见上方注释：常驻 = itemId；按词 = itemId:targetId
+    db.createObjectStore(IDB_STORES.inventory, { keyPath: 'id' });
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.qiLog)) {
+    const store = db.createObjectStore(IDB_STORES.qiLog, { autoIncrement: true });
+    store.createIndex?.('timestamp', 'timestamp');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.demons)) {
+    const store = db.createObjectStore(IDB_STORES.demons, { keyPath: 'id' });
+    store.createIndex?.('questionId', 'questionId');
+    store.createIndex?.('level', 'level');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.encounters)) {
+    const store = db.createObjectStore(IDB_STORES.encounters, { keyPath: 'id' });
+    store.createIndex?.('day', 'day');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.spiritField)) {
+    const store = db.createObjectStore(IDB_STORES.spiritField, { keyPath: 'id' });
+    store.createIndex?.('plotIndex', 'plotIndex');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.cave)) {
+    db.createObjectStore(IDB_STORES.cave, { keyPath: 'id' });
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.duels)) {
+    const store = db.createObjectStore(IDB_STORES.duels, { keyPath: 'id' });
+    store.createIndex?.('startedAt', 'startedAt');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.transmissions)) {
+    const store = db.createObjectStore(IDB_STORES.transmissions, { keyPath: 'id' });
+    store.createIndex?.('word', 'word');
+  }
+  if (!db.objectStoreNames.contains(IDB_STORES.sect)) {
+    db.createObjectStore(IDB_STORES.sect, { keyPath: 'id' });
   }
 }
 

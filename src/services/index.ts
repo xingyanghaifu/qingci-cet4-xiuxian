@@ -41,6 +41,14 @@ import {
   ASSESSMENT_MIN_ITEMS, ASSESSMENT_MAX_ITEMS, ASSESSMENT_LEVELS,
 } from './assessment';
 import { loadPlanSettings, savePlanSettings, normalizePlanSettings, daysToExam, DEFAULT_PLAN_SETTINGS, PLAN_SETTINGS_KEY } from './plan-settings';
+import {
+  buildTrackFromText, splitSentences, normalizeAudioMeta, segmentAt, neighborSegment, indexOfSegment,
+  clampAbRange, clampRate, estimateSeconds, checkDictation, normalizeForDictation, describeSegment,
+  SPEED_OPTIONS, CHARS_PER_SECOND,
+} from '../types/audio';
+import {
+  createTtsProvider, createElementProvider, pickProvider, createIntensivePlayer,
+} from './audio-provider';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -205,6 +213,30 @@ const QingciServices = {
     daysToExam,
     defaults: DEFAULT_PLAN_SETTINGS,
     planKey: PLAN_SETTINGS_KEY,
+  },
+  audio: {
+    buildTrackFromText,
+    splitSentences,
+    normalizeMeta: normalizeAudioMeta,
+    segmentAt,
+    neighbor: neighborSegment,
+    indexOf: indexOfSegment,
+    clampAbRange,
+    clampRate,
+    estimateSeconds,
+    checkDictation,
+    normalizeForDictation,
+    describeSegment,
+    speedOptions: SPEED_OPTIONS,
+    charsPerSecond: CHARS_PER_SECOND,
+    ttsProvider: createTtsProvider,
+    elementProvider: createElementProvider,
+    pickProvider,
+    createPlayer: createIntensivePlayer,
+    /** 提供方可读名（界面展示用） */
+    providerLabel(id: string): string {
+      return id === 'element' ? '真实音频' : '语音合成（占位）';
+    },
   },
 };
 

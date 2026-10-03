@@ -654,6 +654,16 @@ IntensivePlayer（怎么练）   逐句 / 循环 / A-B / 变速 / 原文 / 听�
 > 密钥只存在于 Cloudflare 环境变量中；仓库、前端代码、构建产物里都不会出现任何 Key。
 > 未完成授权核验前，界面不会展示任何虚拟评分或雷达图。
 
+## 下一步待办（仅规划，均未执行）
+
+| 优先级 | 事项 | 依赖 / 说明 |
+|---|---|---|
+| P0 | **Supabase 云同步**（存档与学情跨设备） | 等 Project URL + anon key 到位后接入；走 Feature Flag，默认关闭 |
+| P1 | **离线分发包构建** `npm run build:offline` | 国内分发用：单 HTML + 词典分片打包 zip，脱离 Cloudflare 也能安装使用 |
+| P1 | **真实听力音频素材接入** | 版权来源待定；接入后精听由「语音合成占位」切换为真实音频按秒循环 |
+| P2 | **真实词频表替换** | `node scripts/build-vocab-grades.mjs --frequency <词频表>`，用真实词频重算四档分级 |
+| P2 | **AI 批改接口接入** | 等 DeepSeek API Key；`src/config/features.ts` 开关默认关闭，接入前 `/api/grade` 保持占位、零外部请求 |
+
 ## 文档
 
 | 文档 | 说明 |

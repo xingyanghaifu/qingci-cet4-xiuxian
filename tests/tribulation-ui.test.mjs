@@ -80,9 +80,9 @@ test('结构6：全部 id 唯一', () => {
   }
 });
 
-test('结构7：R9 门与浮层类名协同（同一字面量）', () => {
-  const guardCount = html.split("document.querySelector('.trib-session')").length - 1;
-  assert.strictEqual(guardCount, 2, '两个全局 keydown 的门都以 .trib-session 为查询依据');
+test('结构7：R9 门与浮层类名协同（同一字面量，遍历任一可见）', () => {
+  const guardCount = html.split("document.querySelectorAll('.trib-session')").length - 1;
+  assert.ok(guardCount >= 2, '两个全局 keydown 的门都以 querySelectorAll 遍历 .trib-session');
   assert.ok(html.includes('class="overlay trib-session hidden"'), '浮层根节点承载 trib-session 类');
   // 选择即确认的 CSS 钩子已在位（逻辑步骤会用）
   assert.ok(html.includes('.trib-choice.picked'), '缺选中态样式钩子');
@@ -156,7 +156,9 @@ test('运行时4：结果页与关闭清空（验收 15 内容复位）', () => 
 test('运行时5：判定接入——abandoned 语义、maxSafeDeduct、落库编排（步骤4已接）', () => {
   const rt = runtimeRegion();
   assert.ok(rt.includes("abandoned: reason !== 'complete'"), '超时与放弃同档：永不判过');
-  assert.ok(rt.includes('hasTalisman: false'), '护道符效果接入在步骤5（本步仍 false）');
+  // A2：护道符判定接入库存缓存，消耗在 persistFinish
+  assert.ok(rt.includes('S.economy.talismanCount() > 0'), '护道符持有须来自库存缓存');
+  assert.ok(rt.includes('S.economy.consumeTalisman()'), '扣罚抵扣后须消耗一张');
   assert.ok(rt.includes('maxSafeDeduct: (typeof realm === \'function\' ? realm().into : 0)'), '扣罚夹逼来自 realm().into');
   // 步骤4：落库已接（记录→冷却、修为扣罚、成功入账）
   assert.ok(rt.includes('persistFinish(rec, grade)'), 'finish 必须走落库编排');

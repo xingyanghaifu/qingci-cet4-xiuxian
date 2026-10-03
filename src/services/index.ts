@@ -31,6 +31,11 @@ import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, 
 import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
 import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_SCHEMA, FREE_DICT_API } from './vocab-detail';
 import {
+  spendSpirit, earnSpirit, getBalance, listRecentTransactions, refreshInventory,
+  purchase, consumeTalisman, arrayActive, talismanCount, activePillWords, bookUnlocked,
+  unlockedBookWords, priceOf, ITEM_CATALOG, ARRAY_DURATION_MS, PILL_DURATION_MS,
+} from './economy';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -149,6 +154,24 @@ const QingciServices = {
     prepareTrack,
     armVoa,
     playReal,
+  },
+  economy: {
+    spendSpirit,
+    earnSpirit,
+    getBalance,
+    listRecentTransactions,
+    refreshInventory,
+    purchase,
+    consumeTalisman,
+    arrayActive,
+    talismanCount,
+    activePillWords,
+    bookUnlocked,
+    unlockedBookWords,
+    priceOf,
+    catalog: ITEM_CATALOG,
+    ARRAY_MS: ARRAY_DURATION_MS,
+    PILL_MS: PILL_DURATION_MS,
   },
   tribulation: {
     canTribulate,

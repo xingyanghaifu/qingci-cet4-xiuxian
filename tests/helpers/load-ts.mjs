@@ -38,7 +38,10 @@ export async function loadTs(relPath) {
     logLevel: 'silent',
   });
   mkdirSync(OUT_DIR, { recursive: true });
-  const file = join(OUT_DIR, key + '.mjs');
+  // 输出文件按进程隔离：多个测试进程会并发加载同一模块（键只含文件名+路径），
+  // 共享文件 + 截断式写入会让另一进程读到半截模块 → 导出 undefined 的随机失败。
+  // pid 后缀使每个进程写读自己的完整文件，彻底消除竞争（dist/.ts-test 已被 gitignore）。
+  const file = join(OUT_DIR, `${key}.${process.pid}.mjs`);
   writeFileSync(file, result.outputFiles[0].text, 'utf8');
 
   const mod = await import(pathToFileURL(file).href);

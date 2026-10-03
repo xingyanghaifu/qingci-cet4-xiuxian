@@ -16,7 +16,7 @@
 
 import { eligibleRealmIndex, realmByIndex, REALMS } from '../types/realm';
 import { selectPracticeSet, type BankQuestion, type QuestionBank } from '../types/question-bank';
-import { storeOf, promisify, type MinimalObjectStore } from './idb';
+import { storeOf, promisify, type MinimalFactory, type MinimalObjectStore } from './idb';
 
 /* ───────────────── 常量（可调参数集中于此） ───────────────── */
 
@@ -93,6 +93,10 @@ export interface InventorySummary {
   talisman: number;
   /** 聚灵阵生效截止（ISO）；无生效记录为 null */
   arrayUntil: string | null;
+  /** 记忆丹覆盖中的词（7 天窗口内） */
+  pills: string[];
+  /** 参悟古籍已解锁的词 */
+  books: string[];
 }
 
 /** 由库存条目纯计算摘要（id 规则见 idb.ts：常驻=itemId，按词=itemId:targetId） */
@@ -105,20 +109,36 @@ export function readInventorySummary(
   const arrayRow = list.find((it) => it && it.id === 'array');
   const arrayUntil = arrayRow && arrayRow.activeUntil ? String(arrayRow.activeUntil) : null;
   const untilMs = arrayUntil ? Date.parse(arrayUntil) : NaN;
+  const pills: string[] = [];
+  const books: string[] = [];
+  for (const it of list) {
+    const id = it && typeof it.id === 'string' ? it.id : '';
+    if (id.startsWith('pill:')) {
+      const t = it && it.activeUntil ? Date.parse(it.activeUntil) : NaN;
+      if (Number.isFinite(t) && t > now) pills.push(id.slice(5));
+    } else if (id.startsWith('book:')) {
+      books.push(id.slice(5));
+    }
+  }
   return {
     talisman: Math.max(0, Number(talismanRow && talismanRow.count) || 0),
     arrayUntil: Number.isFinite(untilMs) && untilMs > now ? arrayUntil : null,
+    pills,
+    books,
   };
 }
 
 /** 读取库存并计算摘要（库存不可用 → 全零，境界卡静默不显示） */
-export async function loadInventorySummary(now: number = Date.now()): Promise<InventorySummary> {
+export async function loadInventorySummary(
+  now: number = Date.now(),
+  factory?: MinimalFactory | null,
+): Promise<InventorySummary> {
   try {
-    const inv = await storeOf('inventory', 'readonly');
+    const inv = await storeOf('inventory', 'readonly', factory);
     const rows = await promisify<Array<{ id: string; count?: number; activeUntil?: string }>>(inv.getAll());
     return readInventorySummary(rows, now);
   } catch {
-    return { talisman: 0, arrayUntil: null };
+    return { talisman: 0, arrayUntil: null, pills: [], books: [] };
   }
 }
 

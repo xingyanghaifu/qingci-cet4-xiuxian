@@ -24,7 +24,7 @@ const html = readFileSync(
   'utf8',
 );
 
-const GUARD = "if (tribSess && !tribSess.classList.contains('hidden')) return;";
+const GUARD = "if (!tribSess[ti].classList.contains('hidden')) return;";
 const mockSession = (hidden) => ({ classList: { contains: (t) => (t === 'hidden' ? hidden : false) } });
 
 /* ─────────────── R9 场景 1/2/4：让位谓词语义 ─────────────── */
@@ -48,9 +48,11 @@ test('R9 场景4：类被移除（元素仍在但不含 trib-session 语义）�
   assert.strictEqual(trib.tribulationSessionYields(closed), false, 'hidden 后恢复');
 });
 
-test('R9 场景3a：静态接线——门存在于两个全局 keydown 且先于一切分发', () => {
+test('R9 场景3a：静态接线——门存在于两个全局 keydown 且先于一切分发（遍历任一可见会话）', () => {
   const guardCount = html.split(GUARD).length - 1;
   assert.strictEqual(guardCount, 2, '两个全局 keydown 处理器都必须装门');
+  assert.ok(html.split("document.querySelectorAll('.trib-session')").length - 1 >= 2,
+    '门必须遍历全部 .trib-session（首个元素可能 hidden，单点查询会漏）');
 
   const guardIdx = [];
   let i = -1;
@@ -399,20 +401,24 @@ test('改道：recordProgress 三参透传（storage + options）', () => {
 
 /* ─────────────── 道具清单摘要（境界卡只读，验收 17-19） ─────────────── */
 
-test('清单摘要：护道符计数 / 聚灵阵时效 / 脏数据兜底', () => {
+test('清单摘要：护道符计数 / 聚灵阵时效 / 丹书窗口 / 脏数据兜底', () => {
   const now = Date.now();
-  assert.deepStrictEqual(trib.readInventorySummary([], now), { talisman: 0, arrayUntil: null });
-  assert.deepStrictEqual(trib.readInventorySummary(null, now), { talisman: 0, arrayUntil: null });
+  const zero = { talisman: 0, arrayUntil: null, pills: [], books: [] };
+  assert.deepStrictEqual(trib.readInventorySummary([], now), zero);
+  assert.deepStrictEqual(trib.readInventorySummary(null, now), zero);
   const active = new Date(now + 3600_000).toISOString();
   const expired = new Date(now - 1000).toISOString();
   const sum = trib.readInventorySummary([
     { id: 'talisman', count: 3 },
     { id: 'array', activeUntil: active },
-    { id: 'pill:about', count: 1 },     // 按词道具不影响这两项
-    { id: 'book:x', count: 1 },
+    { id: 'pill:about', count: 1, activeUntil: active },   // 生效中的记忆丹
+    { id: 'pill:abandon', count: 1, activeUntil: expired }, // 已过期 → 不计
+    { id: 'book:xray', count: 1 },                          // 永久解锁
   ], now);
   assert.strictEqual(sum.talisman, 3);
   assert.strictEqual(sum.arrayUntil, active, '生效中返回截止时间');
+  assert.deepStrictEqual(sum.pills, ['about'], '只统计未过期的记忆丹');
+  assert.deepStrictEqual(sum.books, ['xray'], '古籍永久解锁');
   const sum2 = trib.readInventorySummary([{ id: 'talisman', count: 2 }, { id: 'array', activeUntil: expired }], now);
   assert.strictEqual(sum2.talisman, 2);
   assert.strictEqual(sum2.arrayUntil, null, '过期聚灵阵视为未生效');

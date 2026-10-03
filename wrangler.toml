@@ -21,4 +21,14 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 [vars]
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.5.0"
+
+# 反馈与道友小组的 D1 绑定（Pages 部署时由 scripts/deploy-pages.mjs 写入同样的绑定）
+# 建库与建表：
+#   npx wrangler d1 create qingci-feedback
+#   npx wrangler d1 execute qingci-feedback --remote --file=db/schema.sql
+# 可选加密盐（建议配置）：npx wrangler pages secret put FEEDBACK_SALT
+[[d1_databases]]
+binding = "DB"
+database_name = "qingci-feedback"
+database_id = "a4eff653-dcfd-4874-a0ff-e30f5e92a611"

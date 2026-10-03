@@ -108,6 +108,10 @@ export function collectWranglerCandidates() {
   return candidates;
 }
 
+/** D1 绑定（反馈 + 道友小组共用同一个库；database_id 不是密钥，可入库） */
+const D1_DATABASE_NAME = 'qingci-feedback';
+const D1_DATABASE_ID = 'a4eff653-dcfd-4874-a0ff-e30f5e92a611';
+
 /** 生成 Pages 版配置（只含 Pages 需要的字段） */
 function writePagesConfig() {
   fs.copyFileSync(TOML, BACKUP);
@@ -119,6 +123,12 @@ compatibility_date = "2026-09-30"
 
 [vars]
 APP_VERSION = "${pkg.version}"
+
+# 反馈与道友小组的 D1 绑定（建库命令见 db/schema.sql 与 docs/部署说明.md）
+[[d1_databases]]
+binding = "DB"
+database_name = "${D1_DATABASE_NAME}"
+database_id = "${D1_DATABASE_ID}"
 `);
 }
 

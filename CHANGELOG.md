@@ -5,7 +5,57 @@
 
 ---
 
-## [1.4.0] - 2026-10-03
+## [1.5.0] - 2026-10-03
+
+### 部署：P2.11 + P2.12 上线 + D1 配置（2026-10-03 10:54 +08:00）
+
+- 线上地址 `https://qingci-cet4-xiuxian.pages.dev`，部署版本 **1.5.0**，
+  产物指纹 `sha256:4d69df9e8745f23f`（应用 HTML 693.3 KB，服务层 123.5 KB）。
+- 端点验收（8/8）：
+
+  | 端点 | 结果 |
+  |---|---|
+  | `/` | 200 · 599,616 字符 |
+  | `/healthz` | 200 · `version=1.5.0` `status=ok` |
+  | `/api/meta` | 200 · `version=1.5.0` |
+  | `/status` | 200 · 1,097 字符真实 Function 输出（非 SPA 回退） |
+  | `POST /api/grade` | 200 · `status=not_implemented`（占位，零外部请求） |
+  | `/changelog.html` | 200 · 41,405 字符 |
+  | `/sw.js` | 200 · `cache-control: no-cache, must-revalidate` |
+  | `/question-bank.json` | 200 · 5,714,685 字符 |
+
+- 前端新增功能静态核验（18/18）：境界卡与五档阈值、突破动效容器、称号墙、
+  道友小组面板与隐私声明、无障碍设置卡、字号 4 档、高对比度、动效偏好、
+  快捷键 `1–4`/`Esc`/`?` 接线与文案、`✓/✗` 标记、题干与选项 ARIA、三个 dialog、
+  播报通道与焦点可见、首屏防闪烁、`/api/feedback` 与 `/api/group` 端点在场。
+  > 交互行为（点击、朗读、锁屏控制）需按 `docs/真机验收清单.md` 人工确认。
+
+- **D1 配置完成**（反馈 + 道友小组共用）：
+  - `npx wrangler d1 create qingci-feedback` → 数据库 ID `a4eff653-dcfd-4874-a0ff-e30f5e92a611`（区域 WNAM）；
+  - `npx wrangler d1 execute qingci-feedback --remote --file=db/schema.sql`
+    → 7 条语句执行成功（`feedback` / `study_groups` / `group_members` 三表 + 索引）；
+  - 绑定 `DB`：`wrangler.toml` 与 `scripts/deploy-pages.mjs` 生成的 Pages 配置中均写入
+    `[[d1_databases]] binding = "DB"`；
+  - `FEEDBACK_SALT`：已用 `wrangler pages secret put` 写入（40 位随机串，仅存密文）；
+  - 重新部署使绑定生效，接口实测 **25/25 通过**：
+
+    | 验证项 | 结果 |
+    |---|---|
+    | `POST /api/feedback` 写入 D1 | 201 · `stored=true` · `id=2`（响应不含原始 IP） |
+    | 反馈校验 / honeypot / GET 405 | 400 · 202 `stored=false` · 405 |
+    | 创建道场并入库 | 200 · 邀请码 `2LDJBX`（排除易混字符） |
+    | 进度分档 | 87 → 85（入库前分档为 5 的倍数） |
+    | 榜单字段白名单 | 仅 `isMe,nickname,progress,realmIndex,realmName,studyDays` |
+    | 榜单不含他人 memberId / 分数 | 已确认（无 score/answer/question 字段） |
+    | 排序 | 元婴 > 金丹（按境界→进度→学习天数） |
+    | 周 / 月维度 | `period=week` / `period=month` 均正常 |
+    | 昵称隐私校验 | 邮箱 / 手机号 / 纯数字 / 网址 一律 400 |
+    | 不存在的邀请码 | 404 |
+    | 退出与清理 | 成员退出成功，道场人数归零 |
+
+- **降级路径保留**：D1 未配置时 `/api/feedback` 与 `/api/group` 均返回 503，
+  前端分别走「本地队列自动重试」与「本机模式提示」；该路径无法在已配置的线上环境复现，
+  由单元测试覆盖（`tests/feedback.test.mjs`、`tests/realm-titles.test.mjs` 各有 503 断言）。
 
 ### 新增：无障碍与个性化（P2.12）
 
@@ -64,6 +114,8 @@
   （显式 null = 无 fetch，undefined 才回落全局）。
 
 ### 部署：P0 + P1 全量上线（2026-10-03 10:38 +08:00）
+
+> 该版本已由 **1.5.0** 取代（2026-10-03 11:14 部署，含 P2.11/P2.12）。以下为当时的验收记录。
 
 - 线上地址 `https://qingci-cet4-xiuxian.pages.dev`（Cloudflare Pages，项目 `qingci-cet4-xiuxian`）。
 - 部署版本 **1.4.0**，产物指纹 `sha256:0c683c4c8e648f04`（应用 HTML 649.2 KB）；
@@ -357,10 +409,10 @@
 
 ### 已知边界
 
-- 线上版本 **1.4.0**（2026-10-03 部署）；P2.11/P2.12 尚未部署，需再次执行 `npm run deploy:pages`。
+- 线上版本 **1.5.0**（2026-10-03 10:54 部署，含 P0/P1/P2.11/P2.12 与 D1 绑定）；`/healthz` 与 `/api/meta` 均报 1.5.0。
 - 前端产物体积 677.9 KB → **693.3 KB**（服务层 123.5 KB）；另有 6.23 MB 固化题库按需加载。
-- **道友小组与反馈都需要 D1**：未绑定 `DB` 时两个接口均返回 503（界面提示本机模式 / 保存到本地队列），
-  配置步骤见 `db/schema.sql` 与部署说明。
+- **道友小组与反馈已接入 D1**（库 `qingci-feedback`，2026-10-03 配置并实测 25/25 通过）；
+  未绑定 `DB` 的环境仍会自动降级（503 → 本机模式 / 本地队列），配置步骤见 README「D1 配置」与部署说明。
 - **听力精听暂无真实音频**：当前用语音合成占位、时间轴按文本估算、A-B 循环按「句」界定；
   接入真实音频（url + 逐句时间戳）后自动按秒精确循环，UI 无需改动。
 - **听力音频素材本身仍缺失**（版权与托管未定），这是内容问题，不是代码问题。

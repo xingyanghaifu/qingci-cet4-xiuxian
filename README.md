@@ -2,7 +2,7 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.4.0-0e6b53)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.5.0-0e6b53)](CHANGELOG.md)
 [![tests](https://img.shields.io/badge/tests-190%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
@@ -162,7 +162,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 | `https://qingci-cet4-xiuxian.pages.dev/status` | 状态页（HTML，动态） |
 | `https://qingci-cet4-xiuxian.pages.dev/api/meta` | 元信息（JSON，含五类备考与题源说明） |
 
-实测结果（2026-10-03 部署 v1.4.0 后，每路径 10 次采样 × 2 轮，`npm run probe:prod`）：
+实测结果（2026-10-03 部署 v1.5.0 后，每路径 10 次采样 × 2 轮，`npm run probe:prod`）：
 
 ```text
 路径        中位      最快      最慢      阈值内    超 2 秒
@@ -174,9 +174,9 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 
 > **两轮合计 80/80 采样全部返回 HTTP 200 且低于 2000ms 阈值。**
 > `/status` 上版曾因缺少 Function 走 SPA 回退，实际传输 469 KB 入口页导致偶发超时；
-> v1.4.0 补上 `functions/status.js` 后该路径只返回 1.2 KB 状态页，中位 323ms。
+> v1.5.0 补上 `functions/status.js` 后该路径只返回 1.2 KB 状态页，中位 323ms。
 
-`/healthz` 返回的真实响应（2026-10-03 部署 v1.4.0 后实测）：
+`/healthz` 返回的真实响应（2026-10-03 部署 v1.5.0 后实测）：
 
 ```json
 {
@@ -199,7 +199,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 
 | 通道 | 地址 | 国内直连 | 特点 |
 |---|---|---|---|
-| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.4.0（五类备考 + 状态页），动静接口齐全 |
+| **Cloudflare Pages** | `https://qingci-cet4-xiuxian.pages.dev` | ✅ 实测可达 | **当前验收入口**，已部署 v1.5.0（五类备考 + 状态页），动静接口齐全 |
 | Cloudflare Workers | `https://qingci-cet4-xiuxian.bw8pbrkt56.workers.dev` | ❌ 被阻断 | 固定边缘部署，接口逻辑与 Pages 版同构，当前仍为 v1.2.0 构建 |
 
 > **为什么以 Pages 地址作为验收入口**：`*.workers.dev` 域名在中国大陆网络下被整体阻断
@@ -208,7 +208,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 > 功能基本一致，因此以可达性更好的 Pages 地址作为线上验收入口。
 > Workers 侧此前已完成部署，并通过 Cloudflare API 确认为生产环境运行
 > （部署版本 `37396f96`、`workers.dev` 子域已启用、`APP_VERSION` 为 1.2.0）；
-> 该通道**未随 v1.3.0 / v1.4.0 的 Pages 部署一起更新**。
+> 该通道**未随 v1.3.0 / v1.5.0 的 Pages 部署一起更新**。
 
 > 复采命令：`npm run probe:prod`（每路径 10 次采样，阈值 2000ms）。
 
@@ -216,6 +216,68 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 > 入口页下发 ETag 协商缓存，重复访问命中 `304` 不再重复传输 469KB 正文；
 > 本机服务与静态托管均启用 Brotli 压缩（实测本机预热：gzip 144 KB / br 128 KB，入口页原始 469 KB）。
 
+## D1 配置（反馈 + 道友小组）
+
+反馈收集与道友小组共用**同一个 D1 数据库**；未配置时两个接口返回 503，
+前端分别降级为「本地队列自动重试」与「本机模式」，学习功能不受影响。
+
+```bash
+# 1) 建库（记下返回的 database_id）
+npx wrangler d1 create qingci-feedback
+
+# 2) 建表（feedback / study_groups / group_members 三表 + 索引）
+npx wrangler d1 execute qingci-feedback --remote --file=db/schema.sql
+
+# 3) 可选但建议：配置 IP 哈希盐（仅存密文）
+npx wrangler pages secret put FEEDBACK_SALT
+```
+
+绑定 `DB` 的方式（二选一）：
+
+- **本项目默认**：`wrangler.toml` 与 `scripts/deploy-pages.mjs` 里都写好了
+  `[[d1_databases]] binding = "DB"`，`npm run deploy:pages` 会自动带上绑定；
+- **控制台方式**：Cloudflare Dashboard → Pages → 项目 → Settings → Functions →
+  D1 database bindings，变量名填 `DB`。
+
+当前线上库：`qingci-feedback`（ID `a4eff653-dcfd-4874-a0ff-e30f5e92a611`，区域 WNAM）。
+
+### 接口与隐私约束
+
+| 接口 | 说明 |
+|---|---|
+| `POST /api/feedback` | 反馈落库；限流同 IP 哈希每小时 5 条；honeypot 命中返回 202 但不入库；不保存原始 IP |
+| `POST /api/group` | `action` = `create` / `join` / `sync` / `board` / `leave`；只同步境界档位、粗粒度进度与学习天数 |
+
+- **昵称校验（服务端强制）**：含 `@`、6 位以上连续数字、纯数字或网址一律拒绝；
+- **不存分数、不存逐题数据**：进度入库前分档为 5 的倍数，无法反推分数；
+- **榜单只回** `nickname / realmName / progress / studyDays / isMe`，不含他人 `memberId`。
+
+### 无障碍与个性化使用说明
+
+「洞府 → 无障碍与阅读偏好」与「洞府 → 外观」提供三轴独立设置：
+
+| 设置 | 档位 | 作用范围 |
+|---|---|---|
+| 主题 | 跟随系统 / 浅色 / 深色 | 全局配色（首次跟随系统，切换后记住选择） |
+| 字号 | 标准 / 大 115% / 特大 130% / 超大 150% | 只放大题干、选项、解析与听力原文 |
+| 对比度 | 标准 / 高对比度 | 纯黑纯白 + 2px 加粗边框，弱视友好 |
+| 动效 | 跟随系统 / 减少动态效果 | 关闭突破动画与过渡 |
+
+键盘快捷键（按 `?` 可随时展开）：
+
+| 按键 | 作用 |
+|---|---|
+| `1` – `4` | 选择第 1–4 个选项 |
+| `→` / `↓` | 下一题 |
+| `←` / `↑` | 上一题 |
+| `Enter` | 推进：优先「下一题」，否则提交写作 / 拼写 |
+| `空格` | 播放 / 暂停听力 |
+| `R` | 重播听力 |
+| `Esc` | 关闭最上层弹窗 |
+| `?` | 显示 / 隐藏快捷键表 |
+
+屏幕阅读器：换题自动朗读题干（`aria-live`），正确/错误选项带 `✓`/`✗` 与文字说明，
+弹窗均为 `role="dialog"` 可用 `Esc` 关闭，焦点始终可见。
 ## 部署与访问
 
 | 项目 | 说明 |

@@ -3,7 +3,7 @@
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
 [![version](https://img.shields.io/badge/version-1.3.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-143%20passing-176b3f)](tests/)
+[![tests](https://img.shields.io/badge/tests-151%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -15,7 +15,7 @@
 
 一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
 CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 607.2 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+构建后是一个 621.8 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ npm install               # 安装构建期依赖（esbuild + typescript）
 npm run typecheck         # TypeScript 类型门禁（tsc --noEmit）
 npm run build             # esbuild 打包 src/ → 单文件 dist/ + PWA 资源（manifest/sw/图标）
 npm run verify:pwa        # 校验 PWA 产物一致性（图标尺寸、sw 预缓存清单、页面引用）
-npm test                  # 运行 143 个自动化测试
+npm test                  # 运行 151 个自动化测试
 npm run test:coverage     # 测试 + 覆盖率报告
 npm run test:docs         # 核验 API 文档中的 26 条示例可执行且输出一致
 npm start                 # 启动本地服务（http://127.0.0.1:4173）
@@ -59,7 +59,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 - **TypeScript 源码**：`src/**/*.ts` 与 `functions/**/*.ts` 由 `tsc --noEmit` 把关，
   esbuild 打包后内联进单文件，部署产物形态与旧版一致
 - **纯函数核心**：`src/core/` 与 DOM 解耦，可被 Node 测试直接覆盖
-- **可测试**：143 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
+- **可测试**：151 个用例；`src/core`、`functions/`、`worker/` 行覆盖率 100%
   （统计含测试脚本时整体行覆盖 99.73%、分支 87.88%、函数 96.99%；TypeScript 模块经
   esbuild 打包后执行，由 21 条行为用例覆盖，暂未计入行覆盖率）
 - **PWA 可安装 + 离线可用**：manifest + Service Worker + maskable 图标由构建产出，
@@ -94,6 +94,8 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 │   ├── services/report-store.ts  作答流水与模考报告仓库（IDB attempts / reports）
 │   ├── services/charts.ts        手写 SVG 图表（条形 / 折线 / 环形 / 热力）
 │   ├── services/recommend.ts     薄弱点 → 组卷参数 → 推荐练习
+│   ├── services/assessment.ts    自适应词汇量测试（阶梯难度 + 分档加权估计）
+│   ├── services/plan-settings.ts 学习计划设置（考试日期 / 每日时长）持久化
 │   ├── services/mistake-store.ts  错题仓库（IndexedDB CRUD + 复习日志）
 │   ├── services/migrate.ts    旧存档（v3/v4 心魔本）到错题本的一次性迁移
 │   ├── entry/services.ts      esbuild 入口（IIFE，内联进单文件）
@@ -275,6 +277,21 @@ npm run prepare:deploy   # 产出 deploy/ 目录（含 index.html、healthz.json
 | 手动主题 | 「洞府 → 外观」可选 跟随系统 / 浅色 / 深色；首屏内联脚本先行应用，避免闪色 |
 | 键盘操作 | `1–4` 选择选项、`←/↑` 只读回看上一题、`→/↓` 下一题、`Enter` 提交推进、`空格` 播放/暂停听力（输入框内自动失效） |
 | 后台播放 | 听力接入 Media Session：锁屏 / 通知栏 / 蓝牙耳机可播放、暂停、停止 |
+
+## 动态学习计划（P1 任务 C）
+
+| 能力 | 实现 |
+|---|---|
+| 自适应摸底 | `src/services/assessment.ts`：**阶梯式难度** 1–5（答对升、答错降），每个阶梯对应一个词库分档；题量最少 30、最多 50，达到 30 题后若最近 8 题正确率极端（≥87.5% 或 ≤12.5%）提前收敛 |
+| 词汇量估计 | 分档加权：`Σ 各档词量 × 该档掌握率`，掌握率用 Laplace 平滑并向阶梯先验收缩；区间由各档 Wilson 下/上界加权得到；置信度按题量与分档覆盖判定 |
+| 计划生成 | `src/services/study-plan.ts`：输入考试日期 / 已掌握量 / 每日可用时间 / 到期复习量 / 近期正确率 → 输出每日新词量、复习目标、题型配比、强度与是否可按期覆盖 |
+| 动态调整 | 完成率 <60% 减量、>110% 加量；正确率偏低再降一档；模考得分率偏低提高听力/阅读配比 |
+| 设置持久化 | `src/services/plan-settings.ts`：考试日期 / 每日可用分钟 / 目标词量存 localStorage，读取时规范化（脏数据回落默认、分钟数夹紧 10–240） |
+| 可视化 | 词汇覆盖 / 今日新词 / 今日复习三条进度条 + 近 28 天学习热力图（复用任务 B 的手写 SVG 图表） |
+| 联动 | 摸底结果写入 `state.assessment` 并据此设置每日目标；计划同时读取词汇 SRS 到期量与近 30 天作答正确率 |
+
+> ⚠️ **诚实标注**：这是启发式自适应测试（阶梯难度 + 分档加权），输出是**估计值 + 区间**，
+> 题目难度来自词库分档（P1-A 的启发式分级），**没有经过预试校准**；界面会同时展示区间与置信度。
 
 ## 模考报告与薄弱点分析（P1 任务 B）
 

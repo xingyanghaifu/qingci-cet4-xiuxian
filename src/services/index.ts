@@ -35,6 +35,12 @@ import { createReportStore, attemptFromQuestion, partOfKind } from './report-sto
 import { detectWeaknesses, accuracyTrend, timingByPart, buildPaperReport, compareWithTarget, describeReport, wilsonLowerBound, kindLabel, localDateKey } from '../types/report';
 import { barChart, lineChart, ringChart, heatmapGrid, CHART_CSS } from './charts';
 import { recommendPractice, buildRecommendedSet, describeRecommendation, countCandidates } from './recommend';
+import {
+  createAssessment, applyAnswer, buildAssessmentItem, estimateAssessment, describeAssessment,
+  shouldStop, nextLevel, tierForLevel, priorMastery,
+  ASSESSMENT_MIN_ITEMS, ASSESSMENT_MAX_ITEMS, ASSESSMENT_LEVELS,
+} from './assessment';
+import { loadPlanSettings, savePlanSettings, normalizePlanSettings, daysToExam, DEFAULT_PLAN_SETTINGS, PLAN_SETTINGS_KEY } from './plan-settings';
 import { MISTAKE_TYPES, REVIEW_RATINGS, summarizeMistakes, mistakeId, typeFromGate, proficiencyOf } from '../types/mistakes';
 import {
   GRADE_DIMENSION_WEIGHTS,
@@ -177,6 +183,28 @@ const QingciServices = {
     buildRecommendedSet,
     describeRecommendation,
     countCandidates,
+  },
+  assessment: {
+    create: createAssessment,
+    applyAnswer,
+    buildItem: buildAssessmentItem,
+    estimate: estimateAssessment,
+    describe: describeAssessment,
+    shouldStop,
+    nextLevel,
+    tierForLevel,
+    priorMastery,
+    minItems: ASSESSMENT_MIN_ITEMS,
+    maxItems: ASSESSMENT_MAX_ITEMS,
+    levels: ASSESSMENT_LEVELS,
+  },
+  settings: {
+    loadPlan: loadPlanSettings,
+    savePlan: savePlanSettings,
+    normalizePlan: normalizePlanSettings,
+    daysToExam,
+    defaults: DEFAULT_PLAN_SETTINGS,
+    planKey: PLAN_SETTINGS_KEY,
   },
 };
 

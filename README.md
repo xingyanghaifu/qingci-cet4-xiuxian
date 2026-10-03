@@ -698,3 +698,12 @@ IntensivePlayer（怎么练）   逐句 / 循环 / A-B / 变速 / 原文 / 听�
 ## 许可
 
 MIT
+
+## 声明
+
+- 本项目与教育部教育考试院、全国大学英语四六级考试委员会**无任何关联**，为个人开发的开源 CET-4 备考工具。
+- 数据默认保存在浏览器本地（IndexedDB / localStorage），不上传服务器；反馈与道友小组功能仅提交匿名数据（昵称 + 学习进度分档），不包含答题数据、分数或任何个人身份信息。
+- 词库来源 [mahavivo/english-wordlists](https://github.com/mahavivo/english-wordlists)（MIT License）。
+- 题库由算法确定性生成，**非历年真题**，仅供练习使用；题库规模 18,502 题。
+- 听力音频当前为 TTS 占位，真人音频素材待接入。
+- 本项目采用 **MIT License**，详见 [LICENSE](LICENSE)。

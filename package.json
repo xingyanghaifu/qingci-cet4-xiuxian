@@ -29,13 +29,19 @@
     "verify:prod": "npm run typecheck && npm run verify:pwa && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
   },
   "keywords": [
-    "cet4",
-    "vocabulary",
-    "spaced-repetition",
-    "gamification",
-    "single-file-app"
+    "CET-4",
+    "英语四级",
+    "背单词",
+    "PWA",
+    "修仙"
   ],
   "license": "MIT",
+  "author": "xingyanghaifu",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xingyanghaifu/qingci-cet4-xiuxian.git"
+  },
+  "homepage": "https://qingci-cet4-xiuxian.pages.dev",
   "devDependencies": {
     "esbuild": "^0.28.2",
     "typescript": "^7.0.2"

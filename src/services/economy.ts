@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 灵石经济（修炼生态 · 阶段 A2）
  *
  * 职责：灵石收支 + 流水（qiLog）+ 道具库存（inventory）读写与效果缓存。
@@ -290,6 +290,42 @@ export async function purchase(
     // 库存写失败 → 退款回滚
     const back = earnSpirit(state, item.price, `refund_${itemId}`, factory);
     return { ok: false, reason: 'unknown-item', balanceAfter: back.balanceAfter };
+  }
+}
+
+/**
+ * 无价发放（收获 / 任务奖励）：直接写库存，不扣灵石。
+ * 与 purchase 的区别：无价格校验、无「已拥有」拦截（护道符按计数叠加）。
+ */
+export async function grantItem(
+  itemId: string,
+  targetId?: string,
+  factory?: MinimalFactory | null,
+  now: number = Date.now(),
+): Promise<boolean> {
+  try {
+    const store = await inventoryStore('readwrite', factory);
+    if (!store) return false;
+    const target = targetId ? String(targetId).trim().toLowerCase() : '';
+    const id = target ? `${itemId}:${target}` : itemId;
+    const prev = await promisify<{ id: string; count?: number; activeUntil?: string } | undefined>(store.get(id));
+    if (itemId === 'talisman') {
+      const count = Math.max(0, Number(prev && prev.count) || 0) + 1;
+      await promisify(store.put({ id: 'talisman', count }));
+      cache.talisman = count;
+    } else if (itemId === 'book' && target) {
+      await promisify(store.put({ id, count: 1, targetId: target }));
+      cache.books.add(target);
+    } else if (itemId === 'pill' && target) {
+      const activeUntil = new Date(now + PILL_DURATION_MS).toISOString();
+      await promisify(store.put({ id, count: 1, targetId: target, activeUntil }));
+      cache.pills.set(target, Date.parse(activeUntil));
+    } else {
+      await promisify(store.put({ id, count: Math.max(1, Number(prev && prev.count) || 0) }));
+    }
+    return true;
+  } catch {
+    return false;
   }
 }
 

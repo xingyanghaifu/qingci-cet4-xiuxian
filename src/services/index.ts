@@ -33,7 +33,7 @@ import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_SCHEMA, FREE
 import {
   spendSpirit, earnSpirit, getBalance, listRecentTransactions, refreshInventory,
   purchase, consumeTalisman, arrayActive, talismanCount, activePillWords, bookUnlocked,
-  unlockedBookWords, priceOf, ITEM_CATALOG, ARRAY_DURATION_MS, PILL_DURATION_MS,
+  unlockedBookWords, priceOf, grantItem, ITEM_CATALOG, ARRAY_DURATION_MS, PILL_DURATION_MS,
 } from './economy';
 import {
   demonNameFrom, demonRealmOf, demonImageSlot, demonImagePrompt, hash32, clampLevel,
@@ -45,6 +45,14 @@ import {
   countToday, listPendingEncounters, makeEncounter, encounterDef, localDateKey as encounterDayKey,
   ENCOUNTER_DAILY_LIMIT,
 } from './encounters';
+import {
+  loadField, plantSeed, waterField, harvest, applyWitherPenalty, isMature,
+  effectiveMatureDays, streakState, fieldDayKey, CROPS as FIELD_CROPS, PLOT_COUNT,
+} from './spirit-field';
+import {
+  loadCave, purchaseDecoration, hasDecoration, hasSpringWater, decorationDef,
+  DECORATIONS, SPRING_WATER_ID,
+} from './cave';
 import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
@@ -166,6 +174,28 @@ const QingciServices = {
     armVoa,
     playReal,
   },
+  field: {
+    load: loadField,
+    plant: plantSeed,
+    water: waterField,
+    harvest,
+    wither: applyWitherPenalty,
+    isMature,
+    effectiveDays: effectiveMatureDays,
+    streakState,
+    dayKey: fieldDayKey,
+    crops: FIELD_CROPS,
+    PLOTS: PLOT_COUNT,
+  },
+  cave: {
+    load: loadCave,
+    purchase: purchaseDecoration,
+    has: hasDecoration,
+    hasSpring: hasSpringWater,
+    def: decorationDef,
+    decorations: DECORATIONS,
+    SPRING_WATER: SPRING_WATER_ID,
+  },
   demons: {
     nameFrom: demonNameFrom,
     realmOf: demonRealmOf,
@@ -204,6 +234,7 @@ const QingciServices = {
     refreshInventory,
     purchase,
     consumeTalisman,
+    grantItem,
     arrayActive,
     talismanCount,
     activePillWords,

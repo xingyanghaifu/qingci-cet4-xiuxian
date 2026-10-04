@@ -654,6 +654,38 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .enc-notice span{color:var(--soft);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .enc-notice .btn{min-height:32px;padding:5px 12px}
 @media (max-width:767px){ .enc-notice{left:10px;right:10px;transform:translateY(120%);max-width:none} .enc-notice.show{transform:none} }
+/* ===== 阶段 C · 灵田 + 洞府装饰 ===== */
+.cave-block{margin-top:12px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--card)}
+.cave-block>summary{cursor:pointer;padding:12px 16px;font-size:14px;letter-spacing:.04em;color:var(--gold);list-style:none;display:flex;align-items:center;gap:8px}
+.cave-block>summary::-webkit-details-marker{display:none}
+.cave-block>summary::before{content:'▸';font-size:11px;color:var(--muted);transition:transform .18s cubic-bezier(.4,0,.2,1)}
+.cave-block[open]>summary::before{transform:rotate(90deg)}
+.cave-block[open]>summary{border-bottom:1px solid var(--border-subtle)}
+.cave-body{padding:14px 16px}
+.plot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.plot{display:flex;flex-direction:column;align-items:center;gap:5px;min-height:104px;padding:10px 6px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg);text-align:center}
+.plot.empty{cursor:pointer;justify-content:center;border-style:dashed;color:var(--muted)}
+.plot.empty:hover{border-color:color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold)}
+.plot-plus{font-size:22px;line-height:1}
+.plot-cap{font-size:10.5px;color:var(--muted);font-family:var(--font-mono)}
+.plot-art{width:26px;height:26px;color:var(--jade)}
+.plot-art svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.plot-name{font-size:12px}
+.plot-meter{width:100%;height:4px;border-radius:99px;background:var(--bg2);overflow:hidden}
+.plot-meter i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}
+.plot.mature{border-color:color-mix(in srgb,var(--gold) 60%,transparent);box-shadow:0 0 10px rgba(212,168,83,.2)}
+.plot.withered{opacity:.6}
+.plot-harvest{cursor:pointer;font-size:11px;padding:2px 10px;border:1px solid var(--gold);border-radius:999px;color:var(--gold)}
+.plot-harvest:hover{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+.deco-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.deco-card{display:flex;flex-direction:column;gap:5px;padding:11px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg);font-size:13px}
+.deco-card.owned{border-color:color-mix(in srgb,var(--gold) 50%,transparent);background:color-mix(in srgb,var(--gold) 6%,var(--bg))}
+.deco-desc{font-size:11.5px;line-height:1.5}
+.deco-buy{cursor:pointer;align-self:flex-start;font-size:12px;padding:3px 12px;border:1px solid var(--gold);border-radius:999px;color:var(--gold)}
+.deco-buy:hover{background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.deco-buy.poor{cursor:not-allowed;border-color:var(--border-default);color:var(--muted)}
+.deco-state{font-size:11.5px;color:var(--gold)}
+@media (max-width:520px){ .plot-grid{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -673,7 +705,10 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。"></textarea></section>
     <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><h2>错题本与心魔</h2><p class="muted" id="bookLead"></p><div class="shop-card" id="mistakePanel"><div class="row" style="justify-content:space-between"><b>错题本 · 间隔复习（SM-2）</b><span class="muted" id="mkSummary">加载中…</span></div><p class="muted">答错的题会自动收进来，按 SM-2 动态安排复习间隔：越熟的题间隔越长，反复错的题始终留在短间隔。</p><div class="tools" id="mkFilters"></div><div class="tools"><button class="btn solid" id="mkReviewBtn">开始今日复习</button><span class="muted" id="mkHint"></span></div><div id="mkCards"></div><div id="mkStats"></div></div><button class="btn solid" id="drillWrong">只练这些词</button><div class="dict" id="bookList"></div></section>
     <section class="panel hidden" id="panel-codex"><p class="section-label">词谱 · 4540 WORDS</p><h2>词谱</h2><div class="tools"><input id="q" placeholder="搜单词或中文"><select id="letter"></select><select id="mastery"><option value="all">全部掌握度</option><option value="new">未学过</option><option value="known">已斩获</option><option value="wrong">心魔词</option></select><span class="muted">点击单词查看详解</span></div><div class="dict" id="codexList"></div></section>
-    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="tools"><button class="btn" id="audioSrcBtn">🔊 音频来源声明</button></div><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button><button class="shop-item" data-buy="array" data-cost="100"><b>聚灵阵 · 100</b><small>24 小时内背词收益 ×2</small></button><button class="shop-item" data-buy="talisman" data-cost="150"><b>护道符 · 150</b><small>抵挡一次渡劫失败的修为扣除</small></button><button class="shop-item" data-buy="pill" data-cost="80"><b>记忆丹 · 80</b><small>指定词 7 天不进复习队列</small></button><button class="shop-item" data-buy="book" data-cost="50"><b>参悟古籍 · 50</b><small>解锁指定词深度解析</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div><div class="panel" id="demonPanel"><p class="section-label">心魔录 · DEMON CODEX</p><div class="row" style="justify-content:space-between"><span class="muted" id="demonSummary">尚无心魔</span><span class="tools"><button class="btn" id="demonRaidBtn" type="button">⚔ 心魔劫</button><button class="btn" id="demonSyncBtn" type="button">⟳ 对账错题</button></span></div><div class="demon-grid" id="demonGrid"></div></div></section>
+    <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="tools"><button class="btn" id="audioSrcBtn">🔊 音频来源声明</button></div><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button><button class="shop-item" data-buy="array" data-cost="100"><b>聚灵阵 · 100</b><small>24 小时内背词收益 ×2</small></button><button class="shop-item" data-buy="talisman" data-cost="150"><b>护道符 · 150</b><small>抵挡一次渡劫失败的修为扣除</small></button><button class="shop-item" data-buy="pill" data-cost="80"><b>记忆丹 · 80</b><small>指定词 7 天不进复习队列</small></button><button class="shop-item" data-buy="book" data-cost="50"><b>参悟古籍 · 50</b><small>解锁指定词深度解析</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div>
+<details class="cave-block" id="fieldDetails"><summary>灵田 · 9 格耕种（<span id="fieldSummary">空</span>）</summary><div class="cave-body"><p class="muted" id="fieldSpringNote"></p><div class="plot-grid" id="plotGrid"></div></div></details>
+<details class="cave-block" id="caveDetails"><summary>洞府装饰（<span id="caveSummary">0 / 5</span>）</summary><div class="cave-body"><div class="deco-grid" id="decoGrid"></div></div></details>
+<section class="panel" id="demonPanel"><p class="section-label">心魔录 · DEMON CODEX</p><div class="row" style="justify-content:space-between"><span class="muted" id="demonSummary">尚无心魔</span><span class="tools"><button class="btn" id="demonRaidBtn" type="button">⚔ 心魔劫</button><button class="btn" id="demonSyncBtn" type="button">⟳ 对账错题</button></span></div><div class="demon-grid" id="demonGrid"></div></div></section>
   </main><aside class="side" id="sidePanel">
       <div class="side-head"><button type="button" class="btn side-close" id="ovClose">收起概览</button></div>
       <p class="section-label">今日功课 · DAILY QUESTS</p>
@@ -3607,6 +3642,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   var cAbandon = el('tribConfirmAbandon');
   if (cAbandon) cAbandon.addEventListener('click', abandonFromConfirm);                          // 验收 14
 
+  window.__renderTribItems = renderTribItems;   // 阶段C：收获入账后刷新境界卡道具胶囊
   /* A2：效果缓存预热（聚灵阵/护道符/丹/书）+ 库存变化联动刷新境界卡 */
   if (S.economy && S.economy.refreshInventory) S.economy.refreshInventory();
   window.addEventListener('qingci:inventory-changed', function () { renderTribItems(); renderTribStatus(); });
@@ -3910,8 +3946,32 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       var qid = current && (current.questionId || current.id || (current.word ? 'w:' + current.word : ''));
       if (qid) D.upsert(qid, correct ? -1 : 1).then(function () { renderDemons(); }).catch(function () { });
       rollEncounterAsync();
+      if (S.field && S.field.water) waterFieldOnce();   // 阶段C：每天首次答题浇水
     } catch (e) { console.warn('[settle hook]', e); }
   };
+
+  /* ── 阶段 C：灵田浇水（dayKey 去重，当天只浇一次；R5 复用 state.days 口径） ── */
+  function todayKey() {
+    try { return typeof dayKey === 'function' ? dayKey() : S.field.dayKey(); } catch (e) { return S.field.dayKey(); }
+  }
+  function waterFieldOnce() {
+    var today = todayKey();
+    if (state.__fieldWaterDay === today) return;      // 同日只浇一次
+    state.__fieldWaterDay = today;
+    S.field.water(today).then(function () { /* 静默：不打断答题 */ }).catch(function () { });
+  }
+
+  /* ── 阶段 C：断签检测（开机一次；>1 天未学习 → 未成熟作物减半枯萎） ── */
+  function checkWither() {
+    try {
+      var days = Object.keys(state.days || {}).sort();
+      var last = days.length ? days[days.length - 1] : null;
+      if (S.field.streakState(last) !== 'broken') return;
+      if (state.__fieldWitherDay === todayKey()) return;   // 每天只判一次
+      state.__fieldWitherDay = todayKey();
+      S.field.wither().then(function (r) { if (r && r.withered) { renderField(); toastMsg('久未修行，灵田枯萎（进度减半保留）'); } });
+    } catch (e) { /* 静默 */ }
+  }
 
   /* ── 事件接线 ── */
   var grid = byId('demonGrid');
@@ -3925,6 +3985,165 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   /* ── 开机对账 + 渲染（R17 权威修复） ── */
   renderDemons();
   setTimeout(syncDemons, 300);
+})();
+</script>
+<script>
+/* 阶段 C · 灵田 + 洞府装饰 UI（新增脚本：只增不改，并入 panel-map，不新增导航项）
+   · 浇水/枯萎的写入全部在 settleHook 的 try/catch 内（R18 命门） */
+(function () {
+  var S = window.QingciServices;
+  if (!S || !S.field || !S.cave) return;
+  var F = S.field, CV = S.cave;
+  var byId = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function toastMsg(m) { if (window.toast) toast(m); }
+  function spiritNow() { return (typeof state !== 'undefined' && state) ? Math.max(0, Number(state.spirit) || 0) : 0; }
+
+  var CROP_ICON = {
+    qi_grass: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21v-7"/><path d="M12 14c0-3 2-5 5-5 0 3-2 5-5 5z"/><path d="M12 16c0-3-2-5-5-5 0 3 2 5 5 5z"/></svg>',
+    memory_flower: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21v-6"/><circle cx="12" cy="9" r="2.4"/><path d="M12 6.6V4M12 11.4V14M9.6 9H7M14.4 9H17"/></svg>',
+    enlighten_tree: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21v-8"/><path d="M12 13c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 13c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 4.5h8"/></svg>',
+  };
+
+  /* ---------- 灵田渲染 ---------- */
+  var field = null;
+  function renderField() {
+    if (!byId('plotGrid')) return;
+    F.load().then(function (st) {
+      field = st;
+      var grid = byId('plotGrid');
+      var sum = byId('fieldSummary');
+      var planted = st.plots.filter(Boolean).length;
+      if (sum) sum.textContent = planted ? (planted + ' / 9 已耕') : '空';
+      var note = byId('fieldSpringNote');
+      if (note) note.textContent = st.hasSpringWater ? '灵泉润田：成熟阈值 -10%' : '每日首次答题自动浇水；断签则进度减半（保留）。';
+      grid.innerHTML = st.plots.map(function (p, i) {
+        if (!p) return '<button type="button" class="plot empty" data-plant="' + i + '" aria-label="第 ' + (i + 1) + ' 格，空地，可种植"><span class="plot-plus">+</span><span class="plot-cap">第 ' + (i + 1) + ' 格</span></button>';
+        var need = F.effectiveDays(p.cropType, st.hasSpringWater);
+        var pct = Math.min(100, Math.round((p.wateredDays / Math.max(1, need)) * 100));
+        var mature = F.isMature(p, st.hasSpringWater);
+        return '<article class="plot' + (mature ? ' mature' : '') + (p.withered ? ' withered' : '') + '" data-plot="' + i + '">'
+          + '<span class="plot-art" aria-hidden="true">' + (CROP_ICON[p.cropType] || '') + '</span>'
+          + '<b class="plot-name">' + esc(F.crops[p.cropType].name) + '</b>'
+          + '<span class="plot-meter"><i style="width:' + pct + '%"></i></span>'
+          + '<span class="plot-cap">' + (p.withered ? '复苏中 ' : '') + p.wateredDays + ' / ' + need + ' 天</span>'
+          + (mature ? '<span class="btn plot-harvest" role="button" tabindex="0" data-harvest="' + i + '">收获</span>' : '')
+          + '</article>';
+      }).join('');
+    });
+  }
+
+  /* 种植：弹出作物选择（简单 prompt 三选一，避免新增浮层体积） */
+  function onPlotClick(e) {
+    var plant = e.target.closest && e.target.closest('[data-plant]');
+    if (plant) {
+      var i = Number(plant.getAttribute('data-plant'));
+      var order = Object.keys(F.crops);
+      var pick = window.prompt('第 ' + (i + 1) + ' 格种什么？\n1) 灵石草（7天→50灵石）\n2) 记忆花（14天→护道符）\n3) 悟道树（30天→参悟古籍）', '1');
+      var n = Number(pick) - 1;
+      if (!pick || !F.crops[order[n]]) return;
+      F.plant(i, order[n]).then(function (r) {
+        if (r.ok) { renderField(); toastMsg('已种下 ' + F.crops[order[n]].name); }
+        else if (r.reason === 'occupied') toastMsg('这格已有作物');
+      });
+      return;
+    }
+    var hv = e.target.closest && e.target.closest('[data-harvest]');
+    if (hv) doHarvest(Number(hv.getAttribute('data-harvest')));
+  }
+
+  function doHarvest(i) {
+    F.harvest(i).then(function (r) {
+      if (!r.ok) { if (r.reason === 'not-mature') toastMsg('尚未成熟'); return; }
+      var rw = r.reward || {};
+      if (rw.type === 'spirit') {
+        if (S.economy && S.economy.earnSpirit) S.economy.earnSpirit(state, rw.amount || 0, 'harvest_' + r.cropType);
+        toastMsg('收获 ' + F.crops[r.cropType].name + ' · 灵石 +' + (rw.amount || 0));
+      } else if (rw.itemId) {
+        // 护道符 / 参悟古籍：真实写入库存（阶段C补 grantItem，避免「只 toast 不入账」）
+        var granted = S.economy && S.economy.grantItem ? S.economy.grantItem(rw.itemId, r.cropType) : Promise.resolve(false);
+        granted.then(function (ok) {
+          if (ok && window.__renderTribItems) window.__renderTribItems();
+          toastMsg('收获 ' + F.crops[r.cropType].name + ' · ' + (rw.itemId === 'talisman' ? '护道符 ×1' : '参悟古籍 ×1') + '（已入库存）');
+        });
+      }
+      if (typeof save === 'function') save();
+      if (window.renderTop) renderTop();
+      renderField();
+      if (window.__renderShopExtras) window.__renderShopExtras();
+    });
+  }
+
+  /* ---------- 洞府装饰渲染 ---------- */
+  function renderCave() {
+    if (!byId('decoGrid')) return;
+    CV.load().then(function (cave) {
+      var grid = byId('decoGrid');
+      var sum = byId('caveSummary');
+      if (sum) sum.textContent = cave.decorations.length + ' / ' + CV.decorations.length;
+      var spirit = spiritNow();
+      grid.innerHTML = CV.decorations.map(function (d) {
+        var owned = cave.decorations.indexOf(d.id) >= 0;
+        var poor = !owned && spirit < d.price;
+        return '<article class="deco-card' + (owned ? ' owned' : '') + '">'
+          + '<b>' + esc(d.name) + '</b>'
+          + '<span class="muted">' + (owned ? '已拥有' : d.price + ' 灵石') + '</span>'
+          + '<span class="muted deco-desc">' + esc(d.desc) + '</span>'
+          + (owned
+            ? '<span class="deco-state">已拥有</span>'
+            : '<span class="btn deco-buy' + (poor ? ' poor' : '') + '" role="button" tabindex="0" aria-disabled="' + (poor ? 'true' : 'false') + '" data-buy="' + esc(d.id) + '">'
+              + (poor ? '还需 ' + (d.price - spirit) + ' 灵石' : '购买') + '</span>')
+          + '</article>';
+      }).join('');
+    });
+  }
+
+  function onDecoClick(e) {
+    var b = e.target.closest && e.target.closest('[data-buy]');
+    if (!b) return;
+    var id = b.getAttribute('data-buy');
+    var def = CV.def(id);
+    if (!def) return;
+    if (b.getAttribute('aria-disabled') === 'true') { toastMsg('灵石不足，还差 ' + (def.price - spiritNow())); return; }
+    CV.purchase(state, id).then(function (r) {
+      if (r.ok) { toastMsg(def.name + ' 已入洞府'); if (typeof save === 'function') save(); }
+      else if (r.reason === 'no-funds') toastMsg('灵石不足，还差 ' + (def.price - spiritNow()));
+      else if (r.reason === 'already-owned') toastMsg('已拥有，无需重复购买');
+      if (window.renderTop) renderTop();
+      renderCave();
+      renderField();   // 灵泉会影响成熟阈值，装上后立即重算
+    });
+  }
+
+  /* ---------- 事件 + 启动 ---------- */
+  var grid = byId('plotGrid');
+  if (grid) {
+    grid.addEventListener('click', onPlotClick);
+    grid.addEventListener('keydown', function (e) { if (e.key === 'Enter') onPlotClick(e); });
+  }
+  var dgrid = byId('decoGrid');
+  if (dgrid) {
+    dgrid.addEventListener('click', onDecoClick);
+    dgrid.addEventListener('keydown', function (e) { if (e.key === 'Enter') onDecoClick(e); });
+  }
+  renderField();
+  renderCave();
+  setTimeout(function () { checkWitherSafe(); renderField(); }, 400);
+
+  /* 断签检测的薄封装（挂在心魔脚本同名逻辑之外，避免跨脚本耦合失败） */
+  function checkWitherSafe() {
+    try {
+      if (typeof state === 'undefined' || !state) return;
+      var days = Object.keys(state.days || {}).sort();
+      var last = days.length ? days[days.length - 1] : null;
+      if (F.streakState(last) !== 'broken') return;
+      var today = F.dayKey();
+      if (state.__fieldWitherDay === today) return;
+      state.__fieldWitherDay = today;
+      F.wither().then(function (r) { if (r && r.withered) toastMsg('久未修行，灵田枯萎（进度减半保留）'); });
+    } catch (e) { /* 静默 */ }
+  }
+  window.__fieldRefresh = function () { renderField(); renderCave(); };
 })();
 </script>
 </body></html>

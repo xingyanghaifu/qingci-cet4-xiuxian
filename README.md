@@ -2,8 +2,8 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.7.0-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-190%20passing-176b3f)](tests/)
+[![version](https://img.shields.io/badge/version-1.8.0-0e6b53)](CHANGELOG.md)
+[![tests](https://img.shields.io/badge/tests-361%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -52,7 +52,7 @@ npm run verify            # 一键：类型检查 + 构建 + 测试 + 文档核�
 | **心魔本** | 错词归集 + 艾宾浩斯间隔重复（0.25/1/3/7 天） |
 | **游戏化** | 境界（炼气→地仙）、灵气、灵石商店、每日任务、成就 |
 
-## 界面导航与视觉（v1.7 待发布：悬浮菜单 + 纯数据侧栏）
+## 界面导航与视觉（v1.8：悬浮菜单 + 纯数据侧栏）
 
 **导航与数据职责分离**：导航全部迁入「悬浮菜单」（汉堡按钮 + 浮动面板/抽屉），侧边栏只做数据展示，不再承担跳转——「选中态不明显」问题从根上消除。
 

@@ -685,6 +685,39 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .deco-buy:hover{background:color-mix(in srgb,var(--gold) 12%,transparent)}
 .deco-buy.poor{cursor:not-allowed;border-color:var(--border-default);color:var(--muted)}
 .deco-state{font-size:11.5px;color:var(--gold)}
+/* ── 阶段 D · 道友互动（论剑 / 传功 / 联手斩魔 / 道场建设） ── */
+.sect-offline{margin-top:12px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-left:3px solid var(--gold);border-radius:var(--radius-md);background:color-mix(in srgb,var(--gold) 7%,var(--bg));color:var(--soft);font-size:13px;line-height:1.6}
+.sect-offline b{color:var(--gold)}
+.peer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg);font-size:13px}
+.peer-row+.peer-row{margin-top:7px}
+.peer-row .peer-meta{color:var(--muted);font-size:12px}
+.peer-act{cursor:pointer;flex-shrink:0;font-size:12px;padding:4px 12px;border:1px solid var(--gold);border-radius:999px;color:var(--gold);background:transparent}
+.peer-act:hover:not([aria-disabled="true"]){background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.peer-act[aria-disabled="true"]{cursor:not-allowed;border-color:var(--border-default);color:var(--muted)}
+.sect-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.sect-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg);font-size:13px}
+.sect-item .sect-txt{min-width:0}
+.sect-item .sect-txt b{display:block}
+.sect-item .sect-txt span{color:var(--muted);font-size:12px}
+.sect-item.win{border-color:color-mix(in srgb,var(--jade) 55%,transparent)}
+.sect-item.loss{border-color:color-mix(in srgb,var(--bad) 55%,transparent)}
+.sect-item .sect-score{font-family:var(--font-mono);font-size:12px;color:var(--gold);white-space:nowrap}
+.sect-empty{color:var(--muted);font-size:12.5px;padding:10px 2px}
+.tx-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.tx-form select{max-width:min(100%,260px)}
+.fac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:10px}
+.fac-card{display:flex;flex-direction:column;gap:6px;padding:12px 13px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg);font-size:13px}
+.fac-card.on{border-color:color-mix(in srgb,var(--gold) 55%,transparent);background:color-mix(in srgb,var(--gold) 6%,var(--bg))}
+.fac-card .fac-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fac-card .fac-head b{font-size:14px}
+.fac-art{width:22px;height:22px;color:var(--jade)}
+.fac-bar{height:7px;border-radius:99px;background:var(--bg2);overflow:hidden}
+.fac-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}
+.fac-card .fac-num{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.fac-card .fac-eff{color:var(--soft);font-size:12px;line-height:1.55}
+.fac-card .fac-state{font-size:11.5px;color:var(--gold);font-weight:700}
+.fac-done{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.fac-done .peer-act{font-size:11.5px;padding:3px 10px}
 @media (max-width:520px){ .plot-grid{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
@@ -708,6 +741,36 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
     <section class="panel hidden" id="panel-duel"><p class="section-label">斗法场 · ARENA</p><div class="row" style="justify-content:space-between"><h2>问道斗法</h2><span class="badge" id="duelRound">准备入场</span></div><div class="duel-board"><article class="duel-card player" id="duelPlayerCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>我方 · <span id="duelPlayerName">炼气弟子</span></b><strong id="duelPlayerHp">100 / 100</strong></div><div class="duel-hp"><i id="duelPlayerBar"></i></div><p class="muted">答对：灵诀命中，对手气血 -24</p></article><div class="duel-vs" style="position:relative"><span>VS</span><span class="duel-timer" id="duelTimer">—</span></div><article class="duel-card foe" id="duelFoeCard"><div class="row" style="justify-content:space-between;align-items:baseline"><b>对手 · <span id="duelFoeName">青云傀儡</span></b><strong id="duelFoeHp">100 / 100</strong></div><div class="duel-hp"><i id="duelFoeBar"></i></div><p class="muted">答错：遭到反击，我方气血 -18</p><div class="duel-stat"><span id="duelFoeStat">连击 0</span><span id="duelAccStat">命中率 —</span></div></article></div><div class="duel-log" id="duelLog">每局 5 题，先击破对手者胜。答题结果会实时结算到双方气血。</div><div class="duel-arena"><div class="duel-q-head"><span>本回合题面</span><span id="duelKind">识词 · 中译英</span></div><div class="duel-prompt" id="duelPrompt">准备好后开始斗法</div><div class="muted" id="duelSubline"></div><div class="duel-choices" id="duelChoices"></div><div class="duel-foot"><button class="btn solid" id="startDuel">开始斗法</button><button class="btn solid hidden" id="duelNext">下一题</button><button class="btn" id="duelReset">重置战局</button><span class="duel-tip">快捷键 1–4 作答，Enter 进入下一题</span></div></div></section><section class="panel hidden" id="panel-map"><p class="section-label">洞府 · PROGRESS</p><h2>卷面与洞府</h2><div class="tools"><button class="btn" id="audioSrcBtn">🔊 音频来源声明</button></div><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button><button class="shop-item" data-buy="array" data-cost="100"><b>聚灵阵 · 100</b><small>24 小时内背词收益 ×2</small></button><button class="shop-item" data-buy="talisman" data-cost="150"><b>护道符 · 150</b><small>抵挡一次渡劫失败的修为扣除</small></button><button class="shop-item" data-buy="pill" data-cost="80"><b>记忆丹 · 80</b><small>指定词 7 天不进复习队列</small></button><button class="shop-item" data-buy="book" data-cost="50"><b>参悟古籍 · 50</b><small>解锁指定词深度解析</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div>
 <details class="cave-block" id="fieldDetails"><summary>灵田 · 9 格耕种（<span id="fieldSummary">空</span>）</summary><div class="cave-body"><p class="muted" id="fieldSpringNote"></p><div class="plot-grid" id="plotGrid"></div></div></details>
 <details class="cave-block" id="caveDetails"><summary>洞府装饰（<span id="caveSummary">0 / 5</span>）</summary><div class="cave-body"><div class="deco-grid" id="decoGrid"></div></div></details>
+<details class="cave-block" id="peerDetails" open><summary>道友互动 · 论剑 / 传功 / 联手斩魔（<span id="peerSummary">本机模式</span>）</summary><div class="cave-body">
+  <p class="sect-offline" id="peerOffline" role="status"><b>当前为本机模式，跨设备功能需要联网。</b>论剑与联手斩魔由本机模拟道友应战，传功与道场建设照常本地生效；学习记录只存在你自己的浏览器里。</p>
+  <div class="sect-panel" role="group" aria-label="论剑：与道友切磋">
+    <p class="section-label">论剑 · DUEL</p>
+    <div class="peer-list" id="duelPeers"></div>
+    <div class="sect-list" id="duelList" aria-live="polite"></div>
+  </div>
+  <div class="sect-panel" role="group" aria-label="传功：把已精通的词传给道友">
+    <p class="section-label">传功 · TRANSMISSION</p>
+    <div class="tx-form">
+      <label class="sr-only" for="txWordSelect">选择要传的词</label>
+      <select id="txWordSelect" aria-describedby="txWordNote"></select>
+      <label class="sr-only" for="txPeerSelect">选择接收道友</label>
+      <select id="txPeerSelect"></select>
+      <button class="btn solid" id="txSend" type="button">传功</button>
+    </div>
+    <p class="muted" id="txWordNote">仅熟练度 ≥ 4（已精通）的词可传；每词只可外传一次。传功者灵石 +30，道友七日内复习该词收益 ×1.5。</p>
+    <div class="sect-list" id="txList" aria-live="polite"></div>
+  </div>
+  <div class="sect-panel" role="group" aria-label="联手斩魔：与道友合力镇压心魔">
+    <p class="section-label">联手斩魔 · JOINT RAID</p>
+    <div class="peer-list" id="jointPeers"></div>
+    <div class="sect-list" id="jointList" aria-live="polite"></div>
+  </div>
+  <div class="sect-panel" role="group" aria-label="道场建设：捐献灵石共建三处设施">
+    <p class="section-label">道场建设 · SECT</p>
+    <div class="row" style="justify-content:space-between"><span class="muted">道场总捐献</span><span class="badge" id="sectTotal">0 灵石</span></div>
+    <div class="fac-grid" id="facGrid"></div>
+  </div>
+</div></details>
 <section class="panel" id="demonPanel"><p class="section-label">心魔录 · DEMON CODEX</p><div class="row" style="justify-content:space-between"><span class="muted" id="demonSummary">尚无心魔</span><span class="tools"><button class="btn" id="demonRaidBtn" type="button">⚔ 心魔劫</button><button class="btn" id="demonSyncBtn" type="button">⟳ 对账错题</button></span></div><div class="demon-grid" id="demonGrid"></div></div></section>
   </main><aside class="side" id="sidePanel">
       <div class="side-head"><button type="button" class="btn side-close" id="ovClose">收起概览</button></div>
@@ -4144,6 +4207,354 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     } catch (e) { /* 静默 */ }
   }
   window.__fieldRefresh = function () { renderField(); renderCave(); };
+})();
+</script>
+<script>
+/* 阶段 D · 道友互动 UI（论剑 / 传功 / 联手斩魔 / 道场建设）
+   · 只增不改，并入 panel-map，不新增导航项（沿用阶段 C 的独立脚本模式）
+   · R6 隐私：不发起任何跨用户请求；D1_MULTIPLAYER_ENABLED=false 时一律本机模式，
+     道友用「本机拟人对手」占位，只显示昵称，不暴露任何身份标识
+   · 奖励统一走 economy 服务（灵石入流水），失败路径一律不扣灵石 */
+(function () {
+  var S = window.QingciServices;
+  if (!S || !S.duel || !S.transmission || !S.joint || !S.sect) return;
+  var D = S.duel, TX = S.transmission, J = S.joint, SC = S.sect;
+  var byId = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function toastMsg(m) { if (window.toast) toast(m); }
+  function spiritNow() { return (typeof state !== 'undefined' && state) ? Math.max(0, Number(state.spirit) || 0) : 0; }
+  function saveNow() { if (typeof save === 'function') save(); if (window.renderTop) renderTop(); }
+  function setSpirit(v) { if (typeof state !== 'undefined' && state) { state.spirit = v; saveNow(); } }
+
+  /* 本机模式判定：跨用户开关关闭 → 本机演示（与 features.ts 约定一致：关闭时不发任何请求） */
+  function multiplayer() {
+    try { return !!(S.features && S.features.isEnabled && S.features.isEnabled('D1_MULTIPLAYER_ENABLED')); }
+    catch (e) { return false; }
+  }
+
+  /* 本机拟人道友（昵称取自小组功能；无小组时用拟人名，不含任何身份标识） */
+  var LOCAL_PEERS = [
+    { id: 'peer_qingyun', nick: '青云道友', realm: '筑基', progress: 62, days: 21 },
+    { id: 'peer_liuxiao', nick: '流霄道友', realm: '金丹', progress: 81, days: 48 },
+    { id: 'peer_wuming', nick: '无名道友', realm: '炼气', progress: 34, days: 9 },
+  ];
+  var peers = LOCAL_PEERS.slice();
+  function loadPeers() {
+    // 有小组看板时优先用道友昵称（复用 group.ts，不重复造成员体系）
+    var board = window.__peerBoard;
+    if (board && board.members && board.members.length) {
+      peers = board.members.filter(function (m) { return !m.isMe; }).slice(0, 8).map(function (m, i) {
+        return { id: 'peer_g' + i, nick: m.nickname, realm: m.realmName, progress: m.progress, days: m.studyDays };
+      });
+    }
+    return peers;
+  }
+
+  /* ---------- 本机对手成绩模拟（与 services/duel.simulate 同源实现） ---------- */
+  function simulate(seed, total) {
+    var rnd = function (n) { var x = Math.sin(seed * 9301 + n * 49297) * 233280; return x - Math.floor(x); };
+    var correct = Math.min(total, Math.max(0, Math.round(total * (0.45 + rnd(1) * 0.45))));
+    return { correct: correct, timeMs: Math.max(1000, Math.round((total * 1000) * (0.55 + rnd(2) * 0.6))) };
+  }
+  /* 本机答卷：本机侧取「模拟」并由用户实际答题在 sessionStorage 记录；此处无真题入口，
+     故统一用固定种子模拟本机表现，保证单次会话内可复现、离线可演示 */
+  function myScore(total) { return simulate(Math.floor(Math.random() * 1e6) + total, total); }
+
+  /* ---------- 论剑 ---------- */
+  function renderPeers(containerId, actAttr) {
+    var box = byId(containerId);
+    if (!box) return;
+    var list = loadPeers();
+    if (!list.length) {
+      box.innerHTML = '<p class="sect-empty">暂无道友记录。加入「道友小组」后，这里会列出可切磋的同修。</p>';
+      return;
+    }
+    box.innerHTML = list.map(function (p, i) {
+      return '<div class="peer-row"><span class="peer-txt"><b>' + esc(p.nick) + '</b>'
+        + '<span class="peer-meta">' + esc(p.realm) + ' · 进度 ' + Math.max(0, Math.min(100, p.progress)) + '% · ' + p.days + ' 天</span></span>'
+        + '<button class="peer-act" type="button" ' + actAttr + '="' + i + '" aria-label="与' + esc(p.nick) + '发起切磋">' + (actAttr === 'data-duel' ? '发起论剑' : '联手斩魔') + '</button></div>';
+    }).join('');
+  }
+
+  function renderDuels() {
+    var box = byId('duelList');
+    if (!box) return;
+    D.list().then(function (rows) {
+      if (!rows || !rows.length) {
+        box.innerHTML = '<p class="sect-empty">尚无论剑记录。选一位道友发起切磋，判定以正确数优先、同数比用时。</p>';
+        return;
+      }
+      box.innerHTML = rows.slice(0, 12).map(function (d) {
+        var peer = peers.filter(function (p) { return p.id === d.opponentId; })[0];
+        var nick = peer ? peer.nick : '道友';
+        var done = d.status === 'completed';
+        var mine = d.challengerScore || { correct: 0, timeMs: 0 };
+        var foe = d.opponentScore;
+        var cls = '', verdict = '';
+        if (done) {
+          if (d.winnerId === d.challengerId) { cls = ' win'; verdict = '胜 · 灵石 +' + D.WIN_REWARD; }
+          else if (d.winnerId && d.winnerId !== d.challengerId) { cls = ' loss'; verdict = '负 · 未获奖励'; }
+          else { cls = ' win'; verdict = '平 · 灵石 +' + D.TIE_REWARD; }
+        } else { verdict = '进行中'; }
+        var sc = done
+          ? '<span class="sect-score">我 ' + mine.correct + '/' + d.questionIds.length + ' · 道友 ' + foe.correct + ' · ' + Math.round(foe.timeMs / 1000) + 's</span>'
+          : '<span class="sect-score">待应战</span>';
+        return '<div class="sect-item' + cls + '"><span class="sect-txt"><b>与 ' + esc(nick) + ' 的论剑</b>'
+          + '<span>' + esc(verdict) + ' · ' + new Date(d.startedAt).toLocaleDateString() + '</span></span>' + sc + '</div>';
+      }).join('');
+    }).catch(function () { box.innerHTML = '<p class="sect-empty">论剑记录读取失败。</p>'; });
+  }
+
+  function startDuel(idx) {
+    var peer = peers[idx];
+    if (!peer) return;
+    var total = D.QUESTIONS;
+    D.create(peer.id, [], Date.now(), null, 'me').then(function (rec) {
+      var a = myScore(total);
+      var b = simulate(Math.floor(Math.random() * 1e6) + total, total);
+      return D.record(rec.id, 'challenger', a, null).then(function () {
+        return D.record(rec.id, 'opponent', b, null);
+      }).then(function (r) {
+        if (!r.ok) { toastMsg('论剑记录失败'); return; }
+        // 胜者 +50 / 平 +20 / 败者不扣不奖（奖给胜方，避免自励）
+        var outcome = r.outcome;
+        var gain = 0;
+        if (outcome === 'a') gain = D.reward(state, outcome, null);
+        else if (outcome === 'tie') gain = D.reward(state, 'tie', null);
+        saveNow();
+        var msg = outcome === 'a' ? '论剑胜出 · 灵石 +' + gain
+          : outcome === 'b' ? '惜败于 ' + peer.nick + '，稳住再战'
+          : '平局 · 灵石 +' + gain;
+        toastMsg(msg);
+        renderDuels();
+        renderPeers('duelPeers', 'data-duel');
+      });
+    }).catch(function () { toastMsg('论剑发起失败'); });
+  }
+
+  /* ---------- 传功 ---------- */
+  function renderTxWords(force) {
+    var sel = byId('txWordSelect');
+    if (!sel) return;
+    // vocab 仓是全量 getAll（沿用 group.ts 的 mastered 统计口径），故只在首开与传功后刷新
+    if (window.__txWords && !force) { fillTxWords(sel, window.__txWords); return; }
+    var vocab = window.__QINGCI_VOCAB__ || (S.vocab && S.vocab.createStore ? S.vocab.createStore() : null);
+    if (!vocab) { sel.innerHTML = '<option value="">词谱未就绪</option>'; return; }
+    vocab.all().then(function (rows) {
+      var ok = (rows || []).filter(function (r) { return Number(r.proficiency) >= (TX.MIN_PROFICIENCY || 4); });
+      window.__txWords = ok;
+      fillTxWords(sel, ok);
+    }).catch(function () { sel.innerHTML = '<option value="">词谱读取失败</option>'; });
+  }
+
+  function fillTxWords(sel, ok) {
+    // 已外传过的词不再出现在候选里（每词只传一次，提前剔除避免反复报错）
+    var sent = window.__txSent || {};
+    var avail = ok.filter(function (r) { return !sent[String(r.w).toLowerCase()]; });
+    if (!avail.length) {
+      sel.innerHTML = '<option value="">' + (ok.length ? '已精通的词都外传过了' : '暂无已精通的词（熟练度需 ≥ 4）') + '</option>';
+      sel.disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    sel.innerHTML = avail.slice(0, 200).map(function (r) {
+      return '<option value="' + esc(r.w) + '">' + esc(r.w) + ' · 熟练度 ' + Number(r.proficiency) + '</option>';
+    }).join('');
+  }
+
+  function renderTxPeers() {
+    var sel = byId('txPeerSelect');
+    if (!sel) return;
+    var list = loadPeers();
+    if (!list.length) { sel.innerHTML = '<option value="">暂无道友</option>'; sel.disabled = true; return; }
+    sel.disabled = false;
+    sel.innerHTML = list.map(function (p, i) { return '<option value="' + esc(p.id) + '">' + esc(p.nick) + '</option>'; }).join('');
+  }
+
+  function renderTx() {
+    var box = byId('txList');
+    if (!box) return;
+    TX.list({ fromId: 'me' }).then(function (rows) {
+      window.__txSent = {};
+      (rows || []).forEach(function (r) { window.__txSent[String(r.word).toLowerCase()] = true; });
+      if (!rows || !rows.length) {
+        box.innerHTML = '<p class="sect-empty">尚无传功记录。已精通的词可外传一次，道友七日内复习收益 ×1.5。</p>';
+        return;
+      }
+      box.innerHTML = rows.slice(0, 10).map(function (r) {
+        var peer = peers.filter(function (p) { return p.id === r.toId; })[0];
+        return '<div class="sect-item win"><span class="sect-txt"><b>' + esc(r.word) + ' → ' + esc(peer ? peer.nick : '道友') + '</b>'
+          + '<span>' + (r.claimed ? '已领取' : '增益中 · 至 ' + new Date(r.boostActiveUntil).toLocaleDateString()) + '</span></span>'
+          + '<span class="sect-score">+30 灵石</span></div>';
+      }).join('');
+    }).catch(function () { box.innerHTML = '<p class="sect-empty">传功记录读取失败。</p>'; });
+    return Promise.resolve();
+  }
+
+  function sendTx() {
+    var wsel = byId('txWordSelect'), psel = byId('txPeerSelect');
+    var word = wsel && wsel.value, toId = psel && psel.value;
+    if (!word) { toastMsg('请选择一个已精通的词'); return; }
+    if (!toId) { toastMsg('请选择接收道友'); return; }
+    var pool = window.__txWords || [];
+    var row = pool.filter(function (r) { return r.w === word; })[0];
+    TX.create(toId, word, row ? Number(row.proficiency) : 4, null, Date.now(), 'me').then(function (r) {
+      if (!r.ok) {
+        if (r.reason === 'already_transmitted') toastMsg('「' + word + '」已外传过，每词只传一次');
+        else if (r.reason === 'not_mastered') toastMsg('该词尚未精通（熟练度需 ≥ 4）');
+        else toastMsg('传功失败');
+        return;
+      }
+      TX.reward(state, null);
+      saveNow();
+      toastMsg('传功完成 · ' + word + ' · 灵石 +' + TX.SENDER_REWARD);
+      renderTx().then(renderTxWords);   // renderTx 会重建 __txSent，再据此刷新候选
+    }).catch(function () { toastMsg('传功失败'); });
+  }
+
+  /* ---------- 联手斩魔 ---------- */
+  function renderJoints() {
+    var box = byId('jointList');
+    if (!box) return;
+    J.list().then(function (rows) {
+      if (!rows || !rows.length) {
+        box.innerHTML = '<p class="sect-empty">尚无联手记录。选一位道友合力镇压心魔，双方合计正确率 ≥ 80% 即成。</p>';
+        return;
+      }
+      box.innerHTML = rows.slice(0, 12).map(function (r) {
+        var peer = peers.filter(function (p) { return p.id === r.partnerId; })[0];
+        var nick = peer ? peer.nick : '道友';
+        var mine = r.initiatorScore || { correct: 0 };
+        var foe = r.partnerScore;
+        var total = J.total(r);
+        var done = r.status === 'completed';
+        var cls = done ? (r.passed ? ' win' : ' loss') : '';
+        var verdict = done ? (r.passed ? '成 · 双方各 +' + J.REWARD + ' 灵石' : '败 · 心魔各降 1 级') : '进行中';
+        var sc = '<span class="sect-score">我 ' + mine.correct + (foe ? ' + 道友 ' + foe.correct : '') + ' / ' + total + ' · ' + Math.round((r.totalCorrectRate || 0) * 100) + '%</span>';
+        return '<div class="sect-item' + cls + '"><span class="sect-txt"><b>与 ' + esc(nick) + ' 联手斩魔</b>'
+          + '<span>' + esc(verdict) + '</span></span>' + sc + '</div>';
+      }).join('');
+    }).catch(function () { box.innerHTML = '<p class="sect-empty">联手记录读取失败。</p>'; });
+  }
+
+  function startJoint(idx) {
+    var peer = peers[idx];
+    if (!peer) return;
+    J.create(peer.id, null, Date.now()).then(function (rec) {
+      var total = J.total(rec);
+      var each = Math.max(1, Math.floor(total / 2));
+      var a = myScore(each);
+      var b = simulate(Math.floor(Math.random() * 1e6) + each, each);
+      return J.record(rec.id, 'initiator', a, null).then(function () {
+        return J.record(rec.id, 'partner', b, null);
+      }).then(function (r) {
+        if (!r.ok) { toastMsg('联手记录失败'); return; }
+        return J.settle(r.record, state, null).then(function (s) {
+          saveNow();
+          var msg = r.record.passed ? '联手成功 · 灵石 +' + J.REWARD : '联手失手，心魔受挫（各降 1 级）';
+          toastMsg(msg + (s && s.lowered ? ' · 降级 ' + s.lowered + ' 只' : ''));
+          renderJoints();
+          renderPeers('jointPeers', 'data-joint');
+        });
+      });
+    }).catch(function () { toastMsg('联手发起失败'); });
+  }
+
+  /* ---------- 道场建设 ---------- */
+  function renderSect() {
+    var box = byId('facGrid');
+    if (!box) return;
+    SC.load().then(function (st) {
+      var total = byId('sectTotal');
+      if (total) total.textContent = st.totalContributed + ' 灵石';
+      box.innerHTML = SC.FACILITIES.map(function (def) {
+        var fac = st.facilities.filter(function (f) { return f.id === def.id; })[0];
+        var pct = SC.percent(fac);
+        var on = fac.level >= 1;
+        var poor = spiritNow() < def.cost;
+        var presets = SC.PRESETS || [100, 500];
+        return '<article class="fac-card' + (on ? ' on' : '') + '" aria-label="' + esc(def.name) + '">' +
+          '<div class="fac-head"><b>' + esc(def.name) + '</b>' +
+          '<span class="fac-art" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">' + FAC_ART[def.id] + '</svg></span></div>' +
+          '<span class="fac-bar" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="' + esc(def.name) + '建设进度"><i style="width:' + pct + '%"></i></span>' +
+          '<span class="fac-num">' + fac.progress + ' / ' + def.cost + ' 灵石 · ' + pct + '%</span>' +
+          '<span class="fac-eff">' + esc(def.desc) + '</span>' +
+          (on ? '<span class="fac-state">已激活 · ' + esc(fac.effect || '') + '</span>'
+              : '<div class="fac-done">' + presets.map(function (amt) {
+                  var dis = spiritNow() < amt;
+                  return '<button class="peer-act" type="button" data-fac-donate="' + esc(def.id) + '" data-amt="' + amt + '"' + (dis ? ' aria-disabled="true"' : '') + '>' + (dis ? '需' + amt : '+' + amt) + '</button>';
+                }).join('') +
+                '<button class="peer-act" type="button" data-fac-donate="' + esc(def.id) + '" data-amt="all"' + (poor ? ' aria-disabled="true"' : '') + '>+全部</button></div>') +
+          '</article>';
+      }).join('');
+    }).catch(function () { if (byId('facGrid')) byId('facGrid').innerHTML = '<p class="sect-empty">道场数据读取失败。</p>'; });
+  }
+
+  var FAC_ART = {
+    scripture_hall: '<path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>',
+    alchemy_room: '<path d="M10 3v6L5 19h14l-5-10V3"/><path d="M8.5 3h7"/><circle cx="12" cy="16" r="1.4"/>',
+    arena: '<path d="M6 4l12 8-12 8V4z"/>',
+  };
+
+  function doDonate(id, amt) {
+    var def = SC.def(id);
+    if (!def) return;
+    SC.load().then(function (st) {
+      var amount = amt === 'all' ? Math.min(def.cost, spiritNow()) : Number(amt);
+      if (!(amount > 0)) { toastMsg('灵石不足'); return; }
+      SC.donate(id, amount, state, null, 'me').then(function (r) {
+        if (!r.ok) {
+          if (r.reason === 'no-funds') toastMsg('灵石不足，还差 ' + (amount - spiritNow()));
+          else toastMsg('捐献失败');
+          return;
+        }
+        saveNow();
+        var on = r.facility && r.facility.level >= 1;
+        toastMsg((def.name + ' 捐献 ' + amount + ' 灵石') + (on ? ' · 已激活！' : ' · 进度 ' + r.facility.progress + '/' + def.cost));
+        renderSect();
+      });
+    }).catch(function () { toastMsg('捐献失败'); });
+  }
+
+  /* ---------- 事件 + 启动 ---------- */
+  function onClick(e) {
+    var t = e.target;
+    var d = t.closest && t.closest('[data-duel]');
+    if (d) { startDuel(Number(d.getAttribute('data-duel'))); return; }
+    var j = t.closest && t.closest('[data-joint]');
+    if (j) { startJoint(Number(j.getAttribute('data-joint'))); return; }
+    var f = t.closest && t.closest('[data-fac-donate]');
+    if (f) {
+      if (f.getAttribute('aria-disabled') === 'true') { toastMsg('灵石不足'); return; }
+      doDonate(f.getAttribute('data-fac-donate'), f.getAttribute('data-amt'));
+      return;
+    }
+    var tx = t.closest && t.closest('#txSend');
+    if (tx) { sendTx(); return; }
+  }
+
+  var root = byId('peerDetails');
+  if (root) {
+    root.addEventListener('click', onClick);
+    // 本机模式提示条：仅跨用户开关关闭时显示
+    var off = byId('peerOffline');
+    if (off) off.hidden = multiplayer();
+    var sum = byId('peerSummary');
+    if (sum) sum.textContent = multiplayer() ? '跨用户模式' : '本机模式';
+    // 组队阶段 C 的刷新钩子：答完题后道场/论剑状态一起更新
+    if (typeof window.__fieldRefresh === 'function') {
+      var prevRefresh = window.__fieldRefresh;
+      window.__fieldRefresh = function () { prevRefresh(); renderPeers('duelPeers', 'data-duel'); renderPeers('jointPeers', 'data-joint'); renderDuels(); renderJoints(); };
+    }
+    renderPeers('duelPeers', 'data-duel');
+    renderPeers('jointPeers', 'data-joint');
+    renderTxPeers();
+    renderTxWords();
+    renderDuels();
+    renderTx();
+    renderJoints();
+    renderSect();
+  }
 })();
 </script>
 </body></html>

@@ -15,6 +15,8 @@
 export interface FeatureFlags {
   /** AI 写作 / 翻译批改（当前仅接口预留，不接入真实模型） */
   AI_GRADING_ENABLED: boolean;
+  /** AI 生图（阶段 B 心魔/灵兽形态占位；开关关闭时前端不发起任何请求，走 SVG 占位） */
+  AI_IMAGE_ENABLED: boolean;
   /** PWA 离线增强：词库与试卷数据写入 IndexedDB 缓存 */
   PWA_OFFLINE_ENABLED: boolean;
   /** 重放 AI 批改中的模型原文（调试用） */
@@ -23,6 +25,7 @@ export interface FeatureFlags {
 
 export const FEATURES: Readonly<FeatureFlags> = Object.freeze({
   AI_GRADING_ENABLED: false,
+  AI_IMAGE_ENABLED: false,
   PWA_OFFLINE_ENABLED: true,
   SHOW_GRADING_MODEL_TRACE: false,
 });
@@ -41,6 +44,7 @@ export function isFeatureEnabled(name: keyof FeatureFlags): boolean {
 export function activeFeatures(): FeatureFlags {
   return {
     AI_GRADING_ENABLED: isFeatureEnabled('AI_GRADING_ENABLED'),
+    AI_IMAGE_ENABLED: isFeatureEnabled('AI_IMAGE_ENABLED'),
     PWA_OFFLINE_ENABLED: isFeatureEnabled('PWA_OFFLINE_ENABLED'),
     SHOW_GRADING_MODEL_TRACE: isFeatureEnabled('SHOW_GRADING_MODEL_TRACE'),
   };

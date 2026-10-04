@@ -36,6 +36,16 @@ import {
   unlockedBookWords, priceOf, ITEM_CATALOG, ARRAY_DURATION_MS, PILL_DURATION_MS,
 } from './economy';
 import {
+  demonNameFrom, demonRealmOf, demonImageSlot, demonImagePrompt, hash32, clampLevel,
+  upsertDemon, listDemons, getDemon, reconcileDemons, countRaidReady, beastNameFrom,
+  DEMON_MIN_LEVEL, DEMON_MAX_LEVEL, DEMON_RAID_LEVEL,
+} from './demons';
+import {
+  ENCOUNTER_POOL, rollEncounter, recordEncounter, listTodayEncounters, resolveEncounter,
+  countToday, listPendingEncounters, makeEncounter, encounterDef, localDateKey as encounterDayKey,
+  ENCOUNTER_DAILY_LIMIT,
+} from './encounters';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -154,6 +164,36 @@ const QingciServices = {
     prepareTrack,
     armVoa,
     playReal,
+  },
+  demons: {
+    nameFrom: demonNameFrom,
+    realmOf: demonRealmOf,
+    imageSlot: demonImageSlot,
+    imagePrompt: demonImagePrompt,
+    hash: hash32,
+    clampLevel,
+    upsert: upsertDemon,
+    list: listDemons,
+    get: getDemon,
+    reconcile: reconcileDemons,
+    raidReady: countRaidReady,
+    beastNameFrom,
+    MIN_LEVEL: DEMON_MIN_LEVEL,
+    MAX_LEVEL: DEMON_MAX_LEVEL,
+    RAID_LEVEL: DEMON_RAID_LEVEL,
+  },
+  encounters: {
+    POOL: ENCOUNTER_POOL,
+    roll: rollEncounter,
+    record: recordEncounter,
+    listToday: listTodayEncounters,
+    resolve: resolveEncounter,
+    countToday,
+    listPending: listPendingEncounters,
+    make: makeEncounter,
+    def: encounterDef,
+    dayKey: encounterDayKey,
+    DAILY_LIMIT: ENCOUNTER_DAILY_LIMIT,
   },
   economy: {
     spendSpirit,

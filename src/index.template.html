@@ -3227,11 +3227,14 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     clearTimeout(advanceTimer);
     session.phase = 'done';
     session.reason = reason;
+    var raid = session.mode === 'demon_raid';
     var grade = T.grade(session.state.correct, {
       qi: (typeof state !== 'undefined' && state ? Number(state.qi) || 0 : 0),
       maxSafeDeduct: (typeof realm === 'function' ? realm().into : 0),
-      hasTalisman: !!(S.economy && S.economy.talismanCount && S.economy.talismanCount() > 0), // A2：库存缓存判定（效果消费在 persistFinish）,          // inventory 接入在步骤 4/5
+      hasTalisman: !!(S.economy && S.economy.talismanCount && S.economy.talismanCount() > 0), // A2：库存缓存判定（效果消费在 persistFinish）
       abandoned: reason !== 'complete',  // 超时与放弃同档：永不判过、按题数落失败档
+      // 阶段 B：心魔劫用独立判罚档（失败一律 5%），渡劫保持原 10%/20%
+      penaltyMode: raid ? 'demon_raid' : 'tribulation',
     });
     session.grade = grade;
     /* —— 落库（步骤 4）：记录+冷却 / 修为扣罚（夹逼不掉境界）/ 成功时位次·灵石·突破史 —— */
@@ -3263,14 +3266,22 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     if (bodyEl) bodyEl.classList.add('hidden');
     resultEl.classList.remove('hidden');
     if (grade.passed) {
-      rTitle.className = 'trib-result-title ok';
-      rTitle.textContent = '渡劫成功';
-      rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题 · 灵石 <b>+' + T.REWARD + '</b><br>'
-        + '境界 ' + escx(nameOf(session.realmFrom)) + ' → ' + escx(nameOf(session.realmTo)) + ' 已晋升（修为与灵石已入账）';
-      openBreakthrough();
+      if (raid) {
+        /* 心魔劫：80 灵石（流水）+ 25 修为，不晋级 */
+        rTitle.className = 'trib-result-title ok';
+        rTitle.textContent = '心魔劫胜';
+        rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题<br>'
+          + '灵石 <b>+' + T.RAID_REWARD + '</b> · 修为 <b>+' + T.RAID_QI + '</b>（已入账）';
+      } else {
+        rTitle.className = 'trib-result-title ok';
+        rTitle.textContent = '渡劫成功';
+        rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题 · 灵石 <b>+' + T.REWARD + '</b><br>'
+          + '境界 ' + escx(nameOf(session.realmFrom)) + ' → ' + escx(nameOf(session.realmTo)) + ' 已晋升（修为与灵石已入账）';
+        openBreakthrough();
+      }
     } else {
       rTitle.className = 'trib-result-title bad';
-      rTitle.textContent = reason === 'timeout' ? '渡劫失败 · 时间到' : '渡劫失败';
+      rTitle.textContent = reason === 'timeout' ? (raid ? '心魔劫败 · 时间到' : '渡劫失败 · 时间到') : (raid ? '心魔劫败' : '渡劫失败');
       var extra = grade.talismanUsed ? '护道符已抵扣' : (grade.qiPenalty > 0 ? '扣除修为 <b>' + grade.qiPenalty + '</b>' : '修为无损');
       rBody.innerHTML = '答对 <b>' + session.state.correct + ' / ' + session.state.total + '</b> 题 · ' + extra
         + '<br>已记入渡劫史 · 冷却 24 小时' + (reason !== 'complete' ? '（按当前题数落失败档）' : '');
@@ -3293,18 +3304,28 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     }
     if (grade.passed) {
       if (typeof state !== 'undefined') {
-        if (S.economy && S.economy.earnSpirit) S.economy.earnSpirit(state, T.REWARD, 'tribulation_win');
-        else state.spirit = (Number(state.spirit) || 0) + T.REWARD;
+        if (raid) {
+          /* 心魔劫：80 灵石（走流水）+ 25 修为（沿用全站 state.qi 直接赋值惯例） */
+          if (S.economy && S.economy.earnSpirit) S.economy.earnSpirit(state, T.RAID_REWARD, 'demon_raid_success');
+          else state.spirit = (Number(state.spirit) || 0) + T.RAID_REWARD;
+          state.qi = (Number(state.qi) || 0) + T.RAID_QI;
+        } else {
+          if (S.economy && S.economy.earnSpirit) S.economy.earnSpirit(state, T.REWARD, 'tribulation_win');
+          else state.spirit = (Number(state.spirit) || 0) + T.REWARD;
+        }
       }
-      var gs = S.gamification.load();
-      if (gs.realmIndex < session.realmTo) {
-        var hist = (gs.breakthroughs || []).concat([{
-          at: new Date().toISOString(), from: gs.realmIndex, to: session.realmTo,
-        }]);
-        S.gamification.save(Object.assign({}, gs, { realmIndex: session.realmTo, breakthroughs: hist.slice(-20) }));
+      // 心魔劫不晋级（日常对抗）；渡劫才推进持久位次 + 突破史
+      if (!raid) {
+        var gs = S.gamification.load();
+        if (gs.realmIndex < session.realmTo) {
+          var hist = (gs.breakthroughs || []).concat([{
+            at: new Date().toISOString(), from: gs.realmIndex, to: session.realmTo,
+          }]);
+          S.gamification.save(Object.assign({}, gs, { realmIndex: session.realmTo, breakthroughs: hist.slice(-20) }));
+        }
+        // 重算并刷新洞府境界卡/称号（defer 模式不会越级）
+        if (window.__refreshRealm) window.__refreshRealm();
       }
-      // 重算并刷新洞府境界卡/称号（defer 模式不会越级）
-      if (window.__refreshRealm) window.__refreshRealm();
     }
     if (typeof save === 'function') { try { save(); } catch (e) { /* 忽略 */ } }
     if (typeof renderTop === 'function') { try { renderTop(); } catch (e) { /* 忽略 */ } }
@@ -3486,6 +3507,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       session = {
         questions: qs, realmFrom: idx.from, realmTo: realmTo, seed: seed,
         state: T.createSession(qs.length), phase: 'running', reason: null, correctIdx: -1,
+        mode: opts.mode === 'demon_raid' ? 'demon_raid' : 'tribulation',   // 阶段B：心魔劫复用同一渲染器，判罚档不同
         startedAt: new Date().toISOString(),
       };
       // 复位 UI

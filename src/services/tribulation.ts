@@ -278,6 +278,12 @@ export interface GradeInput {
   hasTalisman?: boolean;
   /** Esc 放弃：永不判过，≥5 按 10% 档、<5 按 20% 档 */
   abandoned?: boolean;
+  /**
+   * 判罚档位（阶段 B 心魔劫）：
+   * - 'tribulation'（缺省）：渡劫原档，5–7 题扣 10%、<5 题扣 20%
+   * - 'demon_raid'：心魔劫档，失败一律扣 5%（复用同一夹逼与护道符逻辑）
+   */
+  penaltyMode?: 'tribulation' | 'demon_raid';
 }
 
 export interface GradeResult {
@@ -290,7 +296,13 @@ export interface GradeResult {
   penaltyRate: number;
 }
 
-/** 三档判定 + 护道符抵扣 + 「不掉境界」夹逼 */
+/** 心魔劫判罚档（阶段 B）：失败一律 5% */
+export const DEMON_RAID_PENALTY_RATE = 0.05;
+/** 心魔劫成功奖励：灵石 / 修为（阶段 B 裁决值） */
+export const DEMON_RAID_REWARD_SPIRIT = 80;
+export const DEMON_RAID_REWARD_QI = 25;
+
+/** 三档判定 + 护道符抵扣 + 「不掉境界」夹逼（阶段 B：可切心魔劫 5% 档） */
 export function gradeTribulation(correctCount: number, input: GradeInput): GradeResult {
   const correct = Math.max(0, Math.min(TRIBULATION_TOTAL, Number(correctCount) || 0));
 
@@ -300,7 +312,9 @@ export function gradeTribulation(correctCount: number, input: GradeInput): Grade
     return { passed: true, qiPenalty: 0, talismanUsed: false, penaltyRate: 0 };
   }
 
-  const penaltyRate = correct >= 5 ? TRIBULATION_PENALTY.mid : TRIBULATION_PENALTY.low;
+  const penaltyRate = input.penaltyMode === 'demon_raid'
+    ? DEMON_RAID_PENALTY_RATE
+    : (correct >= 5 ? TRIBULATION_PENALTY.mid : TRIBULATION_PENALTY.low);
   const raw = Math.ceil((Number(input.qi) || 0) * penaltyRate);
   const capped = Math.min(
     raw,

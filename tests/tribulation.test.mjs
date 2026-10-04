@@ -260,7 +260,44 @@ test('gradeTribulation：Esc 放弃——永不判过，按当前答对数落失
   assert.strictEqual(saved.talismanUsed, true);
 });
 
-test('TribulationRecord：类型契约字段齐全（编译期 + 运行期样例）', () => {
+/* ─────────────── 阶段 B：心魔劫独立判罚档（5%） ─────────────── */
+
+test('心魔劫判罚：penaltyMode=demon_raid 时失败一律 5%（成功仍为 0）', () => {
+  const input = { qi: 100, maxSafeDeduct: 100, penaltyMode: 'demon_raid' };
+  // 10 / 8 题 → 成功，无扣罚
+  assert.deepStrictEqual(trib.gradeTribulation(10, input), { passed: true, qiPenalty: 0, talismanUsed: false, penaltyRate: 0 });
+  assert.strictEqual(trib.gradeTribulation(8, input).passed, true, '8/10 仍是过线');
+  // 7 / 5 / 4 题 → 失败，统一 5%
+  for (const n of [7, 5, 4]) {
+    const r = trib.gradeTribulation(n, input);
+    assert.strictEqual(r.passed, false, `${n} 题应失败`);
+    assert.strictEqual(r.penaltyRate, 0.05, `${n} 题心魔劫档固定 5%`);
+    assert.strictEqual(r.qiPenalty, 5, 'ceil(100×0.05)=5');
+  }
+  // 与渡劫档对比（同样的 7 题）
+  assert.strictEqual(trib.gradeTribulation(7, { qi: 100, maxSafeDeduct: 100 }).penaltyRate, 0.1, '渡劫档仍 10%');
+  assert.strictEqual(trib.gradeTribulation(4, { qi: 100, maxSafeDeduct: 100 }).penaltyRate, 0.2, '渡劫档仍 20%');
+});
+
+test('心魔劫判罚：护道符 / 夹逼 / 放弃语义与渡劫一致', () => {
+  const base = { qi: 100, maxSafeDeduct: 100, penaltyMode: 'demon_raid' };
+  const saved = trib.gradeTribulation(6, { ...base, hasTalisman: true });
+  assert.strictEqual(saved.qiPenalty, 0);
+  assert.strictEqual(saved.talismanUsed, true);
+  const capped = trib.gradeTribulation(3, { qi: 100, maxSafeDeduct: 2, penaltyMode: 'demon_raid' });
+  assert.strictEqual(capped.qiPenalty, 2, '夹逼到本层结余（不掉境界）');
+  const quit = trib.gradeTribulation(9, { ...base, abandoned: true });
+  assert.strictEqual(quit.passed, false, '放弃永不判过');
+  assert.strictEqual(quit.penaltyRate, 0.05, '放弃也走心魔劫 5% 档');
+});
+
+test('心魔劫奖励常量（阶段 B 裁决值）', () => {
+  assert.strictEqual(trib.DEMON_RAID_PENALTY_RATE, 0.05);
+  assert.strictEqual(trib.DEMON_RAID_REWARD_SPIRIT, 80);
+  assert.strictEqual(trib.DEMON_RAID_REWARD_QI, 25);
+});
+
+test('TribulationRecord：记录字段契约（spec 模型）', () => {
   /** @type {import('src/services/tribulation.ts').TribulationRecord} */
   const rec = {
     id: 'trib-1',

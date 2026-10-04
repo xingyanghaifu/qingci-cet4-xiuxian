@@ -104,6 +104,18 @@ test('R18：settle 挂钩点包裹 try/catch（不得连累答题）', () => {
   assert.ok(html.includes("console.warn('[settle hook]', e);"), '实现内须兜底');
 });
 
+test('心魔劫：判罚档与奖励接线（阶段 B 补齐）', () => {
+  const rt = html.slice(html.indexOf('渡劫会话运行时'));
+  // 判罚档透传
+  assert.ok(rt.includes("var raid = session.mode === 'demon_raid';"), 'raid 标志缺失');
+  assert.ok(rt.includes("penaltyMode: raid ? 'demon_raid' : 'tribulation',"), '判罚档未透传');
+  // 成功奖励分流
+  assert.ok(rt.includes("S.economy.earnSpirit(state, T.RAID_REWARD, 'demon_raid_success')"), '心魔劫 80 灵石未走流水');
+  assert.ok(rt.includes("state.qi = (Number(state.qi) || 0) + T.RAID_QI;"), '心魔劫 25 修为未入账');
+  assert.ok(rt.includes('if (!raid) {'), '心魔劫必须不晋级（晋级分支须受 !raid 保护）');
+  assert.ok(rt.includes("rTitle.textContent = '心魔劫胜'"), '结果页文案未区分心魔劫');
+});
+
 test('接线：心魔录 UI + 心魔劫复用 + 奇遇通知 aria-live', () => {
   assert.ok(html.includes('id="demonPanel"') && html.includes('id="demonGrid"'), '心魔录面板缺失');
   // 心魔录必须落在洞府页 panel-map 内（防止挂到别处导致不可见）

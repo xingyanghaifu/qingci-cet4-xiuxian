@@ -284,13 +284,14 @@ test('步骤4-6 落库编排：记录/冷却/修为/位次/灵石/历史（验�
   const rt = runtimeRegion();
   const iPersist = rt.indexOf('function persistFinish(rec, grade)');
   assert.ok(iPersist > 0, '缺 persistFinish');
-  const body = rt.slice(iPersist, iPersist + 1400);
+  const body = rt.slice(iPersist, iPersist + 2000);
   assert.ok(body.includes('T.saveRecord(rec)'), '写 tribulations（冷却数据源）');
   assert.ok(body.includes('state.qi = Math.max(0,'), '修为扣罚显式夹逼赋值');
-  assert.ok(body.includes('state.spirit = (Number(state.spirit) || 0) + T.REWARD'), '成功灵石入账');
-  assert.ok(body.includes('S.gamification.save(') && body.includes('realmIndex: session.realmTo'), '成功推进持久位次');
+  assert.ok(body.includes("S.economy.earnSpirit(state, T.REWARD, 'tribulation_win')"), '渡劫成功入账');
+  // 阶段 B：晋级/突破史须受 !raid 保护（心魔劫日常对抗不晋级）
+  assert.ok(body.includes('if (!raid) {') && body.includes('realmIndex: session.realmTo'), '渡劫推进持久位次（心魔劫除外）');
   assert.ok(body.includes('breakthroughs: hist.slice(-20)'), '突破史追加');
-  assert.ok(body.includes('window.__refreshRealm()'), '成功后刷新洞府境界卡/称号');
+  assert.ok(body.includes('if (window.__refreshRealm) window.__refreshRealm();'), '成功后刷新洞府境界卡/称号');
   assert.ok(body.includes("typeof save === 'function'") && body.includes("typeof renderTop === 'function'"), '学习存档与侧栏刷新');
   // 放弃回主界面（验收14）
   const iFinish = rt.indexOf('function finish(reason)');

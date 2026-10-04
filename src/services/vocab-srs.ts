@@ -183,7 +183,7 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
 
     async put(record: VocabSrsRecord): Promise<boolean> {
       const ok = await withStore(IDB_STORES.vocab, 'readwrite', async (store) => {
-        await promisify(store.put(record, record.w));
+        await promisify(store.put(record));
         return true;
       });
       return !!ok;

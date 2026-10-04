@@ -54,6 +54,23 @@ import {
   DECORATIONS, SPRING_WATER_ID,
 } from './cave';
 import {
+  judgeDuel, createDuel, recordDuelScore, listDuels, duelReward, simulateOpponentScore,
+  applyDuelBonus, DUEL_QUESTIONS, DUEL_TIME_PER_Q, DUEL_WIN_REWARD, DUEL_TIE_REWARD,
+} from './duel';
+import {
+  canTransmit, createTransmission, claimTransmission, listTransmissions, transmissionReward,
+  boostMultiplier, transmissionId, TRANSMISSION_MIN_PROFICIENCY, TRANSMISSION_SENDER_REWARD,
+  TRANSMISSION_BOOST_DAYS,
+} from './transmission';
+import {
+  judgeJoint, createJointDemon, recordJointScore, settleJointDemon, listJointDemons,
+  pickJointQuestions, jointTotal, JOINT_DEMON_EACH, JOINT_DEMON_PASS_RATE, JOINT_DEMON_REWARD,
+} from './joint-demon';
+import {
+  loadSect, saveSect, donate, checkFacilityActivation, getFacilityBuffs, facilityDef,
+  facilityPercent, FACILITY_DEFS, SECT_DONATE_PRESETS,
+} from './sect-facilities';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -173,6 +190,54 @@ const QingciServices = {
     prepareTrack,
     armVoa,
     playReal,
+  },
+  duel: {
+    judge: judgeDuel,
+    create: createDuel,
+    record: recordDuelScore,
+    list: listDuels,
+    reward: duelReward,
+    simulate: simulateOpponentScore,
+    applyBonus: applyDuelBonus,
+    QUESTIONS: DUEL_QUESTIONS,
+    TIME_PER_Q: DUEL_TIME_PER_Q,
+    WIN_REWARD: DUEL_WIN_REWARD,
+    TIE_REWARD: DUEL_TIE_REWARD,
+  },
+  transmission: {
+    can: canTransmit,
+    create: createTransmission,
+    claim: claimTransmission,
+    list: listTransmissions,
+    reward: transmissionReward,
+    boost: boostMultiplier,
+    idOf: transmissionId,
+    MIN_PROFICIENCY: TRANSMISSION_MIN_PROFICIENCY,
+    SENDER_REWARD: TRANSMISSION_SENDER_REWARD,
+    BOOST_DAYS: TRANSMISSION_BOOST_DAYS,
+  },
+  joint: {
+    judge: judgeJoint,
+    create: createJointDemon,
+    record: recordJointScore,
+    settle: settleJointDemon,
+    list: listJointDemons,
+    pick: pickJointQuestions,
+    total: jointTotal,
+    EACH: JOINT_DEMON_EACH,
+    PASS_RATE: JOINT_DEMON_PASS_RATE,
+    REWARD: JOINT_DEMON_REWARD,
+  },
+  sect: {
+    load: loadSect,
+    save: saveSect,
+    donate,
+    checkActivation: checkFacilityActivation,
+    buffs: getFacilityBuffs,
+    def: facilityDef,
+    percent: facilityPercent,
+    FACILITIES: FACILITY_DEFS,
+    PRESETS: SECT_DONATE_PRESETS,
   },
   field: {
     load: loadField,

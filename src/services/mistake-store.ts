@@ -83,7 +83,7 @@ export function createMistakeStore(factory?: MinimalFactory | null): MistakeStor
 
     async put(record: MistakeRecord): Promise<boolean> {
       const ok = await withStore(IDB_STORES.mistakes, 'readwrite', async (store) => {
-        await promisify(store.put(record, record.id));
+        await promisify(store.put(record));
         return true;
       });
       return !!ok;

@@ -92,7 +92,7 @@ export async function recordEncounter(e: Encounter, factory?: MinimalFactory | n
   try {
     const store = await encStore('readwrite', factory);
     if (!store) return false;
-    await promisify(store.put(e, e.id));
+    await promisify(store.put(e));
     return true;
   } catch {
     return false;
@@ -142,7 +142,7 @@ export async function resolveEncounter(id: string, factory?: MinimalFactory | nu
     const row = await promisify<Encounter | undefined>(store.get(id));
     const e = normalizeEncounter(row);
     if (!e) return false;
-    await promisify(store.put({ ...e, resolved: true }, id));
+    await promisify(store.put({ ...e, resolved: true }));
     return true;
   } catch {
     return false;

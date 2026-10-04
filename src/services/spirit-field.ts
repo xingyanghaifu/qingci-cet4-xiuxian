@@ -145,7 +145,7 @@ export async function plantSeed(
       wateredDays: 0,
       withered: false,
     };
-    await promisify(store.put(plot, plot.id));
+    await promisify(store.put(plot));
     return { ok: true };
   } catch {
     return { ok: false, reason: 'unavailable' };
@@ -173,7 +173,7 @@ export async function waterField(
       if (!p) continue;
       if (isMature(p, spring)) continue;      // 已成熟不再累加
       const next: Plot = { ...p, wateredDays: p.wateredDays + 1 };
-      await promisify(store.put(next, next.id));
+      await promisify(store.put(next));
       watered++;
     }
     return { watered, day };
@@ -214,7 +214,7 @@ export async function applyWitherPenalty(factory?: MinimalFactory | null): Promi
       if (!p) continue;
       if (isMature(p, spring)) continue;      // 已成熟不枯萎
       const next: Plot = { ...p, wateredDays: Math.floor(p.wateredDays / 2), withered: true };
-      await promisify(store.put(next, next.id));
+      await promisify(store.put(next));
       withered++;
     }
     return { withered };

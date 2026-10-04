@@ -17,6 +17,11 @@ export interface FeatureFlags {
   AI_GRADING_ENABLED: boolean;
   /** AI 生图（阶段 B 心魔/灵兽形态占位；开关关闭时前端不发起任何请求，走 SVG 占位） */
   AI_IMAGE_ENABLED: boolean;
+  /**
+   * 道友互动跨用户模式（阶段 D）：false 时全部走本机模式（local-first，R6）。
+   * 置 true 前需确认 D1 端点已部署且表结构就绪；开关只决定「是否请求跨用户端点」。
+   */
+  D1_MULTIPLAYER_ENABLED: boolean;
   /** PWA 离线增强：词库与试卷数据写入 IndexedDB 缓存 */
   PWA_OFFLINE_ENABLED: boolean;
   /** 重放 AI 批改中的模型原文（调试用） */
@@ -26,6 +31,7 @@ export interface FeatureFlags {
 export const FEATURES: Readonly<FeatureFlags> = Object.freeze({
   AI_GRADING_ENABLED: false,
   AI_IMAGE_ENABLED: false,
+  D1_MULTIPLAYER_ENABLED: false,
   PWA_OFFLINE_ENABLED: true,
   SHOW_GRADING_MODEL_TRACE: false,
 });
@@ -45,6 +51,7 @@ export function activeFeatures(): FeatureFlags {
   return {
     AI_GRADING_ENABLED: isFeatureEnabled('AI_GRADING_ENABLED'),
     AI_IMAGE_ENABLED: isFeatureEnabled('AI_IMAGE_ENABLED'),
+    D1_MULTIPLAYER_ENABLED: isFeatureEnabled('D1_MULTIPLAYER_ENABLED'),
     PWA_OFFLINE_ENABLED: isFeatureEnabled('PWA_OFFLINE_ENABLED'),
     SHOW_GRADING_MODEL_TRACE: isFeatureEnabled('SHOW_GRADING_MODEL_TRACE'),
   };

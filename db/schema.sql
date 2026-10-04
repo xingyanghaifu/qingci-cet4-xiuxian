@@ -57,3 +57,71 @@ CREATE TABLE IF NOT EXISTS group_members (
 );
 
 CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members (group_id, realm_index DESC, progress DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- 阶段 D · 道友互动（论剑 / 传功 / 联手斩魔 / 道场建设）
+-- 隐私口径：只存匿名 member_id 与聚合数值；不存题目内容、不存逐题明细、不存分数。
+-- 应用：npx wrangler d1 execute qingci-feedback --remote --file=db/schema.sql
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS duels (
+  id                 TEXT    NOT NULL PRIMARY KEY,  -- duel:<seed>
+  challenger_id      TEXT    NOT NULL,              -- 匿名 ID
+  opponent_id        TEXT    NOT NULL,              -- 匿名 ID
+  challenger_correct INTEGER NOT NULL DEFAULT 0,    -- 0–10（不含题目内容）
+  challenger_time_ms INTEGER NOT NULL DEFAULT 0,
+  opponent_correct   INTEGER NOT NULL DEFAULT 0,
+  opponent_time_ms   INTEGER NOT NULL DEFAULT 0,
+  status             TEXT    NOT NULL DEFAULT 'pending',  -- pending/completed/expired
+  started_at         TEXT    NOT NULL,
+  updated_at         TEXT,
+  finished_at        TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_duels_challenger ON duels (challenger_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_duels_opponent ON duels (opponent_id, started_at DESC);
+
+CREATE TABLE IF NOT EXISTS transmissions (
+  id          TEXT    NOT NULL PRIMARY KEY,  -- tx:<word>
+  from_id     TEXT    NOT NULL,
+  to_id       TEXT    NOT NULL,
+  word        TEXT    NOT NULL UNIQUE,       -- 每词全局只传一次
+  created_at  TEXT    NOT NULL,
+  claimed     INTEGER NOT NULL DEFAULT 0,
+  boost_until TEXT    NOT NULL               -- 接收方复习收益 ×1.5 截止
+);
+
+CREATE INDEX IF NOT EXISTS idx_transmissions_to ON transmissions (to_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS joint_demons (
+  id                TEXT    NOT NULL PRIMARY KEY,  -- joint:<seed>
+  initiator_id      TEXT    NOT NULL,
+  partner_id        TEXT    NOT NULL,
+  initiator_correct INTEGER NOT NULL DEFAULT 0,    -- 0–5（心魔题目不上传）
+  partner_correct   INTEGER NOT NULL DEFAULT 0,
+  status            TEXT    NOT NULL DEFAULT 'pending',
+  passed            INTEGER NOT NULL DEFAULT 0,
+  started_at        TEXT    NOT NULL,
+  updated_at        TEXT,
+  finished_at       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_joint_initiator ON joint_demons (initiator_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_joint_partner ON joint_demons (partner_id, started_at DESC);
+
+CREATE TABLE IF NOT EXISTS sect_facilities (
+  id           TEXT    NOT NULL PRIMARY KEY,  -- scripture_hall/alchemy_room/arena
+  progress     INTEGER NOT NULL DEFAULT 0,    -- 服务端累计（不信任客户端）
+  activated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sect_donations (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id   TEXT    NOT NULL,               -- 匿名 ID
+  facility_id TEXT    NOT NULL,
+  amount      INTEGER NOT NULL,
+  created_at  TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sect_donations_member ON sect_donations (member_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sect_donations_facility ON sect_donations (facility_id, created_at DESC);

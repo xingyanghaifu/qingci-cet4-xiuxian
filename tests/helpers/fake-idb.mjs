@@ -23,7 +23,25 @@ export function makeFakeIdb() {
   };
 
   const makeStore = (map, meta) => ({
-    put: (value, key) => request(() => {
+    put: (value, key) => {
+      // 【规范门禁·永久】按 MDN IDBObjectStore.put / IndexedDB 3.0：
+      //  1) in-line key（keyPath）或有 key generator 的仓收到显式 key → DataError
+      //     （历史 bug：18 处 put(value, key) 在 keyPath 仓上真机会静默 DataError，
+      //      被各层 try/catch 吞掉表现为「不持久化」；已按方案 A 全部去掉冗余 key）
+      //  2) out-of-line 仓（无 keyPath 且无 generator）缺 key → DataError
+      if ((meta.keyPath || meta.autoIncrement) && key !== undefined) {
+        throw new DOMException(
+          "The object store uses in-line keys or has a key generator, and a key parameter was provided.",
+          'DataError',
+        );
+      }
+      if (!meta.keyPath && !meta.autoIncrement && key === undefined) {
+        throw new DOMException(
+          "The object store uses out-of-line keys and has no key generator, and no key parameter was provided.",
+          'DataError',
+        );
+      }
+      return request(() => {
       let storeKey = key;
       if (storeKey === undefined) {
         if (meta.keyPath) storeKey = value[meta.keyPath];
@@ -32,7 +50,8 @@ export function makeFakeIdb() {
       }
       map.set(String(storeKey), value);
       return storeKey;
-    }),
+      });
+    },
     get: (key) => request(() => map.get(String(key))),
     getAll: () => request(() => [...map.values()]),
     delete: (key) => request(() => { map.delete(String(key)); return undefined; }),

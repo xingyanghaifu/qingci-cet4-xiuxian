@@ -234,7 +234,7 @@ export async function upsertDemon(
       imagePrompt: prev ? prev.imagePrompt : undefined,
       imageStatus: prev ? prev.imageStatus || 'none' : 'none',
     };
-    await promisify(store.put(demon, id));
+    await promisify(store.put(demon));
     return demon;
   } catch {
     return null;
@@ -278,7 +278,7 @@ export async function reconcileDemons(
           imagePrompt: undefined,
           imageStatus: 'none',
         };
-      await promisify(store.put(demon, id));
+      await promisify(store.put(demon));
       if (prev) kept++; else created++;
     }
     return { created, kept };

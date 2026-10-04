@@ -99,7 +99,7 @@ export async function purchaseDecoration(
       decorations: [...cave.decorations, id],
       layout: cave.decorations.length + 1 >= DECORATIONS.length ? 'lush' : cave.layout,
     };
-    await promisify(store.put(next, 'main'));
+    await promisify(store.put(next));
     return { ok: true };
   } catch {
     earnSpirit(state, def.price, `refund_${id}`, factory);

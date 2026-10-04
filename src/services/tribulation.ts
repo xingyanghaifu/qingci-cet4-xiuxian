@@ -66,7 +66,7 @@ export async function saveTribulationRecord(record: TribulationRecord): Promise<
   try {
     const store = await tribStore('readwrite');
     if (!store) return false;
-    await promisify<unknown>(store.put(record, record.id));
+    await promisify<unknown>(store.put(record));
     return true;
   } catch {
     return false;

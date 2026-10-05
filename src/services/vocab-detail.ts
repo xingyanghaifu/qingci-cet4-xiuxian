@@ -13,6 +13,7 @@
  * file:// 双击打开时 fetch 分片必然失败，直接走 3→5，不会抛错。
  */
 import { storeOf, promisify, type MinimalObjectStore } from './idb';
+import { currentLexiconId } from './lexicon';
 
 /* ---------- D3 数据模型 ---------- */
 export interface VocabDefinition {
@@ -64,6 +65,24 @@ export const VOCAB_DETAIL_SCHEMA = 'qingci-vocab-detail/1';
 export const FREE_DICT_API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 export const VOCAB_DETAIL_CACHE_KEY = 'vocabdetail:';
 
+/**
+ * 各词库的详情分片目录（v1.8.2 多词库）。
+ *
+ * CET-4 保持**原路径** `vocab-detail/`（兼容策略：现有分片不搬动），
+ * 其余词库走 `lexicons/<id>/vocab-detail/`。
+ * 传入未知词库时回落到 CET-4 —— 宁可显示四级的详情，也不要让详情面板空白。
+ */
+export const VOCAB_DETAIL_BASES: Readonly<Record<string, string>> = {
+  cet4: 'vocab-detail/',
+  cet6: 'lexicons/cet6/vocab-detail/',
+};
+
+/** 词库 → 详情分片目录（归一化；未知/缺省回落到 cet4） */
+export function baseOf(lexiconId?: string | null): string {
+  const id = String(lexiconId == null ? '' : lexiconId).trim();
+  return VOCAB_DETAIL_BASES[id] || VOCAB_DETAIL_BASE;
+}
+
 interface Manifest {
   schema: string;
   count: number;
@@ -73,9 +92,36 @@ interface Manifest {
 }
 
 /* ---------- 模块级缓存 ---------- */
-let manifestPromise: Promise<Manifest | null> | null = null;
-const shardCache = new Map<string, Record<string, VocabDetail>>();
+/**
+ * 清单与分片缓存按词库分桶（v1.8.2 多词库）。
+ *
+ * 为什么不加词库前缀：详情是**可再生的只读数据**，同一单词在 CET-4/CET-6
+ * 的释义完全一致，重复缓存只会白占 IndexedDB 配额。真正需要隔离的是
+ * 进度 / 错题 / SRS（见 lexicon-scope.ts），详情缓存不属于隔离范畴。
+ */
+const manifestPromises = new Map<string, Promise<Manifest | null>>();
+const shardCaches = new Map<string, Map<string, Record<string, VocabDetail>>>();
 const detailCache = new Map<string, VocabDetail>();
+
+function manifestFor(lexiconId?: string | null): Promise<Manifest | null> {
+  const key = baseOf(lexiconId);
+  let p = manifestPromises.get(key);
+  if (!p) {
+    p = (async () => {
+      try {
+        const res = await fetch(key + 'manifest.json', { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const data = (await res.json()) as Manifest;
+        if (!data || !Array.isArray(data.prefixes) || !data.files) return null;
+        return data;
+      } catch {
+        return null;
+      }
+    })();
+    manifestPromises.set(key, p);
+  }
+  return p;
+}
 
 async function idbStore(mode: 'readonly' | 'readwrite'): Promise<MinimalObjectStore | null> {
   try {
@@ -107,22 +153,9 @@ async function idbPut(key: string, detail: VocabDetail): Promise<void> {
   }
 }
 
-/** 分片清单（失败返回 null：file:// 或未部署分片时安全降级） */
-function loadManifest(): Promise<Manifest | null> {
-  if (!manifestPromise) {
-    manifestPromise = (async () => {
-      try {
-        const res = await fetch(VOCAB_DETAIL_BASE + 'manifest.json', { cache: 'no-cache' });
-        if (!res.ok) return null;
-        const data = (await res.json()) as Manifest;
-        if (!data || !Array.isArray(data.prefixes) || !data.files) return null;
-        return data;
-      } catch {
-        return null;
-      }
-    })();
-  }
-  return manifestPromise;
+/** 分片清单（按词库分桶；失败返回 null：file:// 或未部署分片时安全降级） */
+function loadManifest(lexiconId?: string | null): Promise<Manifest | null> {
+  return manifestFor(lexiconId);
 }
 
 /** 最长前缀匹配：manifest.prefixes 已按长度降序 */
@@ -134,18 +167,24 @@ function prefixFor(manifest: Manifest, word: string): string {
   return '';
 }
 
-/** 取本地分片（内存 → 网络/SW 缓存） */
-async function loadShard(manifest: Manifest, word: string): Promise<Record<string, VocabDetail> | null> {
+/** 取本地分片（内存 → 网络/SW 缓存）；缓存按词库分桶 */
+async function loadShard(manifest: Manifest, word: string, lexiconId?: string | null): Promise<Record<string, VocabDetail> | null> {
   const prefix = prefixFor(manifest, word);
   if (!prefix) return null;
   const file = manifest.files[prefix];
   if (!file) return null;
-  if (shardCache.has(prefix)) return shardCache.get(prefix) || null;
+  const base = baseOf(lexiconId);
+  let bucket = shardCaches.get(base);
+  if (!bucket) {
+    bucket = new Map();
+    shardCaches.set(base, bucket);
+  }
+  if (bucket.has(prefix)) return bucket.get(prefix) || null;
   try {
-    const res = await fetch(VOCAB_DETAIL_BASE + file);
+    const res = await fetch(base + file);
     if (!res.ok) return null;
     const data = (await res.json()) as Record<string, VocabDetail>;
-    shardCache.set(prefix, data);
+    bucket.set(prefix, data);
     return data;
   } catch {
     return null;
@@ -223,22 +262,26 @@ async function fetchApiDetail(word: string): Promise<VocabDetail | null> {
 
 /**
  * 取单词详情（离线优先）。
+ * @param word     单词
+ * @param lexiconId 词库 id（决定加载哪套分片；缺省按当前词库，再缺省回落到 CET-4）
  * @returns null 表示本地与联网均无详情（界面提示离线兜底文案）
  */
-export async function getVocabDetail(word: string): Promise<VocabDetailResult | null> {
+export async function getVocabDetail(word: string, lexiconId?: string | null): Promise<VocabDetailResult | null> {
   const key = String(word || '').trim().toLowerCase();
   if (!key) return null;
+  const lx = lexiconId ?? currentLexiconId();
 
-  const mem = detailCache.get(key);
+  // 内存缓存也按词库分桶：同一单词在四级/六级下应读各自的分片
+  const mem = detailCache.get(lx + '' + key);
   if (mem) return { detail: mem, source: 'local' };
 
-  // 1) 本地分片（构建产出，4540 词白名单）
-  const manifest = await loadManifest();
+  // 1) 本地分片（构建产出，按词库白名单）
+  const manifest = await loadManifest(lx);
   if (manifest) {
-    const shard = await loadShard(manifest, key);
+    const shard = await loadShard(manifest, key, lx);
     const hit = shard && (shard[key] || shard[String(word).trim()]);
     if (hit && hit.word) {
-      detailCache.set(key, hit);
+      detailCache.set(lx + '' + key, hit);
       void idbPut(VOCAB_DETAIL_CACHE_KEY + key, hit);
       return { detail: hit, source: 'local' };
     }
@@ -247,7 +290,7 @@ export async function getVocabDetail(word: string): Promise<VocabDetailResult | 
   // 2) IndexedDB 缓存（含 API 联网结果）
   const cached = await idbGet(VOCAB_DETAIL_CACHE_KEY + key);
   if (cached) {
-    detailCache.set(key, cached);
+    detailCache.set(lx + '' + key, cached);
     return { detail: cached, source: 'cache' };
   }
 
@@ -256,7 +299,7 @@ export async function getVocabDetail(word: string): Promise<VocabDetailResult | 
   if (online) {
     const api = await fetchApiDetail(word);
     if (api) {
-      detailCache.set(key, api);
+      detailCache.set(lx + '' + key, api);
       return { detail: api, source: 'api' };
     }
   }
@@ -284,7 +327,7 @@ export function speakWord(word: string, prefer: 'british' | 'american' = 'britis
 
 /** 仅测试/诊断用：清空模块级缓存 */
 export function __resetVocabDetailCache(): void {
-  manifestPromise = null;
-  shardCache.clear();
+  manifestPromises.clear();
+  shardCaches.clear();
   detailCache.clear();
 }

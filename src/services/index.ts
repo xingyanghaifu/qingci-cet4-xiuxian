@@ -29,7 +29,12 @@ import { normalizeBank, selectPracticeSet, questionType, questionPart, seededRng
 import { createVocabSrsStore, planLegacyVocabMigration, rateVocabRecord, createVocabRecord } from './vocab-srs';
 import { VOCAB_GRADES, VOCAB_TIERS, tierOf, tierLabel, tierCounts, wordsOfTier, gradesSource } from './vocab-grades';
 import { enrichWord, splitAffixes, findConfusables, collocationsFor, editDistance, describeEnrichment } from './vocab-enrich';
-import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_SCHEMA, FREE_DICT_API } from './vocab-detail';
+import { getVocabDetail, speakWord, VOCAB_DETAIL_BASE, VOCAB_DETAIL_BASES, baseOf, VOCAB_DETAIL_SCHEMA, FREE_DICT_API } from './vocab-detail';
+import {
+  currentLexiconId, currentLexicon, switchLexicon, parseManifest, lexiconById, enabledLexicons,
+  LEXICON_CURRENT_KEY, DEFAULT_LEXICON_ID, FALLBACK_MANIFEST, LEXICON_ROOT,
+} from './lexicon';
+import { lexiconOf, sameLexicon, tagLexicon, filterByLexicon, summarizeByLexicon } from './lexicon-scope';
 import {
   spendSpirit, earnSpirit, getBalance, listRecentTransactions, refreshInventory,
   purchase, consumeTalisman, arrayActive, talismanCount, activePillWords, bookUnlocked,
@@ -58,6 +63,7 @@ import {
   harvestTitleOf, harvestDemonSoftening,
 } from './cultivation';
 export type { CultivationChain } from './cultivation';
+export type { Lexicon, LexiconManifest } from './lexicon';
 import {
   loadCave, purchaseDecoration, hasDecoration, hasSpringWater, decorationDef,
   DECORATIONS, SPRING_WATER_ID,
@@ -376,8 +382,29 @@ const QingciServices = {
     get: getVocabDetail,
     speak: speakWord,
     base: VOCAB_DETAIL_BASE,
+    bases: VOCAB_DETAIL_BASES,
+    baseOf,
     schema: VOCAB_DETAIL_SCHEMA,
     freeDictApi: FREE_DICT_API,
+  },
+  lexicon: {
+    current: currentLexiconId,
+    profile: currentLexicon,
+    switchTo: switchLexicon,
+    parseManifest,
+    byId: lexiconById,
+    enabled: enabledLexicons,
+    storageKey: LEXICON_CURRENT_KEY,
+    defaultId: DEFAULT_LEXICON_ID,
+    fallback: FALLBACK_MANIFEST,
+    root: LEXICON_ROOT,
+  },
+  lexiconScope: {
+    of: lexiconOf,
+    same: sameLexicon,
+    tag: tagLexicon,
+    filter: filterByLexicon,
+    summarize: summarizeByLexicon,
   },
   shortcuts: {
     resolve: resolveShortcut,

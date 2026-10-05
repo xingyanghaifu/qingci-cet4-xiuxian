@@ -75,6 +75,14 @@ export interface MistakeRecord {
   repetitions: number;
   /** 0–5 熟练度等级（派生字段，便于展示） */
   proficiency: number;
+  /**
+   * 所属词库（v1.8.2 多词库隔离）。
+   *
+   * **老数据没有这个字段，一律读作 `'cet4'`** —— 迁移策略不是重写老记录，
+   * 而是读取时用 `lexiconOf(record)` 兜底，这样既有用户零改动、不丢任何进度。
+   * 不参与 SM-2 调度语义，纯隔离标记。
+   */
+  lx?: string;
   createdAt: string;
   updatedAt: string;
 }

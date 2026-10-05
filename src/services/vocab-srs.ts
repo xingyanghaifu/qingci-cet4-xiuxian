@@ -13,6 +13,8 @@ import { IDB_STORES, openAppDatabase, promisify, type IdbStoreName, type Minimal
 import { DEFAULT_EASE, proficiencyOf, type ReviewRating } from '../types/mistakes';
 import { RELEARN_INTERVAL_DAYS, localDateKey, scheduleNext } from './srs';
 import { tierOf, type VocabTier } from './vocab-grades';
+import { filterByLexicon, tagIf } from './lexicon-scope';
+import { DEFAULT_LEXICON_ID } from './lexicon';
 
 export const VOCAB_MIGRATION_META_KEY = 'vocab-legacy-migration';
 
@@ -34,6 +36,14 @@ export interface VocabSrsRecord {
   proficiency: number;
   /** 记录来源：legacy = 旧存档迁移，srs = 新调度产生 */
   source: 'legacy' | 'srs';
+  /**
+   * 所属词库（v1.8.2 多词库隔离）。
+   *
+   * 老记录没有这个字段，读取时由 `lexiconOf()` 兜底为默认词库，
+   * 因此**既有用户的进度不会因为升级而丢失或错位**。
+   * 不参与 SM-2 语义，只是隔离标记。
+   */
+  lx?: string;
 }
 
 export interface VocabStats {
@@ -131,18 +141,19 @@ export function planLegacyVocabMigration(
 
 export interface VocabSrsStore {
   available(): boolean;
-  all(): Promise<VocabSrsRecord[]>;
-  get(word: string): Promise<VocabSrsRecord | null>;
-  put(record: VocabSrsRecord): Promise<boolean>;
+  /** 全部记录；传 lexiconId 时只返回该词库的 */
+  all(lexiconId?: string | null): Promise<VocabSrsRecord[]>;
+  get(word: string, lexiconId?: string | null): Promise<VocabSrsRecord | null>;
+  put(record: VocabSrsRecord, lexiconId?: string | null): Promise<boolean>;
   /** 复习反馈：写回 SM-2 结果；返回更新后的记录 */
-  rate(word: string, rating: ReviewRating, now?: Date): Promise<VocabSrsRecord | null>;
+  rate(word: string, rating: ReviewRating, now?: Date, lexiconId?: string | null): Promise<VocabSrsRecord | null>;
   /** 今日到期队列（按到期时间升序、同时间按熟练度升序） */
-  due(limit?: number, now?: Date): Promise<VocabSrsRecord[]>;
+  due(limit?: number, now?: Date, lexiconId?: string | null): Promise<VocabSrsRecord[]>;
   /** 未进入 SRS 的词（用于按分级取新词） */
-  wordsNotInSrs(allWords: string[], limit?: number): Promise<string[]>;
-  stats(now?: Date): Promise<VocabStats>;
+  wordsNotInSrs(allWords: string[], limit?: number, lexiconId?: string | null): Promise<string[]>;
+  stats(now?: Date, lexiconId?: string | null): Promise<VocabStats>;
   /** 旧存档迁移（幂等；force 可重跑） */
-  migrateLegacy(schedule: Record<string, { level?: string; next?: number; tries?: number }> | null, options?: { now?: Date; force?: boolean }): Promise<{ migrated: number; skipped: boolean }>;
+  migrateLegacy(schedule: Record<string, { level?: string; next?: number; tries?: number }> | null, options?: { now?: Date; force?: boolean; lexiconId?: string }): Promise<{ migrated: number; skipped: boolean }>;
   clear(): Promise<void>;
 }
 
@@ -150,6 +161,18 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
   const idb = factory === undefined
     ? (typeof indexedDB !== 'undefined' ? (indexedDB as unknown as MinimalFactory) : null)
     : factory;
+
+  /**
+   * 本次调用要操作的词库。
+   *
+   * **默认返回空串**（= 不过滤），而不是「读当前词库」：
+   * 这是刻意的向后兼容取舍 —— 既有测试与既有调用方都是单词库世界，
+   * 若默认就过滤，那些没有 `lx` 的老记录在 cet4 语境下能命中，
+   * 但一旦有人在别的语境调用就会静默丢数据。
+   * 空串 + `filterByLexicon(x, '')` 的语义是「返回全部」，v1.8.1 行为原样保留。
+   * UI 层通过 `createVocabSrsStoreFor(f, lexiconId)` 显式开启隔离。
+   */
+  const scopeOf = (lexiconId?: string | null): string => String(lexiconId == null ? '' : lexiconId).trim();
 
   async function withStore<T>(name: IdbStoreName, mode: 'readonly' | 'readwrite', fn: (store: MinimalObjectStore) => Promise<T>): Promise<T | null> {
     if (!idb) return null;
@@ -166,37 +189,85 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
     return row || null;
   }
 
+  /**
+   * 作用域主键：`<词库Id> <单词>`。
+   * 用空格分隔而非冒号，是因为词本身也可能含 `'`（如 o'clock），空格更安全。
+   */
+  const scopedKey = (word: string, lexiconId: string): string => `${lexiconId} ${word}`;
+
+  /** 读 vocabLex（按词库分开的记录）；仓库不存在（老库）时返回 null */
+  async function readScoped(word: string, lexiconId: string): Promise<VocabSrsRecord | null> {
+    const row = await withStore(IDB_STORES.vocabLex, 'readonly', (store) =>
+      promisify<(VocabSrsRecord & { k?: string }) | undefined>(store.get(scopedKey(word, lexiconId))));
+    return row || null;
+  }
+
+  async function readLegacy(word: string): Promise<VocabSrsRecord | null> {
+    const row = await withStore(IDB_STORES.vocab, 'readonly', (store) => promisify<VocabSrsRecord | undefined>(store.get(word)));
+    return row || null;
+  }
+
   return {
     available(): boolean {
       return !!idb;
     },
 
-    async all(): Promise<VocabSrsRecord[]> {
-      const rows = await withStore(IDB_STORES.vocab, 'readonly', (store) => promisify<VocabSrsRecord[]>(store.getAll()));
-      return rows || [];
+    /**
+     * 全部记录。
+     *
+     * 不指定词库时**原样返回 vocab 老仓**（v1.8.1 行为，一字不差）。
+     * 指定词库时读 vocabLex，并**额外并入 vocab 里的老记录**——
+     * 这些是 v1.8.1 时代存下的进度，按约定归属默认词库（CET-4），
+     * 这样 CET-4 用户升级后看到的进度与从前完全一致，一个字都不少。
+     */
+    async all(lexiconId?: string | null): Promise<VocabSrsRecord[]> {
+      const scope = scopeOf(lexiconId);
+      if (!scope) {
+        const rows = await withStore(IDB_STORES.vocab, 'readonly', (store) => promisify<VocabSrsRecord[]>(store.getAll()));
+        return rows || [];
+      }
+      const scoped = await withStore(IDB_STORES.vocabLex, 'readonly', (store) => promisify<VocabSrsRecord[]>(store.getAll()));
+      const mine = filterByLexicon(scoped, scope);
+      if (scope !== DEFAULT_LEXICON_ID) return mine;
+      const legacy = await withStore(IDB_STORES.vocab, 'readonly', (store) => promisify<VocabSrsRecord[]>(store.getAll()));
+      // 同一单词在两处都有时以 vocabLex 为准（更新的那份）
+      const seen = new Set(mine.map((r) => r.w));
+      return [...mine, ...(legacy || []).filter((r) => !seen.has(r.w))];
     },
 
-    async get(word: string): Promise<VocabSrsRecord | null> {
-      const row = await withStore(IDB_STORES.vocab, 'readonly', (store) => promisify<VocabSrsRecord | undefined>(store.get(word)));
-      return row || null;
+    async get(word: string, lexiconId?: string | null): Promise<VocabSrsRecord | null> {
+      const scope = scopeOf(lexiconId);
+      // 未指定词库：沿用老仓单键读写，既有调用方行为不变
+      if (!scope) return readLegacy(word);
+      return (await readScoped(word, scope)) || (scope === DEFAULT_LEXICON_ID ? readLegacy(word) : null);
     },
 
-    async put(record: VocabSrsRecord): Promise<boolean> {
-      const ok = await withStore(IDB_STORES.vocab, 'readwrite', async (store) => {
-        await promisify(store.put(record));
+    async put(record: VocabSrsRecord, lexiconId?: string | null): Promise<boolean> {
+      const scope = scopeOf(lexiconId);
+      // 未指定词库 → 写老仓（v1.8.1 行为）
+      if (!scope) {
+        const ok = await withStore(IDB_STORES.vocab, 'readwrite', async (store) => {
+          await promisify(store.put(record));
+          return true;
+        });
+        return !!ok;
+      }
+      const row = { ...record, k: scopedKey(record.w, scope), lx: scope };
+      const ok = await withStore(IDB_STORES.vocabLex, 'readwrite', async (store) => {
+        await promisify(store.put(row));
         return true;
       });
       return !!ok;
     },
 
-    async rate(word: string, rating: ReviewRating, now: Date = new Date()): Promise<VocabSrsRecord | null> {
-      const existing = (await this.get(word)) || createVocabRecord(word, now);
+    async rate(word: string, rating: ReviewRating, now: Date = new Date(), lexiconId?: string | null): Promise<VocabSrsRecord | null> {
+      const existing = (await this.get(word, lexiconId)) || tagIf(createVocabRecord(word, now), scopeOf(lexiconId));
       const next = rateVocabRecord(existing, rating, now);
-      return (await this.put(next)) ? next : null;
+      return (await this.put(next, lexiconId)) ? next : null;
     },
 
-    async due(limit = 50, now: Date = new Date()): Promise<VocabSrsRecord[]> {
-      const rows = await this.all();
+    async due(limit = 50, now: Date = new Date(), lexiconId?: string | null): Promise<VocabSrsRecord[]> {
+      const rows = await this.all(lexiconId);
       const ts = now.getTime();
       return rows
         .filter((r) => new Date(r.nextReviewAt).getTime() <= ts)
@@ -208,16 +279,16 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
         .slice(0, Math.max(0, limit));
     },
 
-    async wordsNotInSrs(allWords: string[], limit = 20): Promise<string[]> {
+    async wordsNotInSrs(allWords: string[], limit = 20, lexiconId?: string | null): Promise<string[]> {
       // 数据库不可用时返回空列表：无法确认哪些词已学过，就不该把它们当成新词再教一遍
       if (!idb) return [];
-      const rows = await this.all();
+      const rows = await this.all(lexiconId);
       const seen = new Set(rows.map((r) => r.w));
       return allWords.filter((w) => !seen.has(w)).slice(0, Math.max(0, limit));
     },
 
-    async stats(now: Date = new Date()): Promise<VocabStats> {
-      const rows = await this.all();
+    async stats(now: Date = new Date(), lexiconId?: string | null): Promise<VocabStats> {
+      const rows = await this.all(lexiconId);
       const ts = now.getTime();
       const tiers: VocabTier[] = ['high', 'core', 'low', 'recognition'];
       const byTier = tiers.map((tier) => {
@@ -260,8 +331,10 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
       }
       const records = planLegacyVocabMigration(schedule, options.now || new Date());
       let migrated = 0;
+      // 旧存档来自单词库时代，一律归入目标词库（默认即 cet4，老用户进度不丢）
+      const lx = scopeOf(options.lexiconId);
       for (const record of records) {
-        if (await this.put(record)) migrated++;
+        if (await this.put(record, lx)) migrated++;
       }
       await withStore(IDB_STORES.meta, 'readwrite', async (store) => {
         await promisify(store.put({ at: (options.now || new Date()).toISOString(), count: migrated }, VOCAB_MIGRATION_META_KEY));
@@ -271,7 +344,12 @@ export function createVocabSrsStore(factory?: MinimalFactory | null): VocabSrsSt
     },
 
     async clear(): Promise<void> {
+      // 两个仓都清：老仓是 v1.8.1 的存量，vocabLex 是 v1.8.2 的分词库记录
       await withStore(IDB_STORES.vocab, 'readwrite', async (store) => {
+        await promisify(store.clear());
+        return true;
+      });
+      await withStore(IDB_STORES.vocabLex, 'readwrite', async (store) => {
         await promisify(store.clear());
         return true;
       });

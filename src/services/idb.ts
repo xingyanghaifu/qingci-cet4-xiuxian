@@ -14,10 +14,16 @@
  *           spiritField / cave / duels / transmissions / sect
  *       —— 修炼生态四阶段（A 渡劫与灵石消费 / B 心魔与奇遇 / C 灵田洞府 /
  *          D 道友互动）一次性建仓；此后各阶段只写数据，不再改 schema
+ *   v6  + vocabLex —— 多词库词汇 SRS（v1.8.2 阶段 A5）
+ *       **纯新增仓，不动 vocab**：vocab 是 keyPath:'w' 的单键仓，一个单词
+ *       最多一条记录，无法同时承载「CET-4 的 abandon」与「CET-6 的 abandon」。
+ *       若改成复合键就必须删库重建 → 有丢既有进度的风险；
+ *       因此另开 vocabLex（keyPath:'k' = `<词库Id><单词>`），
+ *       老数据原地留在 vocab 里，读写时按词库合并（见 vocab-srs.ts）。
  */
 
 export const IDB_NAME = 'qingci-offline';
-export const IDB_VERSION = 5;
+export const IDB_VERSION = 6;
 
 export const IDB_STORES = {
   datasets: 'datasets',
@@ -25,6 +31,11 @@ export const IDB_STORES = {
   reviews: 'reviews',
   meta: 'meta',
   vocab: 'vocab',
+  // —— v1.8.2 多词库词汇 SRS（keyPath 'k' = `<lexiconId> <word>`）——
+  // 与 vocab 并存：vocab 承接待机中的 v1.8.1 单键记录，vocabLex 承载按词库分开的记录
+  vocabLex: 'vocabLex',
+  // —— v1.8.2 多词库错题本（keyPath 'k' = `<lexiconId> <mistakeId>`）——
+  mistakesLex: 'mistakesLex',
   attempts: 'attempts',
   reports: 'reports',
   // —— 修炼生态 v5（四阶段一次性建仓）——
@@ -109,6 +120,13 @@ export function upgradeSchema(db: MinimalDatabase): void {
     store.createIndex?.('nextReviewAt', 'nextReviewAt');
     store.createIndex?.('type', 'type');
   }
+  // v1.8.2：按词库分开的错题本。与 vocabLex 同理 —— mistakes 的 id 由题目内容
+  // 哈希而来，同一题在 CET-4 与 CET-6 下会得到同一个 id，单键仓无法并存两条。
+  if (!db.objectStoreNames.contains(IDB_STORES.mistakesLex)) {
+    const store = db.createObjectStore(IDB_STORES.mistakesLex, { keyPath: 'k' });
+    store.createIndex?.('lx', 'lx');
+    store.createIndex?.('nextReviewAt', 'nextReviewAt');
+  }
   if (!db.objectStoreNames.contains(IDB_STORES.reviews)) {
     const store = db.createObjectStore(IDB_STORES.reviews, { autoIncrement: true });
     store.createIndex?.('mistakeId', 'mistakeId');
@@ -120,6 +138,13 @@ export function upgradeSchema(db: MinimalDatabase): void {
     const store = db.createObjectStore(IDB_STORES.vocab, { keyPath: 'w' });
     store.createIndex?.('nextReviewAt', 'nextReviewAt');
     store.createIndex?.('tier', 'tier');
+  }
+  // v1.8.2：按词库分开的词汇 SRS。k = `<词库Id> <单词>`，允许同一单词在多个词库各有一条。
+  // 不迁移 vocab 的存量数据 —— 老记录原地保留，读取时按 CET-4 口径合并（见 vocab-srs.ts）。
+  if (!db.objectStoreNames.contains(IDB_STORES.vocabLex)) {
+    const store = db.createObjectStore(IDB_STORES.vocabLex, { keyPath: 'k' });
+    store.createIndex?.('lx', 'lx');
+    store.createIndex?.('nextReviewAt', 'nextReviewAt');
   }
   if (!db.objectStoreNames.contains(IDB_STORES.attempts)) {
     // 作答流水：自增主键，按时间/题型建索引，便于趋势与薄弱点聚合

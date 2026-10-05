@@ -193,6 +193,32 @@ if (existsSync(vdDir)) {
   }
 }
 
+// —— 7.6. 多词库清单与分片（v1.8.2 阶段 A）：src/data/lexicons/** → dist/lexicons/** ——
+//      CET-6 等扩展词库走各自目录，按需 fetch；不进单文件。
+//      CET-4 仍走原路径 vocab-detail/（兼容策略，不搬动）。
+const lexRoot = join(root, 'src', 'data', 'lexicons');
+let lexFiles = 0;
+let lexBytes = 0;
+if (existsSync(lexRoot)) {
+  const outLex = join(OUT_DIR, 'lexicons');
+  if (existsSync(outLex)) rmSync(outLex, { recursive: true, force: true });
+  // 递归拷贝（lexicons/<id>/vocab-detail/*.json 两层目录）
+  const walk = (from, to) => {
+    mkdirSync(to, { recursive: true });
+    for (const entry of readdirSync(from, { withFileTypes: true })) {
+      const src = join(from, entry.name);
+      const dst = join(to, entry.name);
+      if (entry.isDirectory()) walk(src, dst);
+      else if (entry.name.endsWith('.json')) {
+        copyFileSync(src, dst);
+        lexFiles++;
+        lexBytes += statSync(dst).size;
+      }
+    }
+  };
+  walk(lexRoot, outLex);
+}
+
 console.log('');
 console.log('✅ 构建成功');
 console.log('   产物: dist/cet4-xiuxian.html + dist/index.html（同一份内容）');
@@ -204,4 +230,5 @@ console.log('   日志: changelog.html（' + changelog.versions + ' 个版本）
 console.log('   题库: ' + (bankBytes / 1024 / 1024).toFixed(2) + ' MB · ' + bankDecision.mode
   + (bankFresh ? '（复用上次产物）' : '（本次重新生成）'));
 console.log('   词典: ' + (vdFiles ? vdFiles + ' 个详情分片 · ' + (vdBytes / 1024 / 1024).toFixed(2) + ' MB（按需加载）' : '未生成详情分片（node scripts/build-vocab-detail.mjs）'));
+console.log('   词库: ' + (lexFiles ? lexFiles + ' 个扩展词库文件 · ' + (lexBytes / 1024 / 1024).toFixed(2) + ' MB（dist/lexicons，按需加载）' : '无扩展词库（node scripts/build-lexicon.mjs）'));
 console.log('   说明: 单文件自包含，零运行时依赖，可直接双击打开');

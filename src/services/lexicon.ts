@@ -1,0 +1,244 @@
+/**
+ * 词库档案（v1.8.2 阶段 A · 多词库架构）
+ *
+ * 设计原则（三条硬约束的落地）：
+ *
+ * 1. **默认仍是 CET-4，用户不切换则行为不变**。
+ *    `currentLexiconId()` 在 localStorage 无记录时返回 `DEFAULT_LEXICON_ID`，
+ *    存储层所有隔离字段（`lx`）在「默认词库」下都读作 `'cet4'`。
+ *
+ * 2. **零外部依赖**：本模块是纯数据 + 纯函数，不 fetch、不碰 DOM、不依赖
+ *    IndexedDB —— 只负责「现在处于哪个词库」与「清单长什么样」的判定。
+ *
+ * 3. **不把未上线的词库说成可用**：`enabled: false` 的词库在选择器里
+ *    灰显 + `aria-disabled`，`switchLexicon()` 会拒绝切换，绝不静默失败。
+ *
+ * 与存储层的关系：本模块**不 import** vocab-srs / mistake-store 等业务模块
+ * （与 cultivation.ts 同样的「纯展示层不反向依赖业务层」约定），
+ * 业务层只反过来读取这里的 `currentLexiconId()`。
+ */
+
+/** 词库档案（清单里的一条） */
+export interface Lexicon {
+  /** 稳定标识：'cet4' | 'cet6' | 'kaoyan' | 'toefl' | 'ielts' | 'cefr' */
+  id: string;
+  /** 全称：'大学英语四级' */
+  name: string;
+  /** 短名（状态栏展示）：'CET-4' */
+  shortName: string;
+  /** 词条数（清单声明值，实际加载后以 manifest.count 为准） */
+  wordCount: number;
+  description: string;
+  sourceUrl: string;
+  sourceLicense: string;
+  /** 是否对用户开放；false 时选择器灰显且拒绝切换 */
+  enabled: boolean;
+  /** 详情分片目录（相对站点根）：'vocab-detail/' 或 'lexicons/cet6/vocab-detail/' */
+  dataPath: string;
+  /** 词表分片目录（相对站点根），未构建时为空 */
+  wordListPath?: string;
+}
+
+/** 词库清单 */
+export interface LexiconManifest {
+  version: string;
+  lexicons: Lexicon[];
+  defaultLexiconId: string;
+}
+
+/** 词库选择器的 localStorage 键 */
+export const LEXICON_CURRENT_KEY = 'lexicon.current';
+
+/** 默认词库（CET-4）—— 唯一允许在缺省状态下生效的词库 */
+export const DEFAULT_LEXICON_ID = 'cet4';
+
+/** 详情分片清单的地址（各词库共用同构格式，按 dataPath 前缀拼接） */
+export const LEXICON_ROOT = 'lexicons/';
+
+/**
+ * 内置兜底清单。
+ *
+ * 为什么内置一份而不是只靠 fetch：
+ *   file:// 双击打开、或清单尚未部署时，UI 不能白屏。内置清单只声明
+ *   「有哪些词库、默认是谁」，词条数与实际分片以运行时 manifest 为准。
+ */
+export const FALLBACK_LEXICONS: readonly Lexicon[] = [
+  {
+    id: 'cet4',
+    name: '大学英语四级',
+    shortName: 'CET-4',
+    wordCount: 4540,
+    description: '四级大纲词汇，现行默认词库。',
+    sourceUrl: 'https://github.com/mahavivo/english-wordlists',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'vocab-detail/',
+    wordListPath: '',
+  },
+  {
+    id: 'cet6',
+    name: '大学英语六级',
+    shortName: 'CET-6',
+    wordCount: 0,
+    description: '六级大纲词汇，与四级部分重叠；进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/mahavivo/english-wordlists',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'lexicons/cet6/vocab-detail/',
+    wordListPath: 'lexicons/cet6/',
+  },
+  {
+    id: 'kaoyan',
+    name: '考研词汇',
+    shortName: '考研',
+    wordCount: 0,
+    description: '规划中：尚未构建词表。',
+    sourceUrl: '',
+    sourceLicense: '',
+    enabled: false,
+    dataPath: 'lexicons/kaoyan/vocab-detail/',
+  },
+  {
+    id: 'ielts',
+    name: '雅思词汇',
+    shortName: 'IELTS',
+    wordCount: 0,
+    description: '规划中：尚未构建词表。',
+    sourceUrl: '',
+    sourceLicense: '',
+    enabled: false,
+    dataPath: 'lexicons/ielts/vocab-detail/',
+  },
+  {
+    id: 'toefl',
+    name: '托福词汇',
+    shortName: 'TOEFL',
+    wordCount: 0,
+    description: '规划中：尚未构建词表。',
+    sourceUrl: '',
+    sourceLicense: '',
+    enabled: false,
+    dataPath: 'lexicons/toefl/vocab-detail/',
+  },
+];
+
+export const FALLBACK_MANIFEST: LexiconManifest = {
+  version: '1',
+  lexicons: [...FALLBACK_LEXICONS],
+  defaultLexiconId: DEFAULT_LEXICON_ID,
+};
+
+/* ---------------- localStorage 安全读写（隐私模式 / file:// 下不抛错） ---------------- */
+
+function readStorage(): Storage | null {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 归一化：只接受清单里存在且 enabled 的 id，否则回落到默认词库 */
+function normalize(id: unknown, lexicons: readonly Lexicon[]): string {
+  const s = String(id == null ? '' : id).trim();
+  if (!s) return DEFAULT_LEXICON_ID;
+  const hit = lexicons.find((l) => l.id === s);
+  if (!hit) return DEFAULT_LEXICON_ID;
+  return hit.enabled ? hit.id : DEFAULT_LEXICON_ID;
+}
+
+/**
+ * 当前词库 id。
+ * @param lexicons 已知清单；缺省用内置兜底清单
+ */
+export function currentLexiconId(lexicons: readonly Lexicon[] = FALLBACK_LEXICONS): string {
+  const store = readStorage();
+  if (!store) return DEFAULT_LEXICON_ID;
+  try {
+    return normalize(store.getItem(LEXICON_CURRENT_KEY), lexicons);
+  } catch {
+    return DEFAULT_LEXICON_ID;
+  }
+}
+
+/** 当前词库档案；找不到时回落到默认词库档案 */
+export function currentLexicon(lexicons: readonly Lexicon[] = FALLBACK_LEXICONS): Lexicon {
+  const id = currentLexiconId(lexicons);
+  return lexicons.find((l) => l.id === id) || lexicons[0] || FALLBACK_LEXICONS[0];
+}
+
+/**
+ * 切换词库。
+ *
+ * 返回值语义：**只有真正写入了一个已上线词库才返回 true**。
+ * 未上线 / 未知 id 一律返回 false 且不写盘 —— 不能因为「归一化后恰好等于
+ * 当前默认词库」就报成功，否则调用方会以为切换成功了（UI 里就会显示
+ * 「已切换」，而实际词库根本没变）。
+ *
+ * @returns 是否切换成功（未上线词库 / 非法 id / localStorage 不可用均返回 false）
+ */
+export function switchLexicon(id: string, lexicons: readonly Lexicon[] = FALLBACK_LEXICONS): boolean {
+  const want = String(id == null ? '' : id).trim();
+  const target = lexicons.find((l) => l.id === want);
+  // 目标不存在或未上线 → 拒绝，不写盘
+  if (!target || !target.enabled) return false;
+  if (want === currentLexiconId(lexicons)) return true;
+  const store = readStorage();
+  if (!store) return false;
+  try {
+    store.setItem(LEXICON_CURRENT_KEY, want);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 清单解析：把任意 JSON 收敛成合法的 LexiconManifest。
+ * 非法 / 缺字段条目直接丢弃，默认词库缺失时补一个 cet4 —— 保证 UI 永远有词可用。
+ */
+export function parseManifest(raw: unknown): LexiconManifest {
+  const src = (raw && typeof raw === 'object' ? raw : {}) as Partial<LexiconManifest>;
+  const seen = new Set<string>();
+  const lexicons: Lexicon[] = [];
+  for (const item of Array.isArray(src.lexicons) ? src.lexicons : []) {
+    if (!item || typeof item !== 'object') continue;
+    const l = item as Partial<Lexicon>;
+    const id = String(l.id || '').trim();
+    if (!id || seen.has(id)) continue;
+    if (!l.name || !l.shortName) continue;
+    seen.add(id);
+    lexicons.push({
+      id,
+      name: String(l.name),
+      shortName: String(l.shortName),
+      wordCount: Number(l.wordCount) || 0,
+      description: String(l.description || ''),
+      sourceUrl: String(l.sourceUrl || ''),
+      sourceLicense: String(l.sourceLicense || ''),
+      enabled: l.enabled !== false,
+      dataPath: String(l.dataPath || ''),
+      wordListPath: l.wordListPath ? String(l.wordListPath) : undefined,
+    });
+  }
+  if (!lexicons.length) return { ...FALLBACK_MANIFEST, lexicons: [...FALLBACK_LEXICONS] };
+  const wantDefault = String(src.defaultLexiconId || DEFAULT_LEXICON_ID);
+  const defaultLexiconId = lexicons.some((l) => l.id === wantDefault && l.enabled)
+    ? wantDefault
+    : (lexicons.find((l) => l.enabled) || lexicons[0]).id;
+  return {
+    version: String(src.version || '1'),
+    lexicons,
+    defaultLexiconId,
+  };
+}
+
+/** 按 id 取档案；找不到返回 undefined */
+export function lexiconById(id: string, lexicons: readonly Lexicon[]): Lexicon | undefined {
+  return lexicons.find((l) => l.id === id);
+}
+
+/** 可切换（已上线）的词库档案 */
+export function enabledLexicons(lexicons: readonly Lexicon[]): Lexicon[] {
+  return lexicons.filter((l) => l.enabled);
+}

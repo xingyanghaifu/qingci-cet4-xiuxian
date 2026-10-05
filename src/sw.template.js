@@ -34,6 +34,9 @@ const SHELL_ASSETS = [
   './icons/icon-512-maskable.png',
   './healthz.json',
   './api-meta.json',
+  // v1.8.2 多词库清单：预缓存后，洞府页的词库选择器在断网时仍可用
+  // （详情分片不进预缓存，按需 stale-while-revalidate，看过一次即离线可读）
+  './lexicons/manifest.json',
 ];
 
 /** 动态接口：永不缓存 */

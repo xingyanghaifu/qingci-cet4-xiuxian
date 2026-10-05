@@ -55,7 +55,8 @@ fs.writeFileSync(path.join(OUT, 'api-meta.json'), JSON.stringify({
 //      Service Worker 必须与 index.html 同源同目录才能控制整站，因此一并拷贝；
 //      题库体积 >1.5MB，按独立 JSON 交付、由 SW 与页面按需缓存。
 const pwaAssets = ['manifest.webmanifest', 'sw.js', 'question-bank.json', 'changelog.html'];
-const pwaDirs = ['icons', 'vocab-detail', 'audio'];
+// lexicons/ 是 v1.8.2 多词库分片（CET-6 等），与 vocab-detail/ 同构：递归拷贝、按需加载
+const pwaDirs = ['icons', 'vocab-detail', 'lexicons', 'audio'];
 const pwaCopied = [];
 for (const file of pwaAssets) {
   const from = path.join(path.dirname(src), file);
@@ -119,6 +120,11 @@ fs.writeFileSync(path.join(OUT, '_headers'), [
   '',
   // 词库详情分片（任务 D）：按需加载，1 小时缓存 + SW 后台 revalidate
   '/vocab-detail/*',
+  '  Content-Type: application/json; charset=utf-8',
+  '  Cache-Control: public, max-age=3600',
+  '',
+  // 多词库清单与分片（v1.8.2 阶段 A）：CET-6 等扩展词库，按需加载，同上缓存口径
+  '/lexicons/*',
   '  Content-Type: application/json; charset=utf-8',
   '  Cache-Control: public, max-age=3600',
   '',

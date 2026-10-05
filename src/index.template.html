@@ -1169,7 +1169,7 @@ function makeQuestion(kind, meta, index){
   const rand = rng(hash(meta.id+"|"+kind+"|"+index));
   const bank = bankFor(meta);
   const word = () => bank[Math.floor(rand()*bank.length)];
-  const unique = (n, avoid=[]) => { const out=[]; const blocked=new Set(avoid); const seenShort=new Set(out.map(x=>normShort(x.short))); while(out.length<n){ const item=word(); if(blocked.has(item.w)||seenShort.has(normShort(item.short))) continue; blocked.add(item.w); seenShort.add(normShort(item.short)); out.push(item);} return out; };
+  const unique = (n, avoid=[]) => { const out=[]; const blocked=new Set(avoid); const seenShort=new Set(out.map(x=>normShort(x.short))); /* v1.9.1 心魔卡死修复：原实现 continue 分支既不计数也不退出，候选池被缩小时（心魔词仅 2~3 个、或换词库后 state.wrong 与 byWord 失配）while 永不成立 → 主线程 100% 占用、页面卡死。两段防护：①池子不够大时干扰项改从全词池补（目标词仍取自心魔池，「只练这些词」语义不变）；②给按池规模缩放的迭代上限，超限即返回已凑到的子集 —— 只加逃生阀，不改抽中判定与去重口径。 */ const src=bank.length>=n+avoid.length+1?bank:WORDS; const pick=()=>src===bank?word():src[Math.floor(rand()*src.length)]; const cap=Math.max(64,n*(src.length+1)+64); let iter=0; while(out.length<n){ if(++iter>cap) break; const item=pick(); if(!item||blocked.has(item.w)||seenShort.has(normShort(item.short))) continue; blocked.add(item.w); seenShort.add(normShort(item.short)); out.push(item);} return out; };
   if(kind==="words"){ const item=word(); const askEn=index%2===0; const opts=[item,...unique(3,[item.w])]; const ordered=opts.map((x,i)=>[rand(),x]).sort((a,b)=>a[0]-b[0]).map((x)=>x[1]); return {kind,title:meta.name+" · 识词",prompt:askEn?item.short:item.w,sub:askEn?"":item.ipa,choices:ordered.map((x)=>askEn?x.w:x.short),answer:askEn?item.w:item.short,explain:item.w+" "+item.ipa+" "+item.zh,word:item.w}; }
   if(kind==="news"||kind==="talk"||kind==="passage"){ const focus=unique(4); const names={news:"短篇新闻",talk:"长对话",passage:"听力篇章"}; const line=meta.scene+" notice: students should "+focus.map((w)=>w.w).slice(0,3).join(", ")+" when they talk about "+focus[0].short+"."; const options=[focus[0],...unique(3,[focus[0].w])].map((x,i)=>[rand(),x]).sort((a,b)=>a[0]-b[0]).map((x)=>x[1]); return {kind,title:meta.name+" · "+names[kind],prompt:"这段话的核心是？",sub:"先听再看",passage:line,choices:options.map((w)=>w.short),answer:focus[0].short,explain:focus[0].w+"："+focus[0].zh,word:focus[0].w,speak:line}; }
   if(kind==="bank"){ const blanks=unique(5), decoys=unique(5,blanks.map(w=>w.w)), all=blanks.concat(decoys).map((x,i)=>[rand(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); const hole=index%blanks.length; return {kind,title:meta.name+" · 选词填空",prompt:"选择空格用词",sub:blanks.map((w,i)=>i===hole?"____":w.w).join(" / "),passage:all.map((w,i)=>"ABCDEFGHIJ"[i]+" "+w.w).join("  "),choices:all.map(w=>w.w),answer:blanks[hole].w,explain:blanks[hole].zh,word:blanks[hole].w}; }
@@ -4427,11 +4427,14 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
         var raid = list.filter(function (d) { return d.level === D.RAID_LEVEL; }).length;
         var head = list.length ? '共 ' + list.length + ' 只心魔 · 劫级 ' + raid + ' 只' : '尚无心魔（答错一题即可现形）';
         var tail = CULT_S ? ' · 当前境界心魔止于 Lv.' + cap + (raid > 0 ? '' : (cap < D.RAID_LEVEL ? '，突破境界方可心魔劫' : '')) : '';
+        /* v1.9.1 保护性上限（A4）：心魔过多时提醒清理；渲染本身始终封顶 40 张卡 */
+        if (list.length > 500) tail += ' · 心魔过多，建议先到心魔本清理';
         sum.textContent = head + tail;
       }
       if (!grid) return;
       if (!list.length) { grid.innerHTML = '<p class="muted">尚无心魔。答错的题会化作心魔，复习答对可令其降级。</p>'; return; }
-      grid.innerHTML = list.slice(0, 40).map(function (d) {
+      var shown = list.slice(0, 40);
+      grid.innerHTML = shown.map(function (d) {
         var over = CULT_S ? CULT_S.isDemonOverCap(rIdx, d.level) : false;
         return '<article class="demon-card' + (over ? ' over-cap' : '') + '" data-qid="' + esc(d.questionId) + '" data-level="' + d.level + '"' + (over ? ' aria-label="' + esc(d.name) + '，凝而不化，需更高境界方可再进一步"' : '') + '>'
           + demonArt(d)
@@ -4439,7 +4442,8 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
           + '<span class="demon-lv">Lv.' + d.level + ' · ' + (d.defeatedCount ? '击败 ' + d.defeatedCount : '未败') + (over ? ' · 凝而不化' : '') + '</span>'
           + '<span class="btn demon-duel" role="button" tabindex="0" data-duel="' + esc(d.questionId) + '">单挑</span>'
           + '</article>';
-      }).join('');
+      }).join('') + (list.length > shown.length
+        ? '<p class="muted">仅显示最近 ' + shown.length + ' 只（共 ' + list.length + ' 只）。</p>' : '');
     });
   }
   function onDemonGrid(e) {

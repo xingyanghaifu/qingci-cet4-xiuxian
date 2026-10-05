@@ -2,8 +2,8 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.8.1-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-394%20passing-176b3f)](tests/)
+[![version](https://img.shields.io/badge/version-1.8.2-0e6b53)](CHANGELOG.md)
+[![tests](https://img.shields.io/badge/tests-428%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)
@@ -13,9 +13,13 @@
 
 ## 这是什么
 
-一个**单文件自包含**的多考试背词应用：4540 条词库、五类备考模式（初中 / 高中 / PETS-3 /
-CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、学情看板。源码为 **TypeScript**，
-构建后是一个 693.3 KB 的 HTML 文件，**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+一个**单文件自包含**的多考试背词应用：**CET-4（4540 词）与 CET-6（5716 词）双词库**、
+五类备考模式（初中 / 高中 / PETS-3 / CET-4 / CET-6）、六种记忆题型、模拟卷、回合制对战、
+学情看板。源码为 **TypeScript**，构建后是一个约 913 KB 的 HTML 文件，
+**运行时零依赖，断网可用**，可安装到桌面当 App 用。
+
+> **v1.8.2 起支持双词库。** 默认仍是 CET-4，**不切换词库的既有用户行为与数据一字不变**；
+> 切换到 CET-6 后，背词进度、心魔录、灵石与对战记录按词库各自独立互不干扰。
 
 ## 快速开始
 

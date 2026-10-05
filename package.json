@@ -1,7 +1,7 @@
 {
   "name": "qingci-cet4-xiuxian",
-  "version": "1.8.1",
-  "description": "青词天路 · 四级全卷修仙 —— CET-4 词汇修仙学习应用（单文件自包含 HTML + 六种记忆题型 + 对战模式 + 学情看板）",
+  "version": "1.8.2",
+  "description": "青词天路 · 四级全卷修仙 —— CET-4 / CET-6 双词库 + 六种记忆题型 + 对战模式 + 学情看板（单文件自包含 HTML，零运行时依赖）",
   "private": true,
   "type": "commonjs",
   "main": "src/core/quiz.js",
@@ -11,6 +11,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:vocab": "node scripts/build-vocab-detail.mjs",
+    "build:lexicon": "node scripts/build-lexicon.mjs",
+    "build:mnemonics": "node scripts/build-mnemonics.mjs",
     "build:audio": "node scripts/build-audio-tts.mjs",
     "fetch:voa": "node scripts/fetch-voa-audio.mjs",
     "typecheck": "tsc --noEmit",
@@ -32,7 +34,9 @@
   },
   "keywords": [
     "CET-4",
+    "CET-6",
     "英语四级",
+    "英语六级",
     "背单词",
     "PWA",
     "修仙"

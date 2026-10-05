@@ -5,6 +5,83 @@
 
 ---
 
+## [1.8.2] - 2026-10-05
+
+多词库架构 + CET-6 首批扩展 + 记忆锚点。**CET-4 用户的既有数据与默认行为完全不变**。
+
+### 谕令 A：多词库架构 + CET-6 首批扩展
+
+- 新增 `src/services/lexicon.ts`：词库清单、当前词库状态、清单解析与切换，
+  当前词库存于 `localStorage['lexicon.current']`，默认恒为 `cet4`。
+- 清单预留四个词库：`cet4` / `cet6` 已上线，`kaoyan` / `ielts` / `toefl` 以
+  `enabled: false` 占位，**切换到未上线词库会被拒绝**。
+- **数据隔离靠新建复合键仓，不靠给旧记录打标记。**
+  IndexedDB 的 `vocab`（`keyPath:'w'`）与 `mistakes`（`keyPath:'id'`）是单键仓，
+  物理上「一个词只能存一条」，仅靠 `lx` 字段**不可能**隔离两套词库。
+  故新增 `vocabLex` / `mistakesLex`（`keyPath:'k'`，`k = '<词库> <单词>'`），
+  IDB 版本升到 6。**旧仓的 keyPath 一字未改，因此无需任何数据迁移。**
+  - 不传词库参数的调用读写的仍是旧仓，返回结构与 v1.8.1 逐字一致；
+  - `cet4` 会把旧仓记录并入读结果（scoped 优先，同词不重复）；
+  - `clear()` 同时清旧仓与新仓，不会留下幽灵数据。
+- `src/services/lexicon-scope.ts` 提供作用域工具：
+  `lexiconOf` / `sameLexicon` / `tagLexicon` / `tagIf` / `filterByLexicon` / `summarizeByLexicon`。
+  其中 `tagIf` 只在显式传入非空词库时才打标记，这是「不传词库 = 记录形状不变」的关键。
+- CET-6 首批收录 **5716 词**，与 CET-4 重叠 **4540 词**，纯新增 **1176 词**；
+  中文释义覆盖 100%，并标记 `inCET4` 便于识别重合词。
+- 词库数据**一律按需加载分片**，绝不内联进单文件。
+  详情分片基准：CET-4 `vocab-detail/`，CET-6 `lexicons/cet6/vocab-detail/`。
+  详情缓存**刻意不加词库前缀** —— 它们是可再生的只读数据，重合词的详情本就相同。
+- 修复一个真 bug：`build-lexicon.mjs` 读的是 `row.memoryAid`（单数），
+  而语料字段叫 `memoryAids`（复数对象），导致阶段 A 产出的 CET-6 助记覆盖率是 **0%**。
+
+### 谕令 B：记忆锚点（mnemonic）—— CET-4 + CET-6 同时具备
+
+- 新增 `scripts/build-mnemonics.mjs`，把语料的 `memoryAids` / `etymology.rootWords` /
+  `difficultyAnalysis.learningTips` / `grammaticalInfo.commonMistakes`
+  归一化成结构化 `VocabMnemonic` 写回分片，两个词库同一条口径。
+- **覆盖率（B9 口径，全部远超 top-1000 ≥90% / 其余 ≥60% 的目标）**：
+  - CET-4 **4529 / 4540 = 99.76%**（full 4521 · basic 8）
+  - CET-6 **5704 / 5716 = 99.79%**（full 5695 · basic 9）
+  - 未覆盖的 11~12 个词全是语料缺席的普通词（air / my / since / tool…），**不硬凑内容**。
+- **内容红线（B10）**：只拦「有害内容本身」（歧视教条、自伤/制爆教程、
+  色情赌博描写、血腥虐杀），**不拦词义里正常提到某事物** —— sword / weapon /
+  ammunition 都是考纲词，助记讲战场属正常教学素材。
+  另设「助记不得复读释义」：助记若包含完整中文释义则丢弃。
+  全部来自语料原文，无生成、无改写；语料缺席时只用**结构规则**兜底
+  （缩写拆字母 a.m / i.e. / b.c.、复合词逐段拆 ice-cream / father-in-law / x-ray、
+  o'clock = of the clock），**结构规则无法编造内容**。
+- UI：
+  - 详情面板逐项展示助记 / 联想画面 / 词根锚点 / 联想词 / 学习提示 / 易错点；
+  - **向后兼容**：老词条没有 `mnemonics` 时仍走原 `memoryAid` 分支，界面不会变空；
+  - 背单词**答错才**补一条记忆锚点，答对不显示 ——
+    先自己想、答错给线索，本身就是更有效的记忆编码。
+  - 复用详情面板已加载的对象，**不产生任何额外请求**。
+- 分片：加 `mnemonics` 后 `s.json` 涨到 1.9MB 超过 1.5MB 上限，
+  脚本自动按「下一位字母」二次拆分（s → sa…sz）。运行时本就是最长前缀匹配
+  （`vocab-detail.ts:prefixFor`），查 `sack` 仍命中 `sa`，**向后兼容、运行时零改动**。
+
+### 谕令 C：v1.8.1 四条谕令终验（只报告，未擅自改动）
+
+- **29 项 PASS / 0 项 FAIL / 1 项 LEGACY**，详见 `docs/v1.8.1-ui-audit.md`。
+- 四条谕令的声明全部属实，未发现虚报。
+- 唯一遗留项 C3-5（组件样式 7 处裸 hex）经版本回查确认为 **v1.7.0 之前的老债**，
+  与 v1.8.1 无关：`git diff cfd495d~1 cfd495d` 中 v1.8.1 新增行的 hex 数量为 **0**。
+- 审计过程中纠正了三处判定口径，避免后来者重复踩坑：
+  图表 SVG 不该套装饰性图标规则、运行时拼接的 SVG 静态扫描看不到、
+  祖先 `aria-hidden` 是等效写法；C3-7 必须按 CSS cascade 最终规则统计
+  （`.bt-ring` 的 `infinite` 被后置 `3 both` 覆盖，限 3 次即止）。
+
+### 验收
+
+- typecheck + build + test 全绿：**428 passed / 0 failed**（414 + 14）。
+- 单文件 `dist/index.html` 910.3 → **912.7 KB**（本阶段 +2.4 KB；
+  两阶段合计 **+18.4 KB**，预算 30 KB）。锚点与词库数据全部留在分片，
+  单文件内不含任何词条的锚点文本。
+- `D1_MULTIPLAYER_ENABLED` 与 `AI_IMAGE_ENABLED` 保持 `false`，**零外部运行时依赖**
+  （`package.json` 至今没有 `dependencies` 字段）。
+
+---
+
 ## [1.8.1] - 2026-10-05
 
 修仙体系完善与视觉升华。**未部署**（本地提交），生产环境仍为 v1.8.0。

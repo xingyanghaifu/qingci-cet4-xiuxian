@@ -114,11 +114,11 @@ test('开关保持关闭：D1_MULTIPLAYER_ENABLED 默认 false，且未在任何
   assert.ok(!/D1_MULTIPLAYER_ENABLED:\s*true/.test(features), '配置不得把跨用户开关置真');
 });
 
-test('导航项未新增：role=tab 与 data-tab 计数不变', () => {
+test('导航项为 9：role=tab 与 data-tab 计数同步（v1.8.1 新增灵田）', () => {
   const tabs = (html.match(/role="tab"/g) || []).length;
-  assert.equal(tabs, 8, 'role="tab" 应为 8（实际 ' + tabs + '）');
+  assert.equal(tabs, 9, 'role="tab" 应为 9（实际 ' + tabs + '）');
   const dataTabs = new Set((html.match(/data-tab="[a-z]+"/g) || []).map((s) => s.slice(10, -1)));
-  assert.equal(dataTabs.size, 8, 'data-tab 去重后应为 8（实际 ' + dataTabs.size + '）');
+  assert.equal(dataTabs.size, 9, 'data-tab 去重后应为 9（实际 ' + dataTabs.size + '）');
 });
 
 test('保留既有「问道斗法」面板作为独立入口', () => {

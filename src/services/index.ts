@@ -38,6 +38,7 @@ import {
 import {
   demonNameFrom, demonRealmOf, demonImageSlot, demonImagePrompt, hash32, clampLevel,
   upsertDemon, listDemons, getDemon, reconcileDemons, countRaidReady, beastNameFrom,
+  capLevelByRealm, isOverRealmCap, DEFAULT_REALM_DEMON_CAP,
   DEMON_MIN_LEVEL, DEMON_MAX_LEVEL, DEMON_RAID_LEVEL,
 } from './demons';
 import {
@@ -48,7 +49,15 @@ import {
 import {
   loadField, plantSeed, waterField, harvest, applyWitherPenalty, isMature,
   effectiveMatureDays, streakState, fieldDayKey, CROPS as FIELD_CROPS, PLOT_COUNT,
+  isPlotUnlocked as fieldPlotUnlocked, DEFAULT_PLOT_UNLOCK_BY_REALM,
 } from './spirit-field';
+import {
+  PLOT_TOTAL, PLOT_UNLOCK_BY_REALM, DEMON_LEVEL_CAP_BY_REALM, DEMON_LEVEL_ABSOLUTE_CAP,
+  REALM_ENTRY_TITLES, REALM_PRIVILEGE_LINE, REALM_TIERS, TERMINAL_DEMON_NOTE,
+  cultivationChain, isPlotUnlocked, sealReason, capDemonLevel, isDemonOverCap,
+  harvestTitleOf, harvestDemonSoftening,
+} from './cultivation';
+export type { CultivationChain } from './cultivation';
 import {
   loadCave, purchaseDecoration, hasDecoration, hasSpringWater, decorationDef,
   DECORATIONS, SPRING_WATER_ID,
@@ -251,6 +260,8 @@ const QingciServices = {
     dayKey: fieldDayKey,
     crops: FIELD_CROPS,
     PLOTS: PLOT_COUNT,
+    isUnlocked: fieldPlotUnlocked,
+    UNLOCK_BY_REALM: DEFAULT_PLOT_UNLOCK_BY_REALM,
   },
   cave: {
     load: loadCave,
@@ -268,6 +279,9 @@ const QingciServices = {
     imagePrompt: demonImagePrompt,
     hash: hash32,
     clampLevel,
+    capByRealm: capLevelByRealm,
+    overCap: isOverRealmCap,
+    REALM_CAP: DEFAULT_REALM_DEMON_CAP,
     upsert: upsertDemon,
     list: listDemons,
     get: getDemon,
@@ -277,6 +291,24 @@ const QingciServices = {
     MIN_LEVEL: DEMON_MIN_LEVEL,
     MAX_LEVEL: DEMON_MAX_LEVEL,
     RAID_LEVEL: DEMON_RAID_LEVEL,
+  },
+  /* v1.8.1 谕令四：境界↔称号↔灵田↔心魔 四环链（纯常量 + 纯函数，无副作用） */
+  cultivation: {
+    chain: cultivationChain,
+    isPlotUnlocked,
+    sealReason,
+    capDemonLevel,
+    isDemonOverCap,
+    harvestTitleOf,
+    harvestDemonSoftening,
+    PLOT_TOTAL,
+    PLOT_UNLOCK_BY_REALM,
+    DEMON_LEVEL_CAP_BY_REALM,
+    DEMON_LEVEL_ABSOLUTE_CAP,
+    REALM_ENTRY_TITLES,
+    REALM_PRIVILEGE_LINE,
+    REALM_TIERS,
+    TERMINAL_DEMON_NOTE,
   },
   encounters: {
     POOL: ENCOUNTER_POOL,

@@ -121,15 +121,18 @@ export async function loadField(factory?: MinimalFactory | null): Promise<Spirit
   }
 }
 
-/** 种植（免费；格子必须为空） */
+/** 种植（免费；格子必须为空；v1.8.1：境界未解锁的封印格拒绝种植） */
 export async function plantSeed(
   plotIndex: number,
   cropType: CropType,
   factory?: MinimalFactory | null,
   now: number = Date.now(),
+  realmIndex?: number,
 ): Promise<{ ok: boolean; reason?: string }> {
   if (!Number.isInteger(plotIndex) || plotIndex < 0 || plotIndex >= PLOT_COUNT) return { ok: false, reason: 'bad-plot' };
   if (!CROPS[cropType]) return { ok: false, reason: 'bad-crop' };
+  // v1.8.1 谕令四：封印格（境界未解锁）不可耕；realmIndex 缺省时不限格
+  if (!isPlotUnlocked(plotIndex, realmIndex)) return { ok: false, reason: 'sealed' };
   try {
     const store = await fieldStore('readwrite', factory);
     if (!store) return { ok: false, reason: 'unavailable' };
@@ -235,4 +238,30 @@ export function streakState(lastStudyDay: string | null | undefined, now: number
   if (lastStudyDay === k(today)) return 'today';
   if (lastStudyDay === k(yday)) return 'yesterday';
   return 'broken';
+}
+
+/* ───────────────── v1.8.1 谕令四：境界封印（只读判定，不改既有判定口径） ───────────────── */
+
+/**
+ * 默认境界解锁格数（练气 3 / 筑基 5 / 金丹 7 / 元婴 9 / 化神 9）。
+ *
+ * **刻意不与 `cultivation.ts` 互相 import**：那边是纯展示层（会被 UI 引用），
+ * 若此处反向 import 会让 services 内部成环。此处只声明**默认值**；
+ * 真实表由 `services/index.ts` 注入（`plantSeed` 的 `realmIndex` / `isUnlocked` 入参）。
+ * `realmIndex` 缺省时**不限格**，因此既有调用与既有测试一字不改仍全绿。
+ */
+export const DEFAULT_PLOT_UNLOCK_BY_REALM: readonly number[] = [3, 5, 7, 9, 9];
+
+/** 第 n 格在给定境界下是否可耕（false = 封印格） */
+export function isPlotUnlocked(
+  plotIndex: number,
+  realmIndex?: number,
+  unlockTable: readonly number[] = DEFAULT_PLOT_UNLOCK_BY_REALM,
+): boolean {
+  const i = Math.round(Number(plotIndex));
+  if (!Number.isFinite(i) || i < 0) return false;
+  if (realmIndex === undefined || realmIndex === null) return true;
+  const idx = Math.max(0, Math.min(unlockTable.length - 1, Math.round(Number(realmIndex) || 0)));
+  const unlocked = Math.max(0, Math.min(PLOT_COUNT, Math.round(Number(unlockTable[idx]) || PLOT_COUNT)));
+  return i < unlocked;
 }

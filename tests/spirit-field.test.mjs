@@ -215,16 +215,31 @@ test('接线：settle 挂钩内浇水 + 静默（验收 18/R18）', () => {
   assert.ok(html.includes("if(window.__settleHook) try{"), 'settle 调用点缺 try/catch');
 });
 
-test('接线：UI 并入 panel-map + 不新增导航项（验收 20）', () => {
+test('接线：灵田迁入独立 #panel-field + 导航增至 9 项（谕令一）', () => {
   const mapIdx = html.indexOf('id="panel-map"');
   const mapEnd = html.indexOf('</section>', html.indexOf('id="reportCard"'));
-  for (const id of ['id="fieldDetails"', 'id="caveDetails"', 'id="plotGrid"', 'id="decoGrid"']) {
+  const fieldIdx = html.indexOf('id="panel-field"');
+  assert.ok(fieldIdx > 0, 'panel-field 缺失');
+  assert.ok(fieldIdx < mapIdx, 'panel-field 应位于 panel-map 之前（兄弟节点）');
+  // 灵田相关容器必须在 panel-field 内
+  const fieldEnd = html.indexOf('</section>', fieldIdx);
+  for (const id of ['id="plotGrid"', 'id="fieldSummary"', 'id="fieldSpringNote"']) {
+    const i = html.indexOf(id);
+    assert.ok(i > fieldIdx && i < fieldEnd, `${id} 未落在 panel-field 内`);
+  }
+  // 灵田容器不得再出现在 panel-map 内
+  for (const id of ['id="plotGrid"', 'id="fieldDetails"']) {
+    const i = html.indexOf(id);
+    assert.ok(!(i > mapIdx && i < mapEnd), `${id} 不应再位于 panel-map 内`);
+  }
+  // 洞府装饰仍留在 panel-map 内
+  for (const id of ['id="caveDetails"', 'id="decoGrid"']) {
     const i = html.indexOf(id);
     assert.ok(i > mapIdx && i < mapEnd, `${id} 未落在 panel-map 内`);
   }
   const staticHtml = html.replace(/<script[\s\S]*?<\/script>/g, '');
-  assert.strictEqual((staticHtml.match(/role="tab"/g) || []).length, 8, '导航必须仍是 8 项（不新增）');
-  assert.strictEqual((staticHtml.match(/data-tab="/g) || []).length, 8);
+  assert.strictEqual((staticHtml.match(/role="tab"/g) || []).length, 9, '导航必须为 9 项（新增灵田）');
+  assert.strictEqual((staticHtml.match(/data-tab="/g) || []).length, 9);
   assert.ok(html.includes("S.economy.grantItem(rw.itemId"), '收获未真实入账（仅 toast 是上一轮的假发奖）');
   assert.ok(html.includes('window.__renderTribItems = renderTribItems;'), '库存刷新出口未暴露');
 });

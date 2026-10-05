@@ -25,7 +25,7 @@ not_found_handling = "single-page-application"
 # Pages 部署时由 scripts/deploy-pages.mjs 自动写入本次版本；
 # 直连 `wrangler pages deploy` 时则依赖此处的值 —— 此处曾长期停留在 1.6.0，
 # 导致 /healthz 与 /api/meta 回报旧版本号（静态文件是新的，只有 Functions 的 env 是旧的）。
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.8.1"
 
 # 反馈与道友小组的 D1 绑定（Pages 部署时由 scripts/deploy-pages.mjs 写入同样的绑定）
 # 建库与建表：

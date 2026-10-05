@@ -108,6 +108,33 @@ export function clampLevel(level: number): number {
   return Math.max(DEMON_MIN_LEVEL, Math.min(DEMON_MAX_LEVEL, lv));
 }
 
+/**
+ * v1.8.1 谕令四 · 境界封顶：在 1..5 绝对夹取之上，再按境界上限收敛
+ * （练气 Lv.3 / 筑基 Lv.4 / 金丹及以上 Lv.5）。
+ *
+ * **刻意不与既有服务互相 import**：`cultivation.ts` 是纯展示层，
+ * 由 `services/index.ts` 注入实际封顶表进来（默认表 = 无额外限制 = v1.8.0 行为），
+ * 避免 demons ↔ cultivation 成环，也保证 `clampLevel` 语义一字未改。
+ */
+export const DEFAULT_REALM_DEMON_CAP: readonly number[] = [3, 4, 5, 5, 5];
+
+/** 按境界封顶表夹取等级（realmIndex 越界按 0 档处理） */
+export function capLevelByRealm(level: number, realmIndex?: number, caps: readonly number[] = DEFAULT_REALM_DEMON_CAP): number {
+  const lv = clampLevel(level);
+  if (realmIndex === undefined || realmIndex === null) return lv;
+  const idx = Math.max(0, Math.min(caps.length - 1, Math.round(Number(realmIndex) || 0)));
+  const cap = clampLevel(caps[idx] ?? DEMON_MAX_LEVEL);
+  return Math.min(cap, lv);
+}
+
+/** 是否越过境界封顶（「凝而不化」：不再升级，但也不降级、不报错） */
+export function isOverRealmCap(level: number, realmIndex?: number, caps: readonly number[] = DEFAULT_REALM_DEMON_CAP): boolean {
+  if (realmIndex === undefined || realmIndex === null) return false;
+  const idx = Math.max(0, Math.min(caps.length - 1, Math.round(Number(realmIndex) || 0)));
+  const cap = clampLevel(caps[idx] ?? DEMON_MAX_LEVEL);
+  return clampLevel(level) > cap;
+}
+
 /** questionId → 确定性魔名（同 id 恒定） */
 export function demonNameFrom(questionId: string): string {
   const qid = String(questionId || '');
@@ -207,6 +234,7 @@ export async function upsertDemon(
   delta: number,
   factory?: MinimalFactory | null,
   now: number = Date.now(),
+  realmIndex?: number,
 ): Promise<Demon | null> {
   const qid = String(questionId || '').trim();
   if (!qid) return null;
@@ -218,7 +246,8 @@ export async function upsertDemon(
     const prev = normalize(prevRow);
     const step = delta > 0 ? 1 : delta < 0 ? -1 : 0;
     const base = prev ? prev.level : DEMON_MIN_LEVEL;
-    const nextLevel = prev ? clampLevel(base + step) : DEMON_MIN_LEVEL;
+    // 境界封顶：越过上限时「凝而不化」——停在封顶级，不降级也不报错
+    const nextLevel = prev ? capLevelByRealm(base + step, realmIndex) : DEMON_MIN_LEVEL;
     const iso = new Date(now).toISOString();
     const demon: Demon = {
       id,
@@ -250,6 +279,7 @@ export async function reconcileDemons(
   mistakes: DemonMistakeLike[],
   factory?: MinimalFactory | null,
   now: number = Date.now(),
+  realmIndex?: number,
 ): Promise<{ created: number; kept: number }> {
   let created = 0;
   let kept = 0;
@@ -262,7 +292,8 @@ export async function reconcileDemons(
       if (!qid) continue;
       const id = demonId(qid);
       const prev = normalize(await promisify<Demon | undefined>(store.get(id)));
-      const level = clampLevel(DEMON_MIN_LEVEL + Math.max(0, Math.round(Number(mk.wrongCount) || 0) - 1));
+      // 境界封顶同样作用于对账初值：低境界时即使错得多也不越过封顶
+      const level = capLevelByRealm(DEMON_MIN_LEVEL + Math.max(0, Math.round(Number(mk.wrongCount) || 0) - 1), realmIndex);
       const demon: Demon = prev
         ? { ...prev, questionId: qid, level: Math.max(prev.level, level) } // 不降级，只补齐
         : {

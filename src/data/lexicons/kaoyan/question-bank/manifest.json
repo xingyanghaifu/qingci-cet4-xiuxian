@@ -1,0 +1,266 @@
+{
+  "schema": "qingci-exam-bank/1",
+  "lexicon": "kaoyan",
+  "exam": "kaoyan",
+  "counts": {
+    "total": 3276,
+    "byKind": {
+      "reading": 1600,
+      "gapped": 531,
+      "cloze": 599,
+      "trans": 320,
+      "writing": 226
+    }
+  },
+  "kinds": {
+    "reading": {
+      "file": "reading.json",
+      "count": 1600
+    },
+    "gapped": {
+      "file": "gapped.json",
+      "count": 531
+    },
+    "cloze": {
+      "file": "cloze.json",
+      "count": 599
+    },
+    "trans": {
+      "file": "trans.json",
+      "count": 320
+    },
+    "writing": {
+      "file": "writing.json",
+      "count": 226
+    }
+  },
+  "plan": [
+    {
+      "kind": "reading",
+      "type": "group",
+      "per": 5,
+      "groups": 4
+    },
+    {
+      "kind": "gapped",
+      "type": "group",
+      "per": 5,
+      "groups": 1
+    },
+    {
+      "kind": "cloze",
+      "type": "group",
+      "per": 20,
+      "groups": 1
+    },
+    {
+      "kind": "trans",
+      "type": "direct",
+      "count": 5
+    },
+    {
+      "kind": "writing",
+      "type": "direct",
+      "count": 2
+    }
+  ],
+  "papers": {
+    "ky-01": {
+      "name": "考研模拟卷一",
+      "structure": {
+        "reading": 20,
+        "gapped": 5,
+        "cloze": 20,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_ky_reading_0001",
+        "q_ky_reading_0002",
+        "q_ky_reading_0003",
+        "q_ky_reading_0004",
+        "q_ky_reading_0005",
+        "q_ky_reading_0006",
+        "q_ky_reading_0007",
+        "q_ky_reading_0008",
+        "q_ky_reading_0009",
+        "q_ky_reading_0010",
+        "q_ky_reading_0011",
+        "q_ky_reading_0012",
+        "q_ky_reading_0013",
+        "q_ky_reading_0014",
+        "q_ky_reading_0015",
+        "q_ky_reading_0016",
+        "q_ky_reading_0017",
+        "q_ky_reading_0018",
+        "q_ky_reading_0019",
+        "q_ky_reading_0020",
+        "q_ky_gapped_0001",
+        "q_ky_gapped_0002",
+        "q_ky_gapped_0003",
+        "q_ky_gapped_0004",
+        "q_ky_gapped_0005",
+        "q_ky_cloze_0001",
+        "q_ky_cloze_0002",
+        "q_ky_cloze_0003",
+        "q_ky_cloze_0004",
+        "q_ky_cloze_0005",
+        "q_ky_cloze_0006",
+        "q_ky_cloze_0007",
+        "q_ky_cloze_0008",
+        "q_ky_cloze_0009",
+        "q_ky_cloze_0010",
+        "q_ky_cloze_0011",
+        "q_ky_cloze_0012",
+        "q_ky_cloze_0013",
+        "q_ky_cloze_0014",
+        "q_ky_cloze_0015",
+        "q_ky_cloze_0016",
+        "q_ky_cloze_0017",
+        "q_ky_cloze_0018",
+        "q_ky_cloze_0019",
+        "q_ky_cloze_0020",
+        "q_ky_trans_0001",
+        "q_ky_trans_0002",
+        "q_ky_trans_0003",
+        "q_ky_trans_0004",
+        "q_ky_trans_0005",
+        "q_ky_writing_0001",
+        "q_ky_writing_0002"
+      ]
+    },
+    "ky-02": {
+      "name": "考研模拟卷二",
+      "structure": {
+        "reading": 20,
+        "gapped": 5,
+        "cloze": 20,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_ky_reading_0031",
+        "q_ky_reading_0032",
+        "q_ky_reading_0033",
+        "q_ky_reading_0034",
+        "q_ky_reading_0035",
+        "q_ky_reading_0036",
+        "q_ky_reading_0037",
+        "q_ky_reading_0038",
+        "q_ky_reading_0039",
+        "q_ky_reading_0040",
+        "q_ky_reading_0041",
+        "q_ky_reading_0042",
+        "q_ky_reading_0043",
+        "q_ky_reading_0044",
+        "q_ky_reading_0045",
+        "q_ky_reading_0046",
+        "q_ky_reading_0047",
+        "q_ky_reading_0048",
+        "q_ky_reading_0049",
+        "q_ky_reading_0050",
+        "q_ky_gapped_0016",
+        "q_ky_gapped_0017",
+        "q_ky_gapped_0018",
+        "q_ky_gapped_0019",
+        "q_ky_gapped_0020",
+        "q_ky_cloze_0061",
+        "q_ky_cloze_0062",
+        "q_ky_cloze_0063",
+        "q_ky_cloze_0064",
+        "q_ky_cloze_0065",
+        "q_ky_cloze_0066",
+        "q_ky_cloze_0067",
+        "q_ky_cloze_0068",
+        "q_ky_cloze_0069",
+        "q_ky_cloze_0070",
+        "q_ky_cloze_0071",
+        "q_ky_cloze_0072",
+        "q_ky_cloze_0073",
+        "q_ky_cloze_0074",
+        "q_ky_cloze_0075",
+        "q_ky_cloze_0076",
+        "q_ky_cloze_0077",
+        "q_ky_cloze_0078",
+        "q_ky_cloze_0079",
+        "q_ky_cloze_0080",
+        "q_ky_trans_0006",
+        "q_ky_trans_0007",
+        "q_ky_trans_0008",
+        "q_ky_trans_0009",
+        "q_ky_trans_0010",
+        "q_ky_writing_0003",
+        "q_ky_writing_0004"
+      ]
+    },
+    "ky-03": {
+      "name": "考研模拟卷三",
+      "structure": {
+        "reading": 20,
+        "gapped": 5,
+        "cloze": 20,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_ky_reading_0061",
+        "q_ky_reading_0062",
+        "q_ky_reading_0063",
+        "q_ky_reading_0064",
+        "q_ky_reading_0065",
+        "q_ky_reading_0066",
+        "q_ky_reading_0067",
+        "q_ky_reading_0068",
+        "q_ky_reading_0069",
+        "q_ky_reading_0070",
+        "q_ky_reading_0071",
+        "q_ky_reading_0072",
+        "q_ky_reading_0073",
+        "q_ky_reading_0074",
+        "q_ky_reading_0075",
+        "q_ky_reading_0076",
+        "q_ky_reading_0077",
+        "q_ky_reading_0078",
+        "q_ky_reading_0079",
+        "q_ky_reading_0080",
+        "q_ky_gapped_0031",
+        "q_ky_gapped_0032",
+        "q_ky_gapped_0033",
+        "q_ky_gapped_0034",
+        "q_ky_gapped_0035",
+        "q_ky_cloze_0121",
+        "q_ky_cloze_0122",
+        "q_ky_cloze_0123",
+        "q_ky_cloze_0124",
+        "q_ky_cloze_0125",
+        "q_ky_cloze_0126",
+        "q_ky_cloze_0127",
+        "q_ky_cloze_0128",
+        "q_ky_cloze_0129",
+        "q_ky_cloze_0130",
+        "q_ky_cloze_0131",
+        "q_ky_cloze_0132",
+        "q_ky_cloze_0133",
+        "q_ky_cloze_0134",
+        "q_ky_cloze_0135",
+        "q_ky_cloze_0136",
+        "q_ky_cloze_0137",
+        "q_ky_cloze_0138",
+        "q_ky_cloze_0139",
+        "q_ky_cloze_0140",
+        "q_ky_trans_0011",
+        "q_ky_trans_0012",
+        "q_ky_trans_0013",
+        "q_ky_trans_0014",
+        "q_ky_trans_0015",
+        "q_ky_writing_0005",
+        "q_ky_writing_0006"
+      ]
+    }
+  },
+  "papersIndex": [
+    "ky-01",
+    "ky-02",
+    "ky-03"
+  ]
+}

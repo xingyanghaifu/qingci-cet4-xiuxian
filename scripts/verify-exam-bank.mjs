@@ -49,6 +49,28 @@ const LEX = {
     },
     writeKinds: ['writing', 'continuation'],
   },
+  /**
+   * 考研（v1.9.1 阶段 E）：完形 **20 空**、阅读 **5 题/篇**（3 细节+1 主旨+1 词义）、
+   * 新题型七选五 5 空、翻译（英译汉，write 题）、写作 2 类。
+   * 卷面 52 题 = 阅读 20 + 七选五 5 + 完形 20 + 翻译 5 + 写作 2。
+   */
+  kaoyan: {
+    tag: 'kaoyan',
+    kinds: ['cloze', 'reading', 'gapped', 'trans', 'writing'],
+    choiceCount: (k) => (k === 'gapped' ? 7 : 4),
+    passageKinds: ['cloze', 'gapped'],
+    groups: [
+      { name: '阅读', kind: 'reading', per: 5, need: 12 },
+      { name: '七选五', kind: 'gapped', per: 5, need: 3 },
+      { name: '完形', kind: 'cloze', per: 20, need: 3 },
+    ],
+    paper: {
+      size: 52, kinds: 5,
+      structure: { reading: 20, gapped: 5, cloze: 20, trans: 5, writing: 2 },
+    },
+    writeKinds: ['writing', 'trans'],
+    parts: ['读', '写', '译'],
+  },
 };
 const C = LEX[lex];
 if (!C) {
@@ -91,7 +113,7 @@ for (const q of byId.values()) {
   const c = q.content;
   ck(typeof q.difficulty === 'number' && q.difficulty >= 0.2 && q.difficulty <= 0.8, `${q.id}: difficulty 合法`);
   ck(Array.isArray(q.knowledgeTags) && q.knowledgeTags[0] === C.tag, `${q.id}: knowledgeTags 以 ${C.tag} 开头`);
-  ck(q.part === '读' || q.part === '写', `${q.id}: part 合法`);
+  ck((C.parts || ['读', '写']).includes(q.part), `${q.id}: part 合法`);
   if (C.writeKinds.includes(q.kind)) {
     subjective++;
     ck(c.write === true, `${q.id}: 主观题 write=true`);

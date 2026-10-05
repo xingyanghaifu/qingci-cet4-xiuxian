@@ -31,12 +31,31 @@ import {
   WRITING_TASKS, shuffle4,
   SENIOR_SLOTS, SENIOR_CLOZE_SKELETONS, SENIOR_READING_SKELETONS, GAPPED_SKELETONS,
   SENIOR_GRAMMAR_FILL_SKELETONS, FUNCTION_SETS, SENIOR_WRITING, SENIOR_CONTINUATION,
+  KAOYAN_CLOZE_SKELETONS, KAOYAN_READING_SKELETONS, KAOYAN_GAPPED_SKELETONS,
+  KAOYAN_WRITING,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const MAX_SHARD_BYTES = 1_500_000;
 const BANK_SCHEMA = 'qingci-question-bank/1';
 const EXAM_SCHEMA = 'qingci-exam-bank/1';
+
+/**
+ * 语义子池词的中文释义补丁（构建期用，不进单文件）。
+ *
+ * ECDICT `tag:ky` 只标考研**超纲词**，go / town / question 这类基础词不带 ky 标，
+ * 但它们是 SLOTS 语义子池的常客。词义猜测题要给 4 个中文释义选项，查不到就整题丢弃
+ * → 每篇从 5 题掉到 4 题 → 组卷满员组不足而失败。
+ * 补丁表同样取自 ECDICT（MIT），由探活脚本产出到 .cache；文件缺失时回退空表
+ * （此时只影响词义题数量，不会让构建崩）。
+ */
+const GLOSS_PATCH = (() => {
+  const p = path.join(ROOT, '.cache', 'lexicons', 'gloss-patch.json');
+  try {
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch { /* 读不到按空表 */ }
+  return {};
+})();
 
 /** 各词库的词源、题型与组卷计划（阶段 A 初中 / 阶段 B 高中共用一套引擎） */
 const LEXICONS = {
@@ -78,6 +97,40 @@ const LEXICONS = {
     targets: { reading: 400, gapped: 5, cloze: 150, grammarfill: 200, writing: 30, continuation: 10 },
     detailQs: 2,
     content: 'senior',
+  },
+  /**
+   * 考研 —— v1.9.1 阶段 E。
+   *
+   * 与高考的差异（均来自 E4 题型口径）：
+   *   · 完形 **20 空**（`clozeBlanks: 20`，骨架见 KAOYAN_CLOZE_SKELETONS）
+   *   · 阅读 **5 题/篇**（`detailQs: 3` → 3 细节 + 1 主旨 + 1 词义，
+   *     骨架 facts 已派生为 when/where/howMany 三项且三锚点齐全）
+   *   · 新题型 = 七选五（gapped），句子带槽位 → 变体篇章
+   *   · 翻译（英译汉）与写作为 direct 题
+   */
+  kaoyan: {
+    id: 'kaoyan', exam: 'kaoyan', label: '考研', prefix: 'ky',
+    wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'kaoyan', 'wordlist.json'),
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'kaoyan', 'question-bank'),
+    detailDir: path.join(ROOT, 'src', 'data', 'lexicons', 'kaoyan', 'vocab-detail'),
+    paperNames: ['考研模拟卷一', '考研模拟卷二', '考研模拟卷三'],
+    paperKeys: ['ky-01', 'ky-02', 'ky-03'],
+    plan: [
+      { kind: 'reading', type: 'group', per: 5, groups: 4 },
+      { kind: 'gapped', type: 'group', per: 5, groups: 1 },
+      { kind: 'cloze', type: 'group', per: 20, groups: 1 },
+      { kind: 'trans', type: 'direct', count: 5 },
+      { kind: 'writing', type: 'direct', count: 2 },
+    ],
+    // group 类目标是**篇数**，direct 类是**题数**
+    // 阅读 320 篇 × 5 题 = 1600（E4 要 1500+）—— 400 篇会到 2000 题 / 1.83 MB，
+    //   超 1.5 MB 单片上限；915 B/题 → 1.5 MB 上限约 1640 题，留 40 题余量。
+    // 七选五 210 篇（去重后 ~520 题，要 500+）、完形 30 篇 × 20 空 = 600（要 500+）、
+    // 英译汉 320（要 300+）；写作由任务表定（226，要 200+）
+    targets: { reading: 320, gapped: 210, cloze: 30, trans: 320, writing: 226 },
+    detailQs: 3,
+    clozeBlanks: 20,
+    content: 'kaoyan',
   },
 };
 
@@ -359,14 +412,16 @@ function buildCloze(pool, wl, targetPassages, rand) {
   const questions = [];
   const passages = [];
   const seenQ = new Set();
+  /* 完形空数按词库走：中考/高考 10 空，考研 20 空（E4 题型口径） */
+  const needBlanks = SK.clozeBlanks || 10;
   for (let v = 0; v < targetPassages; v++) {
     const sk = SK.cloze[v % SK.cloze.length];
     const vi = Math.floor(v / SK.cloze.length);
     const fill = makeFiller(`${sk.id}|${vi}`, pool);
     const rendered = renderPassage(sk.sents, fill, { blanked: true });
     const { text, blanks, sentences } = rendered;
-    if (blanks.length !== 10) {
-      console.error(`❌ 完形骨架 ${sk.id} 的空数是 ${blanks.length}（必须 10）`);
+    if (blanks.length !== needBlanks) {
+      console.error(`❌ 完形骨架 ${sk.id} 的空数是 ${blanks.length}（本词库要求 ${needBlanks}）`);
       process.exit(1);
     }
     const groupId = `cloze_${String(passages.length + 1).padStart(3, '0')}`;
@@ -516,7 +571,12 @@ function buildReading(pool, wl, targetPassages, rand) {
     {
       const glossOf = (w) => {
         const e = wl.get(String(w).toLowerCase());
-        return e && e.short ? e.short : null;
+        if (e && e.short) return e.short;
+        // ECDICT tag:ky 只标考研**超纲词**，go/town/question 这类基础词不在表内，
+        // 但它们是语义子池的常客 —— 不补则词义题候选不足 4，每篇从 5 题掉到 4 题、
+        // 组卷因满员组不够而失败。补丁表由 .cache/lexicons/gloss-patch.json 提供
+        // （同样取自 ECDICT，MIT），不进单文件、不影响运行时体积。
+        return GLOSS_PATCH[String(w).toLowerCase()] || null;
       };
       // 候选取**短文里出现过的实词**（N/A/V/R）：只用 N* 的话，
       // 名词只有两三个的篇目凑不出 4 个选项，整道词义题会被丢掉。
@@ -524,6 +584,9 @@ function buildReading(pool, wl, targetPassages, rand) {
         .filter((k) => /^(?:[ANRV]\d+)(?:@\w+)?$/.test(k))
         .map((k) => fill(k, resolvePool(k, fill.pools))))];
       const withGloss = cand.map((w) => [w, glossOf(w)]).filter((p) => p[1]);
+      if (process.env.QINGCI_DIAG && passages.length < 3) {
+        console.log(`  [diag] ${sk.id} v=${v}: cand=${cand.length} withGloss=${withGloss.length} facts=${(sk.facts || []).length} mains=${mains.length}`);
+      }
       if (withGloss.length >= 4) {
         const [target, answer] = withGloss[0];
         const decoys = withGloss.slice(1, 4).map((p) => p[1]);
@@ -605,25 +668,32 @@ function buildBankfill(pool, targetPassages, rand) {
  */
 /**
  * 七选五（gapped）：行文抽 5 句成空，每题给同一份 7 句选项（5 正 + 2 干扰）。
- * 篇章是写死的行文（无变体槽），一个骨架一篇 —— 目标篇数 = 骨架数。
+ *
+ * 句子先过 `renderPassage(blanked:false)` 填槽再抽空 —— 中高考骨架**无槽位**，
+ * 该步是恒等变换（输出与旧版逐字节一致）；考研骨架带 {PLACE1}/{NAME} 等槽位，
+ * 由此产生**变体篇章**，否则 6 骨架 × 5 空 = 30 题远达不到 500+ 的目标。
  */
-function buildGapped(targetPassages, rand) {
+function buildGapped(targetPassages, rand, pool) {
   const questions = [];
   const passages = [];
   const seenQ = new Set();
-  for (let v = 0; v < Math.min(targetPassages, SK.gapped.length); v++) {
-    const sk = SK.gapped[v];
+  for (let v = 0; v < targetPassages; v++) {
+    const sk = SK.gapped[v % SK.gapped.length];
+    const vi = Math.floor(v / SK.gapped.length);
+    const fill = makeFiller(`${sk.id}|${vi}`, pool);
+    const sents = renderPassage(sk.sents, fill, { blanked: false }).sentences;
+    const dists = renderPassage(sk.distractors || [], fill, { blanked: false }).sentences;
     const answers = [];
     let n = 0;
-    const text = sk.sents.map((s, i) => {
+    const text = sents.map((s, i) => {
       if (sk.gaps.indexOf(i) >= 0) { answers.push(s); return `___${++n}___`; }
       return s;
     }).join(' ');
-    if (answers.length !== 5 || (sk.distractors || []).length !== 2) {
-      console.error(`❌ 七选五骨架 ${sk.id} 应为 5 空 + 2 干扰（实为 ${answers.length} + ${(sk.distractors || []).length}）`);
+    if (answers.length !== 5 || dists.length !== 2) {
+      console.error(`❌ 七选五骨架 ${sk.id} 应为 5 空 + 2 干扰（实为 ${answers.length} + ${dists.length}）`);
       process.exit(1);
     }
-    const bank = shuffle4([...answers, ...sk.distractors], rand);
+    const bank = shuffle4([...answers, ...dists], rand);
     if (bank.length !== 7 || new Set(bank).size !== 7) {
       console.error(`❌ 七选五骨架 ${sk.id} 的 7 句选项出现重复`);
       process.exit(1);
@@ -783,6 +853,80 @@ function buildWriting(tasks, kind, tagBase) {
   }));
 }
 
+/**
+ * 翻译（英译汉，E4）：素材取自本词库 vocab-detail 的例句 + 中文译文。
+ *
+ * 为什么用例句而非骨架：考研英译汉考的是整句的语序/时态/从句处理，
+ * 语料里的 sentence + translation 天然就是一对「原文 → 参考译文」，
+ * 且已过内容红线与许可审查（corpus 主源 MIT）。骨架手写 300+ 句成本过高。
+ *
+ * 题面给英文、`sample` 给中文参考译文（提交后自评对照），`write: true`。
+ * 中文作答的字数统计走 `cjk()`（`wordsOf` 只数英文，且被 utils.test.js 锁死）。
+ */
+function buildTranslation(target, rand) {
+  if (!SK.transDetailDir) {
+    console.error('❌ 翻译题需要 detailDir（本词库未配置）');
+    process.exit(1);
+  }
+  const mfPath = path.join(SK.transDetailDir, 'manifest.json');
+  if (!fs.existsSync(mfPath)) {
+    console.error(`❌ 翻译素材缺失：${mfPath}`);
+    process.exit(1);
+  }
+  const mf = JSON.parse(fs.readFileSync(mfPath, 'utf8'));
+  const files = [...new Set(Object.values(mf.files || {}))];
+  const pairs = [];
+  const seen = new Set();
+  for (const f of files) {
+    const p = path.join(SK.transDetailDir, f);
+    if (!fs.existsSync(p)) continue;
+    const detail = JSON.parse(fs.readFileSync(p, 'utf8'));
+    for (const d of Object.values(detail)) {
+      for (const e of (Array.isArray(d.examples) ? d.examples : [])) {
+        const s = String(e && e.sentence || '').trim();
+        const t = String(e && e.translation || '').trim();
+        if (!s || !t) continue;
+        const wc = (s.match(/[A-Za-z]+/g) || []).length;
+        // 过滤过短（<8 词）与过长（>40 词）的句子：太短考不出结构，太长判分口径不稳
+        if (wc < 8 || wc > 40) continue;
+        const key = s.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ s, t });
+      }
+    }
+  }
+  if (pairs.length < target) {
+    console.error(`❌ 翻译素材不足：需 ${target}，实得 ${pairs.length}`);
+    process.exit(1);
+  }
+  // 确定性抽取：洗牌后取前 target（seed 来自词库，两次运行一致）
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  const picked = pairs.slice(0, target);
+  return picked.map((p, i) => ({
+    id: `q_${ID_PREFIX}_trans_${String(i + 1).padStart(4, '0')}`,
+    kind: 'trans',
+    part: '译',
+    difficulty: clamp01(0.5 + (i % 5) * 0.04),
+    discrimination: 0.3,
+    knowledgeTags: [SK.tagBase, 'trans:sentence'],
+    content: {
+      prompt: p.s,
+      sub: '译成中文（参考译文在提交后给出）',
+      choices: [],
+      answer: '',
+      explain: '对照参考译文，检查语序、时态、从句与关键词是否都译出。',
+      write: true,
+      min: 15,
+      max: 80,
+      sample: p.t,
+    },
+  }));
+}
+
 /* ---------------- 组卷 ---------------- */
 
 /**
@@ -921,7 +1065,9 @@ function main() {
   const pool = {
     nouns: poolIn(NOUNS, wl),
     adjs: poolIn(ADJ_QUALITY, wl),
-    colors: poolIn(ADJ_COLOR, wl),
+    // 颜色池只有 10 个素材词，按词表过滤后可能不足 4（考研实测 3 个），
+    // 会被下方「池子 ≥4」的护栏拦死。与 places 同款回退：过滤结果够用才过滤。
+    colors: poolIn(ADJ_COLOR, wl).length >= 4 ? poolIn(ADJ_COLOR, wl) : ADJ_COLOR,
     advs: poolIn(ADVS, wl),
     verbs: poolIn(VERBS_BASE, wl),
     names: NAMES.slice(),
@@ -950,14 +1096,20 @@ function main() {
 
   // 素材集与题号前缀按词库切（同引擎、不同学段的题型与行文）
   ID_PREFIX = L.prefix;
+  const isKao = L.content === 'kaoyan';
+  const isSen = L.content === 'senior';
   SK = {
-    cloze: L.content === 'senior' ? SENIOR_CLOZE_SKELETONS : CLOZE_SKELETONS,
-    reading: L.content === 'senior' ? SENIOR_READING_SKELETONS : READING_SKELETONS,
+    cloze: isKao ? KAOYAN_CLOZE_SKELETONS : isSen ? SENIOR_CLOZE_SKELETONS : CLOZE_SKELETONS,
+    reading: isKao ? KAOYAN_READING_SKELETONS : isSen ? SENIOR_READING_SKELETONS : READING_SKELETONS,
     bankfill: BANKFILL_SKELETONS,
-    gapped: GAPPED_SKELETONS,
+    gapped: isKao ? KAOYAN_GAPPED_SKELETONS : GAPPED_SKELETONS,
     grammarfill: SENIOR_GRAMMAR_FILL_SKELETONS,
     detailQs: L.detailQs,
     tagBase: L.id,
+    // 完形空数：中考/高考 10 空，考研 20 空（L.clozeBlanks 未设则回落 10）
+    clozeBlanks: L.clozeBlanks || 10,
+    // 翻译（英译汉）素材：从该词库的 vocab-detail 例句取（E4）
+    transDetailDir: L.detailDir || null,
   };
 
   console.log(`🔨 [${lexId}] 生成 ${L.label}题库（词表 ${wl.size} 词）…`);
@@ -979,14 +1131,18 @@ function main() {
         byKind.bankfill = buildBankfill(pool, t, rand).questions;
         break;
       case 'gapped':
-        byKind.gapped = buildGapped(t, rand).questions;
+        byKind.gapped = buildGapped(t, rand, pool).questions;
+        break;
+      case 'trans':
+        // 英译汉（E4）：素材取自本词库 vocab-detail 的例句 + 中文译文
+        byKind.trans = buildTranslation(t, rand);
         break;
       case 'grammarfill':
         byKind.grammarfill = buildGrammarFill(pool, t, rand).questions;
         break;
       case 'writing':
         byKind.writing = buildWriting(
-          L.content === 'senior' ? SENIOR_WRITING : WRITING_TASKS, 'writing', L.id);
+          isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING : WRITING_TASKS, 'writing', L.id);
         break;
       case 'continuation':
         byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);
@@ -998,11 +1154,21 @@ function main() {
     const label = {
       grammar: '语法选择', cloze: '完形填空', reading: '阅读理解', bankfill: '选词填空',
       gapped: '七选五', grammarfill: '语法填空', writing: '书面表达', continuation: '读后续写',
+      trans: '英译汉',
     }[step.kind];
     console.log(`   ${label} ${byKind[step.kind].length}${pass ? `（${pass}）` : ''}`);
   }
 
   const total = Object.values(byKind).reduce((a, b) => a + b.length, 0);
+  if (process.env.QINGCI_DIAG) {
+    for (const [k, list] of Object.entries(byKind)) {
+      const g = new Map();
+      for (const q of list) { const id = (q.content && q.content.group) || q.id; g.set(id, (g.get(id) || 0) + 1); }
+      const hist = {};
+      for (const n of g.values()) hist[n] = (hist[n] || 0) + 1;
+      console.log(`  [diag] ${k}: 组 ${g.size} · 组大小分布 ${JSON.stringify(hist)}`);
+    }
+  }
   if (total < 3000 || total > 5000) {
     console.error(`❌ 题量 ${total} 超出 3000–5000 区间`);
     process.exit(1);
@@ -1010,7 +1176,7 @@ function main() {
   // 保底题量：刷题主体 ≥100，主观题与小题型按其真实产出定下限
   const FLOOR = {
     grammar: 100, cloze: 100, reading: 100, bankfill: 100, grammarfill: 100,
-    gapped: 5, writing: 30, continuation: 10,
+    gapped: 5, writing: 30, continuation: 10, trans: 100,
   };
   for (const [k, v] of Object.entries(byKind)) {
     const floor = FLOOR[k] ?? 100;

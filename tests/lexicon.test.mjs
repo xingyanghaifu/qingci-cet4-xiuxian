@@ -269,7 +269,8 @@ test('A-10 现有 CET-4 用户：升级后进度不变（老记录无 lx 归属 
 test('A-11 未上线词库：灰显 + aria-disabled，且拒绝切换', () => {
   const storage = fakeStorage();
   withStorage(storage, () => {
-    for (const id of ['kaoyan', 'ielts', 'toefl']) {
+    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 ielts/toefl
+    for (const id of ['ielts', 'toefl']) {
       assert.equal(switchLexicon(id), false, `${id} 未上线，不应允许切换`);
       assert.equal(storage.getItem(LEXICON_CURRENT_KEY), null, '失败的切换不应写入 localStorage');
       assert.equal(currentLexiconId(), 'cet4', '应保持默认词库');
@@ -281,9 +282,15 @@ test('A-11 未上线词库：灰显 + aria-disabled，且拒绝切换', () => {
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'cet4');
   });
   const disabled = FALLBACK_MANIFEST.lexicons.filter((l) => !l.enabled).map((l) => l.id);
-  for (const id of ['kaoyan', 'ielts', 'toefl']) {
+  // v1.9.1 起 kaoyan 已上线；仍应灰显的样本改为 ielts/toefl + 两张 PRETCO 近似占位卡
+  for (const id of ['ielts', 'toefl', 'pretco-a', 'pretco-b']) {
     assert.ok(disabled.includes(id), `${id} 应在兜底清单中标记为未上线`);
   }
+  // 已上线的考研卡必须是 enabled，且带 MIT 许可与真实词数
+  const ky = FALLBACK_MANIFEST.lexicons.find((l) => l.id === 'kaoyan');
+  assert.ok(ky && ky.enabled, 'kaoyan 应在兜底清单中标记为已上线');
+  assert.equal(ky.wordCount, 4801);
+  assert.equal(ky.sourceLicense, 'MIT');
 });
 
 test('A-12 现有测试兼容：不传词库时行为与 v1.8.1 完全一致', async () => {
@@ -373,7 +380,8 @@ test('A 辅助：currentLexicon 返回完整档案，未知词库回落 CET-4', 
     assert.equal(lx.shortName, 'CET-6');
     assert.equal(lx.dataPath, 'lexicons/cet6/vocab-detail/');
   });
-  const storage2 = fakeStorage({ 'lexicon.current': 'kaoyan' });
+  // 未上线词库被存进 localStorage 时读作 CET-4（v1.9.1 前用 kaoyan 作样本，现改 ielts）
+  const storage2 = fakeStorage({ 'lexicon.current': 'ielts' });
   withStorage(storage2, () => {
     assert.equal(currentLexicon().id, 'cet4', '未上线词库读作 CET-4');
   });

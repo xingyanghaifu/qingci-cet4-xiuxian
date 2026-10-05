@@ -71,6 +71,12 @@ const LEXICONS = [
     shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'cet6', 'vocab-detail'),
     corpusDir: path.join(CACHE_DIR, 'cet6', 'corpus'),
   },
+  {
+    // v1.9.1 阶段 E2：考研（语料与 build-lexicon 的 kaoyan 缓存同源）
+    id: 'kaoyan',
+    shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'kaoyan', 'vocab-detail'),
+    corpusDir: path.join(CACHE_DIR, 'kaoyan', 'corpus'),
+  },
 ];
 
 /* ---------------- 内容红线过滤器 ----------------

@@ -2061,3 +2061,342 @@ export const SENIOR_CONTINUATION = [
     min: 110, max: 150,
   },
 ];
+
+/**
+ * 考研（v1.9.1 阶段 E）素材。
+ *
+ * 阅读：派生自 SENIOR_READING_SKELETONS —— facts 从 2 项扩到 3 项
+ *   （when/where/howMany），配合 detailQs=3 得到「3 细节 + 1 主旨 + 1 词义」
+ *   = **5 题/篇**（E4 要求 4 篇 × 5 题）。
+ *   **必须过滤掉缺 PLACE1 的骨架**：where 细节题的正解要能在文中查到，
+ *   否则就是「正解不在文中」的病题（v1.8.x 修过的 bug 类型）。
+ */
+const KAOYAN_READING_ANCHORS = ['when', 'where', 'howMany'];
+export const KAOYAN_READING_SKELETONS = SENIOR_READING_SKELETONS
+  .filter((sk) => /\{PLACE1(@\w+)?\}/.test(sk.sents.join(' ')))
+  .map((sk) => ({ ...sk, facts: KAOYAN_READING_ANCHORS }));
+
+/**
+ * 考研新题型（七选五）：与 SENIOR 的 5 个骨架同构，但**句中带槽位**
+ * （{NAME}/{PLACE1}/{NUM1}/{T1} 等），配合 buildGapped 的 renderPassage
+ * 填词产生变体 —— 否则 5 骨架 × 5 空只有 25 题，远达不到 E4 的 500+。
+ *
+ * 注意：句子必须**语义自洽到槽位可替换**，槽位只替换人名/地名/数字/时间
+ * 这类不承载逻辑关系的成分，七选五的指代与逻辑链不受影响。
+ * distractor（干扰项）同样带槽位，保证每个变体的 7 个选项互不相同。
+ */
+export const KAOYAN_GAPPED_SKELETONS = [
+  {
+    id: 'kgap-method',
+    sents: [
+      'Many students at {PLACE1} want to improve their English but do not know how to start.',
+      'First, set a clear and realistic goal for each week.',
+      'Second, practise speaking with a partner whenever you have a chance.',
+      'Third, review what you have learned before you go to sleep.',
+      'A notebook of useful sentences also helps a lot in writing.',
+      'Fourth, listen to short English programmes twice a week.',
+      'In short, a good method makes progress much easier.',
+      'Do not try to remember everything in a single {NUM1}.',
+    ],
+    gaps: [1, 2, 3, 5, 6],
+    distractors: [
+      'The weather in {PLACE1} is usually freezing in winter.',
+      '{NAME} bought a new bike and rode it to the market every {T1}.',
+    ],
+  },
+  {
+    id: 'kgap-survey',
+    sents: [
+      'A recent survey asked students at {PLACE1} how they spend their free time.',
+      'Some students reported that they spend most of their time online.',
+      'About half said they prefer outdoor activities to computer games.',
+      'Sports and short trips were chosen by {NUM1} students in all.',
+      'Reading remains the third most popular choice among them.',
+      'The survey covered more than one thousand students in different schools.',
+      'The results surprised many teachers in {PLACE1}.',
+      'Music and drawing also became popular among girls in recent years.',
+      'Young people still enjoy activities that help them relax.',
+      'Experts suggest that a balanced plan is the key to a happy school life.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The price of oil rose sharply in the international market last week.',
+      '{NAME} prefers milk to juice before {HISHER} goes to bed every {T1}.',
+    ],
+  },
+  {
+    id: 'kgap-hobby',
+    sents: [
+      'Hobbies are more than simple ways to kill time.',
+      'They can also open a door to a future job or a lifelong interest.',
+      'A student who loves painting may discover talent in art classes.',
+      'Sports build courage, and team games teach players to cooperate.',
+      'Music, for example, trains the ear and the memory at the same time.',
+      'People with hobbies usually feel less stressed after busy days.',
+      'They also teach us to keep trying when something is difficult.',
+      'That is why schools in {PLACE1} often encourage students to join clubs.',
+      'In other words, a good hobby can change the way we study.',
+      'Choose one hobby, give it {NUM1} weeks, and you may surprise yourself.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The bus timetable changed again because of the road repair near {PLACE1}.',
+      '{NAME} put the umbrella into {HISHER} bag before leaving the classroom.',
+    ],
+  },
+  {
+    id: 'kgap-health',
+    sents: [
+      'Keeping healthy is not as hard as most students think.',
+      'A balanced breakfast gives you enough energy for the whole morning.',
+      'Drinking water often works better than sweet drinks.',
+      'Walking to school for {NUM1} weeks already makes a difference.',
+      'Sleeping early helps the brain remember what it has learned.',
+      'Students at {PLACE1} who sleep late often feel tired in class.',
+      'Short breaks between tasks also protect the eyes and the back.',
+      'A weekend walk with friends is both exercise and fun.',
+      'The point is to keep the habit rather than to be perfect.',
+      'Start with one small change this {T1} and keep it up.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The library near {PLACE1} will close early because of the holiday.',
+      '{NAME} left {HISHER} notebook in the classroom last {T1}.',
+    ],
+  },
+  {
+    id: 'kgap-travel',
+    sents: [
+      'Travelling teaches things that a classroom cannot.',
+      'It shows us how people in other places live their daily lives.',
+      'A short trip to {PLACE1} can explain a history book better than a lecture.',
+      'Travellers learn to read maps, ask for help and save money.',
+      'They also learn to accept that not everything goes as planned.',
+      'Sharing a room with strangers builds patience and trust.',
+      'After the trip {NAME} wrote down {NUM1} pages of notes.',
+      'Those notes later became the best part of the travel journal.',
+      'Of course, safety always comes first in every journey.',
+      'Travel far, but always remember to come back with an open mind.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The flight to {PLACE1} was delayed by heavy snow last {T1}.',
+      '{NAME} returned {HISHER} library books before the exam week.',
+    ],
+  },
+  {
+    id: 'kgap-teamwork',
+    sents: [
+      'No single student can finish a large project alone.',
+      'Good teams divide the work according to what each member does best.',
+      'A clear plan keeps everyone moving in the same direction.',
+      'Regular short meetings help the team in {PLACE1} catch mistakes early.',
+      'When a problem appears, members discuss it instead of blaming each other.',
+      '{NAME} once led a group of {NUM1} students to finish a model plane.',
+      'They failed twice before the final design finally worked.',
+      'The failure taught them more than any textbook could.',
+      'In the end the team celebrated not only the result but the process.',
+      'That is why employers value teamwork so much.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The canteen at {PLACE1} will add new dishes from next {T1}.',
+      '{NAME} borrowed two books from the library and forgot to renew them.',
+    ],
+  },
+];
+
+
+/**
+ * 考研完形填空（E4：20 空/篇，与中考/高考的 10 空不同，由 `L.clozeBlanks: 20` 驱动）。
+ *
+ * 每个骨架恰有 **20 个不同的可空键**（BLANKABLE：`[ANRV]\d+(@pool)?` / `T\d+(@pool)?`）。
+ * 同键在一篇里只算一个空（renderPassage 按 key 复用槽位），所以必须用 20 个不同键。
+ *
+ * 句框设计约束：干扰项从**同一个池**随机取，但**答案也是从池里随机取** ——
+ * 因此句框必须能容纳该池的**每一个**词，否则会出现「正解语法不通」的病题。
+ * 下列句框均按此标准写（如 `do` 池 do/finish/start/check/share 都能接 `their jobs`）。
+ */
+export const KAOYAN_CLOZE_SKELETONS = [
+  {
+    id: 'kcloze-remote',
+    theme: '远程办公',
+    sents: [
+      'Last {T1}, a research team studied how people work at home.',
+      'About {NUM1} workers joined the study in {PLACE1}.',
+      'Most of them said the {N1@method} was simple but useful.',
+      'They could {V1@do} their jobs without a long trip.',
+      'However, staying {A1@room} at home is not always easy.',
+      'Small tasks around the {N2@home} often break their focus.',
+      'Some workers feel {A2@feel} when a deadline is near.',
+      'Others {V2@goish} out for a short walk to rest the mind.',
+      'A short walk {R1@really} helps them come back to work.',
+      'The workers {V3@laughPast} at the good news from the office.',
+      'Early birds {V4@do} their hard work in the morning.',
+      'Night owls like to work {R2@leisure} when the house is silent.',
+      'By {T2} the team had collected notes from every group.',
+      'The {N4@news} was shared with readers the following week.',
+      'A break of {NUM2} minutes is often enough to rest the eyes.',
+      'Workers who take breaks make {A3@easy} mistakes less often.',
+      'Students in the same trial remember things {R3@study}.',
+      'The team {V5@newsPast} the whole story the next day.',
+      'Everybody wants to {V6@support} the team in a busy week.',
+      'The study was done at a {N5@work} near {PLACE2}, and by {T4} everyone agreed that resting was {A4@habit}.',
+    ],
+  },
+  {
+    id: 'kcloze-club',
+    theme: '校园社团',
+    sents: [
+      'Every {T1} the student union in {PLACE1} holds a club fair.',
+      'New members come to {N1@schoolObj} tables and ask questions.',
+      'The fair gives students a {A1@easy} way to choose a hobby.',
+      'Some join a club just to {V1@do} something after class.',
+      'Others hope the club will {V2@help} them make new friends.',
+      'A good club also teaches members to {V3@support} each other.',
+      'Last year more than {NUM1} students signed up for sports.',
+      'The swimming group was the {A2@outing} choice of all.',
+      'It trained {R1@freq} and never missed a single week.',
+      'Reading clubs meet in the {N2@fac} on quiet afternoons.',
+      'Members {V4@do} their homework together before they talk.',
+      'The drama club {V5@playPast} a short play at the end of {T2}.',
+      'Everyone agreed the show was a great {N3@memory}.',
+      'Teachers said the clubs {A3@habit} value was hard to measure.',
+      'Club life also {R2@known} improves a student’s confidence.',
+      'By {T3} the union had built {NUM2} clubs in total.',
+      'The union {V6@rememberPast} to keep the fair every term.',
+      'Students who stay long enough often {V7@talkV} about it for years.',
+      'One report in the {N4@news} listed the ten most popular clubs.',
+      'In short, a club is a {N5@chance} that no student should miss.',
+    ],
+  },
+  {
+    id: 'kcloze-city',
+    theme: '城市交通',
+    sents: [
+      'Traffic in big cities has become a {A1@easy} problem to describe.',
+      'Every {T1} the roads near {PLACE1} are crowded with cars.',
+      'City planners {V1@do} a study of how people move around.',
+      'They found that {NUM1} percent of drivers go to work alone.',
+      'City planners also study the {N1@light} along the road.',
+      'A good {N2@method} can take cars off the road quickly.',
+      'People who {V2@goish} by bike need safe lanes near {PLACE2}.',
+      'A new {N3@road} was built beside the river last year.',
+      'In one city the new plan {V3@winPast} a national prize.',
+      'The plan cost less than {NUM2} million and was {A3@easy} to build.',
+      'Some drivers {R1@really} dislike the change, of course.',
+      'Others {V4@help} their neighbours get to work together.',
+      'The {N4@news} covered the story for several days in {T2}.',
+      'Officials said the {A4@habit} value would grow over time.',
+      'Traffic deaths fell, which {V5@newsPast} in every local paper.',
+      'Families now walk to the {N5@work} near their homes at {T3}.',
+      'Shops along the street report more customers on foot.',
+      'The city also plans to {V6@support} electric buses from next year.',
+      'A {N6@vehicle} like this runs quietly and pollutes much less.',
+      'All in all, the change was {R2@known} welcomed by residents.',
+    ],
+  },
+  {
+    id: 'kcloze-reading',
+    theme: '阅读习惯',
+    sents: [
+      'Reading is a {A1@habit} habit that many students give up too early.',
+      'A survey in {PLACE1} asked {NUM1} young people about their reading.',
+      'Most of them said they read less than one {N1@bookish} a month.',
+      'The main reason was a lack of {A2@room} time in the evening.',
+      'Some said the {N2@tech} world simply {V1@do} too many things at once.',
+      'Others {V2@talkV} about the pressure of exams and homework.',
+      'Experts say a reader should {V3@support} a fixed time each day.',
+      'Even ten {R1@freq} minutes can build a lasting habit.',
+      'The survey {V4@newsPast} that students who read more felt calmer.',
+      'They also {A3@feel} more confident when they spoke in class.',
+      'A reading group in {PLACE2} meets every {T1} after school.',
+      'Members bring one {N2@bookish} and {V5@do} a short report.',
+      'The group {V6@help} shy students practise speaking in public.',
+      'By {T2} it had grown to {NUM2} regular members.',
+      'Libraries say the {N3@method} works better than any lecture.',
+      'Young readers choose books that match their level.',
+      'One teacher {V7@rememberPast} the days when she read under a tree.',
+      'Such {N4@memory} often returns when a student opens an old book.',
+      'That is why schools hold reading weeks every spring.',
+      'In the end, the {T3} lesson is simple: read a little, {V8@do} it daily.',
+    ],
+  },
+];
+
+
+/**
+ * 考研写作（E4：200+，应用文 + 短文）。
+ *
+ * 手写 200+ 条既慢又易重复，故用**体裁模板 × 话题**程序化展开：
+ *   · 话题驱动体裁（建议/邀请/通知/发言稿/介绍/话题作文）套同一个中文话题，
+ *     每类句式都能自然容纳任意话题 → 语义不跑偏；
+ *   · 固定场景体裁（感谢/道歉/申请/图表作文）逐条手写，因为它们
+ *     依赖具体情境而非话题。
+ *
+ * 字数按考研口径：应用文 100–120 词、短文 160–200 词。
+ */
+const KAOYAN_TOPICS = [
+  '如何养成良好的学习习惯', '时间管理的三个方法', '校园里的浪费现象', '网络学习的利与弊',
+  '阅读纸质书与电子书的选择', '体育锻炼的重要性', '垃圾分类与环境保护', '传统文化的传承',
+  '志愿服务的意义', '团队合作与个人表现', '人工智能对生活的影响', '城市与乡村生活的差异',
+  '健康饮食与作息', '大学生就业准备', '压力与心理健康', '语言学习的方法',
+  '交通出行方式的选择', '消费观念与节约', '邻里关系与社区建设', '创新与实践能力',
+  '诚信与考试纪律', '社交媒体与人际沟通', '终身学习的必要性', '文化遗产与旅游发展',
+  '绿色出行与低碳生活', '阅读与写作能力的培养', '校园安全与自我保护', '合作学习的益处',
+  '时间与效率的关系', '青年人的责任与担当',
+];
+const KAOYAN_EN_TITLES = [
+  'The Power of Small Habits', 'What Makes a Good Teammate', 'My View on Online Learning',
+  'Reading Beyond Textbooks', 'The Value of Honesty', 'How to Manage Your Time',
+  'Learning from Failure', 'A Person Who Influenced Me', 'Protecting the Environment Starts from Us',
+  'Books vs. Screens', 'The Meaning of Volunteer Work', 'Health Comes First',
+  'Skills Every Student Needs', 'Living in a Fast-changing World', 'Why We Should Keep Writing by Hand',
+  'The Role of Family in Education', 'Making the Most of Your Spare Time', 'Cities That Care for People',
+  'Courage to Ask Questions', 'A Small Act of Kindness', 'Technology and True Friendship',
+  'What Success Really Means', 'Growing Through Challenges', 'Respect for Different Cultures',
+  'The Habit of Asking Why', 'Strength in Diversity', 'Focus in a Distracted Age',
+  'Gratitude and Growth', 'Practice Makes Progress', 'Choosing a Meaningful Career',
+];
+
+export const KAOYAN_WRITING = (() => {
+  const out = [];
+  // 1) 话题驱动体裁：6 类 × 30 话题 = 180
+  const topicGenres = [
+    { genre: '建议信', min: 100, max: 120, tpl: (t) => `你的英国笔友来信说「${t}」让他很困扰。请回信给出两条具体、可执行的建议，并说明理由。` },
+    { genre: '邀请信', min: 100, max: 120, tpl: (t) => `你校将举办以「${t}」为主题的英语活动。请写邮件邀请外教 Mr. Smith 担任评委，并说明时间、地点与流程。` },
+    { genre: '通知', min: 100, max: 120, tpl: (t) => `学生会将围绕「${t}」举办英语演讲比赛。请以学生会名义写一则英文通知，含时间、地点、参赛要求与报名方式。` },
+    { genre: '发言稿', min: 100, max: 120, tpl: (t) => `请以「${t}」为话题，写一篇在班会上发言的英文稿，至少给出两条具体做法。` },
+    { genre: '介绍信', min: 100, max: 120, tpl: (t) => `请写邮件向外国朋友介绍你所在学校在「${t}」方面的一项做法，并说明其效果。` },
+    { genre: '话题作文', min: 160, max: 200, tpl: (t) => `请以「${t}」为话题写一篇英文短文，先描述现象，再给出你的看法与理由（至少两点）。` },
+  ];
+  for (const g of topicGenres) {
+    for (const t of KAOYAN_TOPICS) out.push({ genre: g.genre, prompt: g.tpl(t), min: g.min, max: g.max });
+  }
+  // 2) 英文题目作文（考研大作文常见形式）：30 条
+  for (const title of KAOYAN_EN_TITLES) {
+    out.push({ genre: '短文', prompt: `以 "${title}" 为题写一篇英文短文，观点明确、层次清楚，并用具体例子支撑。`, min: 160, max: 200 });
+  }
+  // 3) 固定场景体裁（依赖具体情境，逐条手写）：16 条
+  const fixed = [
+    ['感谢信', '你在交换学习期间受到导师的悉心指导。请写信感谢他，并回忆一件让你印象最深的小事。', 100, 120],
+    ['感谢信', '你借用了同学的笔记并顺利通过考试。请写信致谢，并说明你打算如何回报。', 100, 120],
+    ['感谢信', '你在迷路时得到一位当地人的帮助。请写信感谢他，并告知那次帮助对你的意义。', 100, 120],
+    ['感谢信', '你校图书馆老师帮你找回了遗失的资料。请写一封感谢信，说明经过与你的感激之情。', 100, 120],
+    ['道歉信', '你因临时有事未能参加同学的毕业聚会。请写信道歉，说明原因并提出补救办法。', 100, 120],
+    ['道歉信', '你把借来的书弄丢了。请写信向书的主人道歉，并商议赔偿方式。', 100, 120],
+    ['道歉信', '你因记错时间错过了小组讨论，拖慢了进度。请写信向组员致歉并说明改进措施。', 100, 120],
+    ['道歉信', '你把内部草稿误发给了外教。请写信说明情况、道歉并给出处理方案。', 100, 120],
+    ['申请信', '你希望加入学校的英语广播站。请写一封申请信，说明你的优势、经历与打算。', 100, 120],
+    ['申请信', '你申请担任国际学术会议的志愿者。请写信说明相关经历、语言能力与可投入的时间。', 100, 120],
+    ['申请信', '你想申请学校的海外交换项目。请写信说明申请理由、学业规划与家庭支持。', 100, 120],
+    ['申请信', '你申请在校报担任英文版编辑。请写信说明你的编辑经验与改进栏目的设想。', 100, 120],
+    ['图表作文', '下图是某高校学生每周课外阅读时间的调查结果。请描述图表数据并分析其原因。', 160, 200],
+    ['图表作文', '下图是近五年某市居民绿色出行比例的变化。请描述趋势并给出你的预测与建议。', 160, 200],
+    ['图表作文', '下图是大学生兼职原因的分布情况。请描述图表并评论这一现象。', 160, 200],
+    ['图表作文', '下图是某中学学生每日睡眠时长的统计。请描述数据差异并分析其影响。', 160, 200],
+  ];
+  for (const [genre, prompt, min, max] of fixed) out.push({ genre, prompt, min, max });
+  return out;
+})();
+

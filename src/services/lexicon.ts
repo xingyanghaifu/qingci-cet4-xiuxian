@@ -115,15 +115,17 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/senior/',
   },
   {
+    // v1.9.1 阶段 E：考研（ECDICT tag:ky，4801 词）—— 默认不选中（硬约束 8）
     id: 'kaoyan',
-    name: '考研词汇',
+    name: '全国硕士研究生招生考试英语',
     shortName: '考研',
-    wordCount: 0,
-    description: '规划中：尚未构建词表。',
-    sourceUrl: '',
-    sourceLicense: '',
-    enabled: false,
+    wordCount: 4801,
+    description: '考研英语核心词汇 4801 词；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
     dataPath: 'lexicons/kaoyan/vocab-detail/',
+    wordListPath: 'lexicons/kaoyan/',
   },
   {
     id: 'ielts',
@@ -146,6 +148,30 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     sourceLicense: '',
     enabled: false,
     dataPath: 'lexicons/toefl/vocab-detail/',
+  },
+  {
+    // v1.9.1 探活结论（docs/probe-pretco.md）：五路径全扫无 PRETCO 词表，
+    // 占位卡如实标注「数据源不可用」而非「规划中」，避免后续误以为只是没做。
+    id: 'pretco-a',
+    name: 'PRETCO-A（三级）',
+    shortName: 'PRETCO-A',
+    wordCount: 0,
+    description: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
+    sourceUrl: '',
+    sourceLicense: '',
+    enabled: false,
+    dataPath: 'lexicons/pretco-a/vocab-detail/',
+  },
+  {
+    id: 'pretco-b',
+    name: 'PRETCO-B（二级）',
+    shortName: 'PRETCO-B',
+    wordCount: 0,
+    description: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
+    sourceUrl: '',
+    sourceLicense: '',
+    enabled: false,
+    dataPath: 'lexicons/pretco-b/vocab-detail/',
   },
 ];
 

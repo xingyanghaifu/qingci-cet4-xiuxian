@@ -134,6 +134,29 @@ const LEXICONS = {
     overlapWith: ['cet4'],
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
+  /**
+   * 考研 —— v1.9.1 阶段 E。
+   *
+   * 数据源：ECDICT `tag=ky`，实测 **4801 词**（本地 62.9 MB 全量扫描核实，
+   * 中文释义覆盖 100%），与谕令目标 4801 一致、≥4000 停下条件未触发。
+   *
+   * 与中学词库同一套机制（tagFilter + inCET4 重叠标记），但**不取 KyleBing
+   * 拓展词**：谕令 E1 明确数据源只列 ECDICT tag:ky，验收 E6-2 要求 4801 词。
+   */
+  kaoyan: {
+    id: 'kaoyan',
+    name: '全国硕士研究生招生考试英语',
+    shortName: '考研',
+    description: '考研英语大纲词汇 4801 词（ECDICT tag:ky）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/kaoyan/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'kaoyan', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'kaoyan'),
+    tagFilter: 'ky',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
+  },
 };
 
 /* ---------------- 镜像链 ---------------- */
@@ -873,7 +896,7 @@ async function loadTagWordlist(key, L) {
 
 function writeManifest(built) {
   // 顺序即选择器卡片顺序（C1 规格：初中 → 高中 → CET-4 → CET-6 → 灰显词库）
-  const order = ['junior', 'senior', 'cet4', 'cet6'];
+  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan'];
   const lexicons = order.map((id) => {
     const L = LEXICONS[id];
     const b = built.find((x) => x.key === id);
@@ -896,19 +919,33 @@ function writeManifest(built) {
       wordListPath: L.dataPath.startsWith('lexicons/') ? L.dataPath.replace('vocab-detail/', '') : '',
     };
   });
-  // 未上线词库：声明但关闭，选择器里灰显
-  for (const id of ['kaoyan', 'ielts', 'toefl']) {
+  /* 未上线词库：声明但关闭，选择器里灰显（kaoyan 已于 v1.9.1 上线，移出此列）。
+     PRETCO-A/B 的文案如实标注探活结论（docs/probe-pretco.md）：五路径全扫
+     数据源不存在，非「规划中」而是「无源可采」——避免后续误以为只是没做。 */
+  const PLACEHOLDERS = [
+    { id: 'ielts', name: '雅思词汇', shortName: 'IELTS', desc: '规划中：尚未构建词表。' },
+    { id: 'toefl', name: '托福词汇', shortName: 'TOEFL', desc: '规划中：尚未构建词表。' },
+    {
+      id: 'pretco-a', name: 'PRETCO-A（三级）', shortName: 'PRETCO-A',
+      desc: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
+    },
+    {
+      id: 'pretco-b', name: 'PRETCO-B（二级）', shortName: 'PRETCO-B',
+      desc: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
+    },
+  ];
+  for (const p of PLACEHOLDERS) {
     lexicons.push({
-      id,
-      name: id === 'kaoyan' ? '考研词汇' : id === 'ielts' ? '雅思词汇' : '托福词汇',
-      shortName: id === 'kaoyan' ? '考研' : id === 'ielts' ? 'IELTS' : 'TOEFL',
+      id: p.id,
+      name: p.name,
+      shortName: p.shortName,
       wordCount: 0,
-      description: '规划中：尚未构建词表。',
+      description: p.desc,
       sourceUrl: '',
       sourceLicense: '',
       enabled: false,
-      dataPath: `lexicons/${id}/vocab-detail/`,
-      wordListPath: `lexicons/${id}/`,
+      dataPath: `lexicons/${p.id}/vocab-detail/`,
+      wordListPath: `lexicons/${p.id}/`,
     });
   }
   fs.mkdirSync(LEX_DIR, { recursive: true });

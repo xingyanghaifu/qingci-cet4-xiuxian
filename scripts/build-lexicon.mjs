@@ -295,7 +295,18 @@ function fromCorpus(word, row, lex) {
     if (roots) parts.push(roots);
     if (parts.length) d.etymology = clip(parts.join('；'), 180);
   }
-  if (row.memoryAid) d.memoryAid = clip(row.memoryAid, 180);
+  // 记忆锚点（v1.8.2 阶段 B）：语料用 memoryAids（复数对象），
+  // 早期误写成 row.memoryAid（单数），导致 CET-6 的助记全部丢失（覆盖率 0%）。
+  // 语料结构与 build-vocab-detail.mjs 保持一致：助记装置 + 视觉联想，用 ｜ 连接。
+  const mem = row.memoryAids;
+  if (mem && typeof mem === 'object') {
+    const parts = [];
+    const md = Array.isArray(mem.mnemonicDevices) ? mem.mnemonicDevices[0] : null;
+    if (md && md.content) parts.push(clip(md.content, 220));
+    if (mem.visualScene && mem.visualScene.description) parts.push(clip(mem.visualScene.description, 160));
+    if (parts.length) d.memoryAid = clip(parts.join('｜'), 400);
+  }
+  if (!d.memoryAid && row.memoryAid) d.memoryAid = clip(row.memoryAid, 180);
   return d;
 }
 

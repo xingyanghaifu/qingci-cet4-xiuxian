@@ -31,6 +31,30 @@ export interface VocabExample {
   translation: string;
   source: string;
 }
+
+/**
+ * 记忆锚点（v1.8.2 阶段 B）
+ *
+ * 全部由 `scripts/build-mnemonics.mjs` 从语料原文归一化而来，
+ * **不生成、不改写、不臆造** —— 每一条都能在语料 JSON 里找到出处。
+ */
+export interface VocabMnemonic {
+  /** 主助记（谐音 / 拆词 / 典故等） */
+  device?: string;
+  /** 视觉联想画面 */
+  scene?: string;
+  /** 联想词 */
+  assoc?: string[];
+  /** 词根词缀锚点（比整段词源更适合做记忆支点） */
+  root?: string;
+  /** 学习提示 */
+  tip?: string;
+  /** 易混点：常见错法 → 正确法 */
+  confusable?: { wrong: string; right: string; note?: string }[];
+  /** 锚点强度：full = 有装置或画面；basic = 只有词根/提示；none = 无（不写此字段） */
+  tier: 'full' | 'basic' | 'none';
+}
+
 export interface VocabDetail {
   word: string;
   phonetic: { british?: string; american?: string };
@@ -42,6 +66,8 @@ export interface VocabDetail {
   antonyms: string[];
   etymology?: string;
   memoryAid?: string;
+  /** 记忆锚点（v1.8.2 阶段 B）——结构化版本，UI 优先用它，回落到 memoryAid */
+  mnemonics?: VocabMnemonic;
   confusionWords?: string[];
   /** 用法场景（语料领域 / 语域）——D3 模型的可选扩展 */
   usage?: string;

@@ -1,7 +1,8 @@
 /**
- * 中考题库验收（生成后自查）
+ * 题库验收（生成后自查）
  *   node scripts/verify-exam-bank.mjs [lexicon]
  * 检查题量口径、选项质量、篇章成组性、模拟卷构成与题号解析。
+ * 两个中学词库与四六级口径不同（题型集、每组题数、卷面结构），按 LEX 校验配置切。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,6 +12,49 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const lex = process.argv[2] || 'junior';
 const dir = path.join(ROOT, 'src', 'data', 'lexicons', lex, 'question-bank');
+
+/* 校验配置：kinds=必备题型集，groups=成组题型（per=每组题数, need=模拟卷所需满员组数），
+ * paper=卷面（size=总题数, structure=各题型题数, kinds=每卷题型数） */
+const LEX = {
+  junior: {
+    tag: 'junior',
+    kinds: ['grammar', 'cloze', 'reading', 'bankfill', 'writing'],
+    choiceCount: (k) => (k === 'bankfill' ? 10 : 4),
+    passageKinds: ['cloze', 'bankfill'],
+    groups: [
+      { name: '完形', kind: 'cloze', per: 10, need: 3 },
+      { name: '阅读', kind: 'reading', per: 5, need: 6 },
+      { name: '选词', kind: 'bankfill', per: 5, need: 3 },
+    ],
+    paper: {
+      size: 40, kinds: 5,
+      structure: { grammar: 14, cloze: 10, reading: 10, bankfill: 5, writing: 1 },
+    },
+    writeKinds: ['writing'],
+  },
+  senior: {
+    tag: 'senior',
+    kinds: ['reading', 'gapped', 'cloze', 'grammarfill', 'writing', 'continuation'],
+    choiceCount: (k) => (k === 'gapped' ? 7 : 4),
+    passageKinds: ['cloze', 'gapped', 'grammarfill'],
+    groups: [
+      { name: '阅读', kind: 'reading', per: 4, need: 12 },
+      { name: '七选五', kind: 'gapped', per: 5, need: 3 },
+      { name: '完形', kind: 'cloze', per: 10, need: 6 },
+      { name: '语法填空', kind: 'grammarfill', per: 10, need: 3 },
+    ],
+    paper: {
+      size: 53, kinds: 6,
+      structure: { reading: 16, gapped: 5, cloze: 20, grammarfill: 10, writing: 1, continuation: 1 },
+    },
+    writeKinds: ['writing', 'continuation'],
+  },
+};
+const C = LEX[lex];
+if (!C) {
+  console.error(`❌ 未知词库：${lex}（可用：${Object.keys(LEX).join(' / ')}）`);
+  process.exit(1);
+}
 
 const fails = [];
 const oks = [];
@@ -36,42 +80,43 @@ for (const [kind, info] of Object.entries(mf.kinds)) {
 const total = Object.values(byKind).reduce((a, b) => a + b.length, 0);
 ck(total === mf.counts.total, `manifest 总数 ${mf.counts.total} = 实际 ${total}`);
 ck(total >= 3000 && total <= 5000, `题量 ${total} 落在 3000–5000`);
-ck(Object.keys(byKind).length === 5, `五种题型齐全：${Object.keys(byKind).join('/')}`);
-for (const k of ['grammar', 'cloze', 'reading', 'bankfill', 'writing']) {
+ck(Object.keys(byKind).length === C.kinds.length, `${C.kinds.length} 种题型齐全：${Object.keys(byKind).join('/')}`);
+for (const k of C.kinds) {
   ck(byKind[k] && byKind[k].length > 0, `题型 ${k} 存在（${byKind[k] ? byKind[k].length : 0} 题）`);
 }
 
 /* 逐题：选项质量 + 正解唯一 */
-let mcq = 0, writing = 0;
+let mcq = 0, subjective = 0;
 for (const q of byId.values()) {
   const c = q.content;
   ck(typeof q.difficulty === 'number' && q.difficulty >= 0.2 && q.difficulty <= 0.8, `${q.id}: difficulty 合法`);
-  ck(Array.isArray(q.knowledgeTags) && q.knowledgeTags[0] === 'junior', `${q.id}: knowledgeTags 以 junior 开头`);
+  ck(Array.isArray(q.knowledgeTags) && q.knowledgeTags[0] === C.tag, `${q.id}: knowledgeTags 以 ${C.tag} 开头`);
   ck(q.part === '读' || q.part === '写', `${q.id}: part 合法`);
-  if (q.kind === 'writing') {
-    writing++;
-    ck(c.write === true, `${q.id}: 写作题 write=true`);
-    ck(typeof c.answer === 'string' && c.answer === '', `${q.id}: 写作题 answer 为空串`);
-    ck(typeof c.min === 'number' && typeof c.max === 'number', `${q.id}: 写作题有字数区间`);
+  if (C.writeKinds.includes(q.kind)) {
+    subjective++;
+    ck(c.write === true, `${q.id}: 主观题 write=true`);
+    ck(typeof c.answer === 'string' && c.answer === '', `${q.id}: 主观题 answer 为空串`);
+    ck(typeof c.min === 'number' && typeof c.max === 'number', `${q.id}: 主观题有字数区间`);
     continue;
   }
   mcq++;
-  const expect = q.kind === 'bankfill' ? 10 : 4;
+  const expect = C.choiceCount(q.kind);
   ck(c.choices.length === expect, `${q.id}: ${c.choices.length} 个选项（应 ${expect}）`);
   ck(new Set(c.choices).size === c.choices.length, `${q.id}: 选项互不重复`);
   ck(c.choices.includes(c.answer), `${q.id}: 正解在选项中`);
   ck(typeof c.explain === 'string' && c.explain.length > 5, `${q.id}: 有解析`);
   ck(!/\{[A-Z0-9]+\}/.test(c.prompt + (c.passage || '')), `${q.id}: 无残留占位符`);
-  // 完形/选词的空在**篇章**里（___1___），题干只提示第几空；
-  // 只有语法题的空画在题干上。
-  if (q.kind === 'grammar') ck(c.prompt.includes('___'), `${q.id}: 语法题干有空`);
-  if (q.kind === 'cloze' || q.kind === 'bankfill') {
+  // 空在**篇章**里的题型（___1___）：题干只提示第几空，篇章必须有对应编号的空。
+  if (C.passageKinds.includes(q.kind)) {
     ck(/___\d+___/.test(c.passage || ''), `${q.id}: 篇章里有对应编号的空`);
-    ck(new RegExp(`___${c.prompt.match(/第 (\d+) 空/)[1]}___`).test(c.passage), `${q.id}: 题干编号与篇章空位对应`);
+    const m = c.prompt.match(/第 (\d+) [空处]/);
+    ck(m && new RegExp(`___${m[1]}___`).test(c.passage), `${q.id}: 题干编号与篇章空位对应`);
   }
+  // 语法选择（初中）的空画在题干上。
+  if (q.kind === 'grammar') ck(c.prompt.includes('___'), `${q.id}: 语法题干有空`);
   if (q.kind === 'reading') ck(typeof c.passage === 'string' && c.passage.length > 100, `${q.id}: 阅读题带短文`);
 }
-console.log(`  客观题 ${mcq} · 主观题 ${writing}`);
+console.log(`  客观题 ${mcq} · 主观题 ${subjective}`);
 
 /* 成组性：组内短文必须一致；组可以**不满**，但模拟卷只能用满员组。
  *
@@ -105,22 +150,25 @@ function checkGroups(name, list, perGroup, needExact) {
   ck(exact >= needExact, `${name} 满员组 ${exact} ≥ ${needExact}（模拟卷需要 ${needExact} 组）`);
   return gs;
 }
-const clozeGroups = checkGroups('完形', byKind.cloze || [], 10, 3);
-const readingGroups = checkGroups('阅读', byKind.reading || [], 5, 6);
-const bankGroups = checkGroups('选词', byKind.bankfill || [], 5, 3);
-for (const [g, arr] of bankGroups) {
+const groupStats = [];
+for (const g of C.groups) {
+  const gs = checkGroups(g.name, byKind[g.kind] || [], g.per, g.need);
+  groupStats.push(`${g.name}组 ${gs.size}`);
+}
+// 选词：组内共用同一份词库（选项池一致）
+for (const [g, arr] of groupsOf(byKind.bankfill || [])) {
   const banks = new Set(arr.map((q) => q.content.choices.join('|')));
   ck(banks.size === 1, `选词 ${g} 组内共用同一份词库`);
 }
-console.log(`  完形组 ${clozeGroups.size} · 阅读组 ${readingGroups.size} · 选词组 ${bankGroups.size}`);
+console.log('  ' + groupStats.join(' · '));
 
-/* 模拟卷：3 套 × 40、两两不重、题号全解析、五题型齐全 */
+/* 模拟卷：3 套、两两不重、题号全解析、题型齐全、结构符合组卷计划 */
 const keys = Object.keys(mf.papers);
 ck(keys.length === 3, `模拟卷 ${keys.length} 套`);
 const seen = new Set();
 for (const k of keys) {
   const p = mf.papers[k];
-  ck(p.ids.length === 40, `${k} 共 ${p.ids.length} 题（应 40）`);
+  ck(p.ids.length === C.paper.size, `${k} 共 ${p.ids.length} 题（应 ${C.paper.size}）`);
   const kinds = new Set();
   for (const id of p.ids) {
     const q = byId.get(id);
@@ -129,11 +177,12 @@ for (const k of keys) {
     ck(!seen.has(id), `${k} 与前一套卷子不重题：${id}`);
     seen.add(id);
   }
-  ck(kinds.size === 5, `${k} 五种题型齐全（实际 ${kinds.size}）`);
-  const struct = p.structure;
-  ck(struct && struct.grammar === 14 && struct.cloze === 10 && struct.reading === 10
-    && struct.bankfill === 5 && struct.writing === 1, `${k} 结构 14/10/10/5/1`);
-  console.log(`  ${k} ${p.name}: 40 题，题型 ${[...kinds].join('/')}`);
+  ck(kinds.size === C.paper.kinds, `${k} ${C.paper.kinds} 种题型齐全（实际 ${kinds.size}）`);
+  const struct = p.structure || {};
+  const want = C.paper.structure;
+  ck(Object.keys(want).every((kk) => struct[kk] === want[kk]),
+    `${k} 结构 ${Object.entries(want).map(([a, b]) => `${a} ${b}`).join('/')}`);
+  console.log(`  ${k} ${p.name}: ${p.ids.length} 题，题型 ${[...kinds].join('/')}`);
 }
 
 /* 分片指纹（供两次运行比对） */

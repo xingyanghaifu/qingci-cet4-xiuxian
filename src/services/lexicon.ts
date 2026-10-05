@@ -101,6 +101,20 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/junior/',
   },
   {
+    // v1.9.0 阶段 B：高中（高考）——同样默认不选中（硬约束 8）；
+    // 词数以站点清单为准，这里只兜离线首屏
+    id: 'senior',
+    name: '高中词汇（高考）',
+    shortName: '高中',
+    wordCount: 3770,
+    description: '高考课标核心 3677 词 + 拓展词；与四级重叠词标 inCET4，进度独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'lexicons/senior/vocab-detail/',
+    wordListPath: 'lexicons/senior/',
+  },
+  {
     id: 'kaoyan',
     name: '考研词汇',
     shortName: '考研',

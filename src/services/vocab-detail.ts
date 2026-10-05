@@ -102,6 +102,7 @@ export const VOCAB_DETAIL_BASES: Readonly<Record<string, string>> = {
   cet4: 'vocab-detail/',
   cet6: 'lexicons/cet6/vocab-detail/',
   junior: 'lexicons/junior/vocab-detail/', // v1.9.0 阶段 A：初中（中考）
+  senior: 'lexicons/senior/vocab-detail/', // v1.9.0 阶段 B：高中（高考）
 };
 
 /** 词库 → 详情分片目录（归一化；未知/缺省回落到 cet4） */

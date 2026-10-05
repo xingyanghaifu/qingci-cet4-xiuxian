@@ -34,6 +34,36 @@
       "count": 30
     }
   },
+  "plan": [
+    {
+      "kind": "grammar",
+      "type": "direct",
+      "count": 14
+    },
+    {
+      "kind": "cloze",
+      "type": "group",
+      "per": 10,
+      "groups": 1
+    },
+    {
+      "kind": "reading",
+      "type": "group",
+      "per": 5,
+      "groups": 2
+    },
+    {
+      "kind": "bankfill",
+      "type": "group",
+      "per": 5,
+      "groups": 1
+    },
+    {
+      "kind": "writing",
+      "type": "direct",
+      "count": 1
+    }
+  ],
   "papers": {
     "zk-01": {
       "name": "中考模拟卷一",

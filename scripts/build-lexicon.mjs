@@ -113,6 +113,27 @@ const LEXICONS = {
     overlapWith: ['cet4'],
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
+  /**
+   * 高中（高考）—— v1.9.0 阶段 B，与初中同一套机制：
+   *   核心：ECDICT `tag=gk` 实测 **3677 词**（课标 3500 + 新增词），正对验收区间；
+   *   拓展：KyleBing 高中词表独有的部分；
+   *   重叠：与 CET-4 重叠的词打 `inCET4`（关键说明第 2 条「完整收录、标记重叠」）。
+   */
+  senior: {
+    id: 'senior',
+    name: '高中词汇（高考）',
+    shortName: '高中',
+    description: '高考课标核心词 + 拓展词；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/senior/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'senior', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'senior'),
+    tagFilter: 'gk',
+    extrasFile: 'json/2-高中-顺序.json',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
+  },
 };
 
 /* ---------------- 镜像链 ---------------- */
@@ -851,7 +872,8 @@ async function loadTagWordlist(key, L) {
 /* ---------------- 清单 ---------------- */
 
 function writeManifest(built) {
-  const order = ['cet4', 'cet6', 'junior'];
+  // 顺序即选择器卡片顺序（C1 规格：初中 → 高中 → CET-4 → CET-6 → 灰显词库）
+  const order = ['junior', 'senior', 'cet4', 'cet6'];
   const lexicons = order.map((id) => {
     const L = LEXICONS[id];
     const b = built.find((x) => x.key === id);

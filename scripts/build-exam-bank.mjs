@@ -29,6 +29,8 @@ import {
   NAMES, PLACES, TIMES, NUMS, NOUNS, ADJ_QUALITY, ADJ_COLOR, ADVS, VERBS_BASE,
   VERB_FORMS, FEMININE, SLOTS, GRAMMAR_FRAMES, CLOZE_SKELETONS, READING_SKELETONS, BANKFILL_SKELETONS,
   WRITING_TASKS, shuffle4,
+  SENIOR_SLOTS, SENIOR_CLOZE_SKELETONS, SENIOR_READING_SKELETONS, GAPPED_SKELETONS,
+  SENIOR_GRAMMAR_FILL_SKELETONS, FUNCTION_SETS, SENIOR_WRITING, SENIOR_CONTINUATION,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -36,15 +38,66 @@ const MAX_SHARD_BYTES = 1_500_000;
 const BANK_SCHEMA = 'qingci-question-bank/1';
 const EXAM_SCHEMA = 'qingci-exam-bank/1';
 
-/** 各词库的词源与产出位置（阶段 A 初中 / 阶段 B 高中共用） */
+/** 各词库的词源、题型与组卷计划（阶段 A 初中 / 阶段 B 高中共用一套引擎） */
 const LEXICONS = {
   junior: {
-    id: 'junior', exam: 'zhongkao', label: '中考',
+    id: 'junior', exam: 'zhongkao', label: '中考', prefix: 'jun',
     wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'junior', 'wordlist.json'),
     outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'junior', 'question-bank'),
     paperNames: ['中考模拟卷一', '中考模拟卷二', '中考模拟卷三'],
     paperKeys: ['zk-01', 'zk-02', 'zk-03'],
+    // 组卷计划：direct = 直接取题，group = 按篇章整组取（per=每组题数, groups=取几组）
+    plan: [
+      { kind: 'grammar', type: 'direct', count: 14 },
+      { kind: 'cloze', type: 'group', per: 10, groups: 1 },
+      { kind: 'reading', type: 'group', per: 5, groups: 2 },
+      { kind: 'bankfill', type: 'group', per: 5, groups: 1 },
+      { kind: 'writing', type: 'direct', count: 1 },
+    ],
+    // group 类的目标是**篇数**，direct 类的目标是**题数**
+    targets: { grammar: 2400, cloze: 96, reading: 144, bankfill: 140, writing: 30 },
+    detailQs: 3, // 每篇阅读出几道细节题（+主旨1 +词义1 = 5/4）
+    content: 'junior', // 用初中素材
   },
+  senior: {
+    id: 'senior', exam: 'gaokao', label: '高考', prefix: 'sen',
+    wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'senior', 'wordlist.json'),
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'senior', 'question-bank'),
+    paperNames: ['高考模拟卷一', '高考模拟卷二', '高考模拟卷三'],
+    paperKeys: ['gk-01', 'gk-02', 'gk-03'],
+    plan: [
+      { kind: 'reading', type: 'group', per: 4, groups: 4 },
+      { kind: 'gapped', type: 'group', per: 5, groups: 1 },
+      { kind: 'cloze', type: 'group', per: 10, groups: 2 },
+      { kind: 'grammarfill', type: 'group', per: 10, groups: 1 },
+      { kind: 'writing', type: 'direct', count: 1 },
+      { kind: 'continuation', type: 'direct', count: 1 },
+    ],
+    // gapped 篇章无变体槽（句子是写死的行文），5 篇就是 5 篇 —— 目标写 5，
+    // 多写只会空转（去重后留 5 篇 ×5 题）；其余题型靠 N/T/NAME 槽位产生变体。
+    targets: { reading: 400, gapped: 5, cloze: 150, grammarfill: 200, writing: 30, continuation: 10 },
+    detailQs: 2,
+    content: 'senior',
+  },
+};
+
+/** 语法填空的形态标记 → 动词变位表字段 */
+const GFORM = { b: 'b', s: 's', p: 'p', past: 'p', pp: 'pp', ing: 'ing' };
+
+/**
+ * 当前正在构建的词库的题号前缀与素材集。
+ * 两个词库分两次进程内构建（`--lexicon`），用模块级状态给各 builder 取材，
+ * 比给 6 个 builder 各加 3 个参数更省事、也更不容易漏改。
+ */
+let ID_PREFIX = 'jun';
+let SK = {
+  cloze: CLOZE_SKELETONS,
+  reading: READING_SKELETONS,
+  bankfill: BANKFILL_SKELETONS,
+  gapped: [],
+  grammarfill: [],
+  detailQs: 3,
+  tagBase: 'junior', // knowledgeTags 首位（也是题库所属词库的标记）
 };
 
 /* ---------------- 确定性随机 ---------------- */
@@ -184,12 +237,12 @@ function buildGrammar(pool, target, rand) {
     idle = 0;
     validateChoice(rec, `grammar#${questions.length + 1}`, { requireBlank: true });
     questions.push({
-      id: `q_jun_grammar_${String(questions.length + 1).padStart(4, '0')}`,
+      id: `q_${ID_PREFIX}_grammar_${String(questions.length + 1).padStart(4, '0')}`,
       kind: 'grammar',
       part: '读',
       difficulty: clamp01(0.3 + ((questions.length % 7) * 0.05)),
       discrimination: 0.4,
-      knowledgeTags: ['junior', `grammar:${f.tag}`, `rule:${fnv1a(f.rule) % 1000}`],
+      knowledgeTags: [SK.tagBase, `grammar:${f.tag}`, `rule:${fnv1a(f.rule) % 1000}`],
       content: rec,
     });
   }
@@ -210,7 +263,12 @@ function makeFiller(seedStr, pools) {
       const cand = list[Math.floor(rnd() * list.length)];
       if (!taken.has(cand)) { v = cand; break; }
     }
-    if (!v) v = list[0]; // 池子被占满的极端情况（正常不会发生）
+    if (!v) {
+      // 随机抽满一轮全是已占词（小池子会撞上）→ 线性找一个没占的，
+      // 直接回落 list[0] 会同篇撞答案，成组校验会判「组内答案互不相同」失败。
+      v = list.find((w) => !taken.has(w)) || '';
+    }
+    if (!v) v = list[0]; // 池子整体被占满的极端情况（正常不会发生）
     taken.add(v);
     assigned.set(key, v);
     return v;
@@ -302,8 +360,8 @@ function buildCloze(pool, wl, targetPassages, rand) {
   const passages = [];
   const seenQ = new Set();
   for (let v = 0; v < targetPassages; v++) {
-    const sk = CLOZE_SKELETONS[v % CLOZE_SKELETONS.length];
-    const vi = Math.floor(v / CLOZE_SKELETONS.length);
+    const sk = SK.cloze[v % SK.cloze.length];
+    const vi = Math.floor(v / SK.cloze.length);
     const fill = makeFiller(`${sk.id}|${vi}`, pool);
     const rendered = renderPassage(sk.sents, fill, { blanked: true });
     const { text, blanks, sentences } = rendered;
@@ -332,12 +390,12 @@ function buildCloze(pool, wl, targetPassages, rand) {
       seenQ.add(key);
       validateChoice(rec, `cloze#${questions.length + 1}`, { requirePassage: true });
       questions.push({
-        id: `q_jun_cloze_${String(questions.length + 1).padStart(4, '0')}`,
+        id: `q_${ID_PREFIX}_cloze_${String(questions.length + 1).padStart(4, '0')}`,
         kind: 'cloze',
         part: '读',
         difficulty: clamp01(0.42 + (idx % 5) * 0.05),
         discrimination: 0.4,
-        knowledgeTags: ['junior', `cloze:${sk.id}`, `slot:${b.label}`],
+        knowledgeTags: [SK.tagBase, `cloze:${sk.id}`, `slot:${b.label}`],
         content: rec,
       });
     });
@@ -356,7 +414,7 @@ function buildReading(pool, wl, targetPassages, rand) {
   const questions = [];
   const passages = [];
   const seenQ = new Set();
-  const mains = READING_SKELETONS.map((s) => s.mainIdea);
+  const mains = SK.reading.map((s) => s.mainIdea);
 
   const push = (rec, meta) => {
     const key = (rec.passage || '') + '\u0000' + rec.prompt + '\u0000' + rec.answer;
@@ -364,20 +422,20 @@ function buildReading(pool, wl, targetPassages, rand) {
     seenQ.add(key);
     validateChoice(rec, meta.where, { requirePassage: true });
     questions.push({
-      id: `q_jun_reading_${String(questions.length + 1).padStart(4, '0')}`,
+      id: `q_${ID_PREFIX}_reading_${String(questions.length + 1).padStart(4, '0')}`,
       kind: 'reading',
       part: '读',
       difficulty: meta.difficulty,
       discrimination: 0.4,
-      knowledgeTags: ['junior', `reading:${meta.sk.id}`, meta.skill],
+      knowledgeTags: [SK.tagBase, `reading:${meta.sk.id}`, meta.skill],
       content: rec,
     });
     return true;
   };
 
   for (let v = 0; v < targetPassages; v++) {
-    const sk = READING_SKELETONS[v % READING_SKELETONS.length];
-    const vi = Math.floor(v / READING_SKELETONS.length);
+    const sk = SK.reading[v % SK.reading.length];
+    const vi = Math.floor(v / SK.reading.length);
     const fill = makeFiller(`${sk.id}|${vi}|r`, pool);
     const rendered = renderPassage(sk.sents, fill, { blanked: false });
     const text = rendered.text;
@@ -417,7 +475,7 @@ function buildReading(pool, wl, targetPassages, rand) {
         skill: 'skill:detail-number',
       },
     };
-    (sk.facts || []).slice(0, 3).forEach((fact, idx) => {
+    (sk.facts || []).slice(0, SK.detailQs).forEach((fact, idx) => {
       const d = DET[fact];
       if (!d || !d.prompt) return;
       const answer = d.value();
@@ -488,8 +546,8 @@ function buildBankfill(pool, targetPassages, rand) {
   const passages = [];
   const seenQ = new Set();
   for (let v = 0; v < targetPassages; v++) {
-    const sk = BANKFILL_SKELETONS[v % BANKFILL_SKELETONS.length];
-    const vi = Math.floor(v / BANKFILL_SKELETONS.length);
+    const sk = SK.bankfill[v % SK.bankfill.length];
+    const vi = Math.floor(v / SK.bankfill.length);
     const fill = makeFiller(`${sk.id}|${vi}|b`, pool);
     const { text, blanks } = renderPassage(sk.sents, fill, { blanked: true });
     if (blanks.length !== 5) {
@@ -528,12 +586,12 @@ function buildBankfill(pool, targetPassages, rand) {
       seenQ.add(key);
       validateChoice(rec, `bankfill#${questions.length + 1}`, { requirePassage: true, choices: 10 });
       questions.push({
-        id: `q_jun_bankfill_${String(questions.length + 1).padStart(4, '0')}`,
+        id: `q_${ID_PREFIX}_bankfill_${String(questions.length + 1).padStart(4, '0')}`,
         kind: 'bankfill',
         part: '读',
         difficulty: clamp01(0.45 + (idx % 5) * 0.05),
         discrimination: 0.42,
-        knowledgeTags: ['junior', `bankfill:${sk.id}`],
+        knowledgeTags: [SK.tagBase, `bankfill:${sk.id}`],
         content: rec,
       });
     });
@@ -541,24 +599,186 @@ function buildBankfill(pool, targetPassages, rand) {
   return { questions, passages };
 }
 
-function buildWriting() {
-  return WRITING_TASKS.map((t, i) => ({
-    id: `q_jun_writing_${String(i + 1).padStart(4, '0')}`,
-    kind: 'writing',
+/**
+ * 主观题（书面表达 / 读后续写）。
+ * `kind` 决定题型与题号段；读后续写多带一段给定原文（content.passage）。
+ */
+/**
+ * 七选五（gapped）：行文抽 5 句成空，每题给同一份 7 句选项（5 正 + 2 干扰）。
+ * 篇章是写死的行文（无变体槽），一个骨架一篇 —— 目标篇数 = 骨架数。
+ */
+function buildGapped(targetPassages, rand) {
+  const questions = [];
+  const passages = [];
+  const seenQ = new Set();
+  for (let v = 0; v < Math.min(targetPassages, SK.gapped.length); v++) {
+    const sk = SK.gapped[v];
+    const answers = [];
+    let n = 0;
+    const text = sk.sents.map((s, i) => {
+      if (sk.gaps.indexOf(i) >= 0) { answers.push(s); return `___${++n}___`; }
+      return s;
+    }).join(' ');
+    if (answers.length !== 5 || (sk.distractors || []).length !== 2) {
+      console.error(`❌ 七选五骨架 ${sk.id} 应为 5 空 + 2 干扰（实为 ${answers.length} + ${(sk.distractors || []).length}）`);
+      process.exit(1);
+    }
+    const bank = shuffle4([...answers, ...sk.distractors], rand);
+    if (bank.length !== 7 || new Set(bank).size !== 7) {
+      console.error(`❌ 七选五骨架 ${sk.id} 的 7 句选项出现重复`);
+      process.exit(1);
+    }
+    const groupId = `gapped_${String(passages.length + 1).padStart(3, '0')}`;
+    passages.push({ groupId, text });
+    answers.forEach((ans, idx) => {
+      const rec = {
+        prompt: `短文第 ${idx + 1} 处应填入的句子：`,
+        choices: bank.slice(),
+        answer: ans,
+        explain: `该句应放在第 ${idx + 1} 处：它与前后句的指代和逻辑顺序衔接；其余选项接不上。`,
+        passage: text,
+        group: groupId,
+      };
+      const key = text + ' ' + rec.prompt + ' ' + ans;
+      if (seenQ.has(key)) return;
+      seenQ.add(key);
+      validateChoice(rec, `gapped#${questions.length + 1}`, { requirePassage: true, choices: 7 });
+      questions.push({
+        id: `q_${ID_PREFIX}_gapped_${String(questions.length + 1).padStart(4, '0')}`,
+        kind: 'gapped',
+        part: '读',
+        difficulty: clamp01(0.45 + (idx % 5) * 0.05),
+        discrimination: 0.4,
+        knowledgeTags: [SK.tagBase, `gapped:${sk.id}`],
+        content: rec,
+      });
+    });
+  }
+  return { questions, passages };
+}
+
+/**
+ * 语法填空（grammarfill）：短文 10 空，三种空：
+ *   Gv = 有提示动词（答案查变位表），Ga = 有提示形容词（comp/sup 规则变化），
+ *   Gf = 无提示功能词（答案烧死在骨架里），普通 N/R 空 = 答案取池、干扰同池。
+ * 有提示词的空写成 `___1___ (go)`，与真实卷面一致。
+ */
+function buildGrammarFill(pool, targetPassages, rand) {
+  const questions = [];
+  const passages = [];
+  const seenQ = new Set();
+  const verbs = dedupeForms();
+  for (let v = 0; v < targetPassages; v++) {
+    const sk = SK.grammarfill[v % SK.grammarfill.length];
+    const vi = Math.floor(v / SK.grammarfill.length);
+    const fill = makeFiller(`${sk.id}|${vi}`, pool);
+    const blanks = [];
+    let n = 0;
+    let abort = false;
+    const parts = sk.sents.map((s) => s.replace(/\{([^{}]+)\}/g, (whole, raw) => {
+      const gm = raw.match(/^G([vaf])\d+\|([^|]+)\|([^|]+)$/);
+      if (gm) {
+        const type = gm[1];
+        const a = gm[2];
+        const b = gm[3];
+        n++;
+        if (type === 'v') {
+          const vf = verbs.find((x) => x.b === a);
+          const field = GFORM[b];
+          if (!vf || !field || !vf[field]) {
+            console.error(`❌ ${sk.id} 动词标记非法：{${raw}}（${a} 不在变位表或缺形态 ${b}）`);
+            process.exit(1);
+          }
+          const answer = vf[field];
+          const others = [...new Set([vf.b, vf.s, vf.p, vf.pp, vf.ing])]
+            .filter((x) => x && x !== answer).slice(0, 3);
+          if (others.length < 3) { abort = true; return whole; } // 变位不充分（put/read 类）→ 弃本篇
+          blanks.push({ n, answer, choices: [answer, ...others], hint: a, type: 'verb' });
+          return `___${n}___ (${a})`;
+        }
+        if (type === 'a') {
+          const answer = b === 'comp' ? `more ${a}` : `most ${a}`;
+          const choices = [...new Set([answer, b === 'comp' ? `most ${a}` : `more ${a}`, a, `less ${a}`])];
+          if (choices.length < 4) { abort = true; return whole; }
+          blanks.push({ n, answer, choices, hint: a, type: 'adj' });
+          return `___${n}___ (${a})`;
+        }
+        const set = FUNCTION_SETS[b];
+        if (!set || !set.includes(a)) {
+          console.error(`❌ ${sk.id} 功能词标记非法：{${raw}}（答案不在组 ${b} 里）`);
+          process.exit(1);
+        }
+        const decoys = takeDecoys(set, a, fnv1a(sk.id + raw + vi));
+        if (decoys.length < 3) { abort = true; return whole; }
+        blanks.push({ n, answer: a, choices: [a, ...decoys], hint: '', type: 'func' });
+        return `___${n}___`;
+      }
+      if (!BLANKABLE.test(raw)) return whole; // NAME/PLACE/NUM 等上下文词原样保留
+      n++;
+      const word = fill(raw, resolvePool(raw, pool));
+      const decoys = takeDecoys(resolvePool(raw, pool), word, fnv1a(sk.id + raw + vi));
+      if (!word || decoys.length < 3) { abort = true; return whole; }
+      blanks.push({ n, answer: word, choices: [word, ...decoys], hint: '', type: 'content' });
+      return `___${n}___`;
+    }));
+    if (abort || blanks.length !== 10 || parts.join(' ').indexOf('{') >= 0) continue; // 换变体
+    const text = parts.join(' ');
+    const groupId = `gfill_${String(passages.length + 1).padStart(3, '0')}`;
+    passages.push({ groupId, text });
+    blanks.forEach((b) => {
+      const rec = {
+        prompt: `短文第 ${b.n} 空${b.hint ? `（提示词 ${b.hint}）` : ''}应填入：`,
+        choices: shuffle4(b.choices, rand),
+        answer: b.answer,
+        explain: b.type === 'verb'
+          ? `按上下文时态/语态应填 ${b.answer}（提示词 ${b.hint}）。`
+          : b.type === 'adj'
+            ? `按句中 than/the 等标志词应填 ${b.answer}（提示词 ${b.hint}）。`
+            : `${b.answer}：该空需要这个功能词，句意才通顺。`,
+        passage: text,
+        group: groupId,
+      };
+      const key = text + ' ' + rec.prompt + ' ' + b.answer;
+      if (seenQ.has(key)) return;
+      seenQ.add(key);
+      validateChoice(rec, `gfill#${questions.length + 1}`, { requirePassage: true });
+      questions.push({
+        id: `q_${ID_PREFIX}_grammarfill_${String(questions.length + 1).padStart(4, '0')}`,
+        kind: 'grammarfill',
+        part: '读',
+        difficulty: clamp01(0.45 + (b.n % 5) * 0.05),
+        discrimination: 0.4,
+        knowledgeTags: [SK.tagBase, `gfill:${sk.id}`, `type:${b.type}`],
+        content: rec,
+      });
+    });
+  }
+  return { questions, passages };
+}
+
+function buildWriting(tasks, kind, tagBase) {
+  const cont = kind === 'continuation';
+  return tasks.map((t, i) => ({
+    id: `q_${ID_PREFIX}_${kind}_${String(i + 1).padStart(4, '0')}`,
+    kind,
     part: '写',
-    difficulty: clamp01(0.45),
+    difficulty: clamp01(cont ? 0.55 : 0.45),
     discrimination: 0.3,
-    knowledgeTags: ['junior', `writing:${t.genre}`],
+    knowledgeTags: [tagBase, `${kind}:${t.genre}`],
     content: {
       prompt: t.prompt,
-      sub: `体裁：${t.genre}；词数 ${t.min}–${t.max}。`,
+      sub: t.sub ? `${t.sub}\n体裁：${t.genre}；词数 ${t.min}–${t.max}。` : `体裁：${t.genre}；词数 ${t.min}–${t.max}。`,
       choices: [],
       answer: '',
-      explain: `写作要点：① 覆盖题目全部要点；② 用上 2–3 个学过的高级词或短语；`
-        + `③ 注意时态与人称一致；④ 检查拼写与标点。字数控制在 ${t.min}–${t.max} 词。`,
+      explain: cont
+        ? `续写要点：① 与所给段落的情节、时态、人称保持一致；② 两段各自以所给首句开头；`
+          + `③ 有冲突、有转折、有收束；④ 字数控制在 ${t.min}–${t.max} 词。`
+        : `写作要点：① 覆盖题目全部要点；② 用上 2–3 个学过的高级词或短语；`
+          + `③ 注意时态与人称一致；④ 检查拼写与标点。字数控制在 ${t.min}–${t.max} 词。`,
       write: true,
       min: t.min,
       max: t.max,
+      ...(t.passage ? { passage: t.passage } : {}),
     },
   }));
 }
@@ -566,13 +786,14 @@ function buildWriting() {
 /* ---------------- 组卷 ---------------- */
 
 /**
- * 模拟卷：中考结构 = 语法 14 + 完形 10（一整篇）+ 阅读 10（两整篇）+ 选词 5（一整篇）+ 写作 1 = 40
+ * 模拟卷（按词库的 plan 组卷）：
+ *   `direct` 项按卷取 count 题（卷间切片错开，天然不重叠）；
+ *   `group` 项**整组取**（篇章完整：完形 10 空一篇、七选五 5 空一篇、阅读按篇 4/5 题）。
  *
  * 「整篇取用」是硬要求：只把一篇完形的第 3 空塞进卷子，学生读不到上下文。
- * 分组大小必须严丝合缝（完形 10 / 阅读每篇 5 / 选词每篇 5），
- * 组大小不匹配的篇章一律不用（比如词义题没凑出 4 个选项、只有 4 题的阅读篇）。
+ * 组大小不匹配的篇章一律不用（比如词义题没凑出 4 个选项、少一题的阅读篇）。
  */
-function buildPapers(byKind, names, keys) {
+function buildPapers(byKind, plan, names, keys) {
   const papers = {};
   const used = new Set();
 
@@ -599,15 +820,25 @@ function buildPapers(byKind, names, keys) {
   };
 
   for (let p = 0; p < keys.length; p++) {
-    const grammar = byKind.grammar.slice(p * 14, p * 14 + 14);
-    const cloze = takeGroups(byKind.cloze, 10, 1, p * 3);
-    const reading = takeGroups(byKind.reading, 5, 2, p * 4);
-    const bankfill = takeGroups(byKind.bankfill, 5, 1, p * 3);
-    const writing = byKind.writing.slice(p, p + 1);
-    const all = [...grammar, ...cloze.picked, ...reading.picked, ...bankfill.picked, ...writing];
-    if (grammar.length !== 14 || !cloze.ok || !reading.ok || !bankfill.ok || writing.length !== 1 || all.length !== 40) {
-      console.error(`❌ ${names[p]} 组卷失败：语法 ${grammar.length}/14、完形 ${cloze.picked.length}/10、`
-        + `阅读 ${reading.picked.length}/10、选词 ${bankfill.picked.length}/5、写作 ${writing.length}/1`);
+    const all = [];
+    const structure = {};
+    const miss = [];
+    for (const step of plan) {
+      const list = byKind[step.kind] || [];
+      if (step.type === 'direct') {
+        const slice = list.slice(p * step.count, p * step.count + step.count);
+        if (slice.length !== step.count) miss.push(`${step.kind} ${slice.length}/${step.count}`);
+        all.push(...slice);
+        structure[step.kind] = slice.length;
+      } else {
+        const t = takeGroups(list, step.per, step.groups, p * (step.groups + 2));
+        if (!t.ok) miss.push(`${step.kind} ${t.picked.length}/${step.per * step.groups}`);
+        all.push(...t.picked);
+        structure[step.kind] = t.picked.length;
+      }
+    }
+    if (miss.length) {
+      console.error(`❌ ${names[p]} 组卷失败：${miss.join('、')}（满员组不足或题量不够）`);
       process.exit(1);
     }
     if (all.some((q) => used.has(q.id))) {
@@ -615,11 +846,7 @@ function buildPapers(byKind, names, keys) {
       process.exit(1);
     }
     all.forEach((q) => used.add(q.id));
-    papers[keys[p]] = {
-      name: names[p],
-      structure: { grammar: 14, cloze: 10, reading: 10, bankfill: 5, writing: 1 },
-      ids: all.map((q) => q.id),
-    };
+    papers[keys[p]] = { name: names[p], structure, ids: all.map((q) => q.id) };
   }
   return papers;
 }
@@ -657,7 +884,7 @@ function writeShards(outDir, lexiconId, byKind) {
   return { kinds, total, bytes, gz };
 }
 
-function writeManifest(outDir, lexiconId, exam, kinds, byKind, papers, papersIndex) {
+function writeManifest(outDir, lexiconId, exam, kinds, byKind, papers, papersIndex, plan) {
   const byKindCount = {};
   for (const [k, v] of Object.entries(byKind)) byKindCount[k] = v.length;
   const manifest = {
@@ -666,6 +893,8 @@ function writeManifest(outDir, lexiconId, exam, kinds, byKind, papers, papersInd
     exam,
     counts: { total: Object.values(byKindCount).reduce((a, b) => a + b, 0), byKind: byKindCount },
     kinds,
+    // 组卷计划随清单下发：验收脚本据此知道每套卷该由哪些组构成
+    plan,
     papers,
     papersIndex,
   };
@@ -701,7 +930,8 @@ function main() {
     nums: NUMS.slice(),
     // 语义子池**不过滤词表**：SLOTS 里有 ran/won 这类课标词的变形，
     // 按字面查词表会全被剔掉（词表只收原形）。它们是人工核过的短表。
-    slot: SLOTS,
+    // 高中素材的子池（SENIOR_SLOTS）并进来，两个学段的骨架都能查到。
+    slot: { ...SLOTS, ...SENIOR_SLOTS },
   };
   for (const [k, v] of Object.entries(pool)) {
     if (v.length < 4) {
@@ -718,52 +948,92 @@ function main() {
 
   const rand = mulberry32(fnv1a(`qingci-exam-bank|${lexId}`));
 
-  console.log(`🔨 [${lexId}] 生成 ${L.label}题库（词表 ${wl.size} 词）…`);
-  const grammar = buildGrammar(pool, 2400, rand);
-  console.log(`   语法选择 ${grammar.length}`);
-  const cloze = buildCloze(pool, wl, 96, rand);
-  console.log(`   完形填空 ${cloze.questions.length}（${96} 篇 × 10 空）`);
-  const reading = buildReading(pool, wl, 144, rand);
-  console.log(`   阅读理解 ${reading.questions.length}（${144} 篇 × 5 题）`);
-  const bankfill = buildBankfill(pool, 140, rand);
-  console.log(`   选词填空 ${bankfill.questions.length}（${140} 篇 × 5 空）`);
-  const writing = buildWriting();
-  console.log(`   书面表达 ${writing.length}`);
-
-  const byKind = {
-    grammar,
-    cloze: cloze.questions,
-    reading: reading.questions,
-    bankfill: bankfill.questions,
-    writing,
+  // 素材集与题号前缀按词库切（同引擎、不同学段的题型与行文）
+  ID_PREFIX = L.prefix;
+  SK = {
+    cloze: L.content === 'senior' ? SENIOR_CLOZE_SKELETONS : CLOZE_SKELETONS,
+    reading: L.content === 'senior' ? SENIOR_READING_SKELETONS : READING_SKELETONS,
+    bankfill: BANKFILL_SKELETONS,
+    gapped: GAPPED_SKELETONS,
+    grammarfill: SENIOR_GRAMMAR_FILL_SKELETONS,
+    detailQs: L.detailQs,
+    tagBase: L.id,
   };
+
+  console.log(`🔨 [${lexId}] 生成 ${L.label}题库（词表 ${wl.size} 词）…`);
+  const byKind = {};
+  for (const step of L.plan) {
+    const t = L.targets[step.kind] || 0;
+    const pass = step.type === 'group' ? `${t} 篇` : '';
+    switch (step.kind) {
+      case 'grammar':
+        byKind.grammar = buildGrammar(pool, t, rand);
+        break;
+      case 'cloze':
+        byKind.cloze = buildCloze(pool, wl, t, rand).questions;
+        break;
+      case 'reading':
+        byKind.reading = buildReading(pool, wl, t, rand).questions;
+        break;
+      case 'bankfill':
+        byKind.bankfill = buildBankfill(pool, t, rand).questions;
+        break;
+      case 'gapped':
+        byKind.gapped = buildGapped(t, rand).questions;
+        break;
+      case 'grammarfill':
+        byKind.grammarfill = buildGrammarFill(pool, t, rand).questions;
+        break;
+      case 'writing':
+        byKind.writing = buildWriting(
+          L.content === 'senior' ? SENIOR_WRITING : WRITING_TASKS, 'writing', L.id);
+        break;
+      case 'continuation':
+        byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);
+        break;
+      default:
+        console.error(`❌ 未知题型 ${step.kind}`);
+        process.exit(1);
+    }
+    const label = {
+      grammar: '语法选择', cloze: '完形填空', reading: '阅读理解', bankfill: '选词填空',
+      gapped: '七选五', grammarfill: '语法填空', writing: '书面表达', continuation: '读后续写',
+    }[step.kind];
+    console.log(`   ${label} ${byKind[step.kind].length}${pass ? `（${pass}）` : ''}`);
+  }
+
   const total = Object.values(byKind).reduce((a, b) => a + b.length, 0);
   if (total < 3000 || total > 5000) {
     console.error(`❌ 题量 ${total} 超出 3000–5000 区间`);
     process.exit(1);
   }
+  // 保底题量：刷题主体 ≥100，主观题与小题型按其真实产出定下限
+  const FLOOR = {
+    grammar: 100, cloze: 100, reading: 100, bankfill: 100, grammarfill: 100,
+    gapped: 5, writing: 30, continuation: 10,
+  };
   for (const [k, v] of Object.entries(byKind)) {
-    // 书面表达是开放题、每卷只出 1 篇，30 个互不相同的任务已远超日常练习量；
-    // 客观题（语法/完形/阅读/选词）才是刷题主体，保底 100。
-    const floor = k === 'writing' ? 30 : 100;
+    const floor = FLOOR[k] ?? 100;
     if (v.length < floor) {
       console.error(`❌ 题型 ${k} 只有 ${v.length} 题（至少 ${floor}）`);
       process.exit(1);
     }
   }
 
-  const papers = buildPapers(byKind, L.paperNames, L.paperKeys);
+  const papers = buildPapers(byKind, L.plan, L.paperNames, L.paperKeys);
   const { kinds, bytes, gz } = writeShards(outDir, lexId, byKind);
-  const manifest = writeManifest(outDir, lexId, L.exam, kinds, byKind, papers, L.paperKeys);
+  const manifest = writeManifest(outDir, lexId, L.exam, kinds, byKind, papers, L.paperKeys, L.plan);
 
   if (!quiet) {
     const raw = Object.values(bytes).reduce((a, b) => a + b, 0);
     const gzTotal = Object.values(gz).reduce((a, b) => a + b, 0);
     const maxBytes = Math.max(...Object.values(bytes));
+    const paperCount = Object.keys(papers).length;
+    const paperLen = paperCount ? papers[L.paperKeys[0]].ids.length : 0;
     console.log(`📘 [${lexId}] ${L.label}题库已生成: ${path.relative(ROOT, outDir)}/`);
     console.log(`   题量: ${total}（${Object.entries(byKind).map(([k, v]) => `${k} ${v.length}`).join(' · ')}）`);
     console.log(`   分片: ${Object.keys(bytes).length} 个，最大 ${(maxBytes / 1024).toFixed(1)} KB（上限 1464.8 KB）`);
-    console.log(`   模拟卷: ${Object.keys(papers).length} 套 × 40 题`);
+    console.log(`   模拟卷: ${paperCount} 套 × ${paperLen} 题`);
     console.log(`   体积: raw ${(raw / 1024 / 1024).toFixed(2)} MB（gzip ${(gzTotal / 1024 / 1024).toFixed(2)} MB）`);
     console.log(`   模拟卷构成: ${JSON.stringify(manifest.papers[L.paperKeys[0]].structure)}`);
   }

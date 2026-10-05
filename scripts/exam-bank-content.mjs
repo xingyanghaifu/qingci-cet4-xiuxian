@@ -1541,3 +1541,523 @@ export const WRITING_TASKS = [
   { genre: '话题作文', prompt: '以 The Importance of Time 为题，谈谈珍惜时间的理由与做法。', min: 60, max: 100 },
   { genre: '话题作文', prompt: '以 My Hobby 为题，介绍你的一个爱好、坚持的时间以及它带给你的收获。', min: 60, max: 100 },
 ];
+
+/* =========================== 7. 高中（高考）素材 =========================== */
+
+/** 高中完形/阅读的补充池（复用初中已有的 weather/outing/feel/… 之外的场景词） */
+export const SENIOR_SLOTS = {
+  inst: ['violin', 'piano', 'guitar', 'drum'],
+  learnPast: ['learned', 'seen', 'done', 'got', 'heard'],
+  town: ['town', 'village', 'city', 'street', 'market'],
+  tech: ['phone', 'computer', 'camera', 'machine', 'robot'],
+  news: ['newspaper', 'report', 'magazine', 'article', 'letter'],
+  interview: ['question', 'answer', 'story', 'idea', 'plan'],
+  craft: ['tool', 'brush', 'knife', 'thread', 'wood'],
+  newsPast: ['reported', 'answered', 'wrote', 'took', 'made'],
+  busy: ['busy', 'fast', 'hard', 'difficult', 'popular'],
+};
+
+/**
+ * 高中完形：与初中同一套 10 空机制，题材换成更「高中生」的场景。
+ * 每篇恰好 10 个可空键（模拟卷按整篇取用，2 篇 = 20 空）。
+ * 注意叙述时态：过去时叙事里动词一律用 xxxPast 池，`to ___` 之后用原形池。
+ */
+export const SENIOR_CLOZE_SKELETONS = [
+  {
+    id: 'sencloze-volunteer',
+    theme: '志愿服务',
+    sents: [
+      'Last {T1}, a group of students went to a nursing home near the {PLACE1}.',
+      '{NAME} and {HISHER} classmates {V1@playPast} there by bus and brought some {N2@gift}.',
+      'The old people were {A1@glad} to see them.',
+      'One student {V2@sayPast} a poem, and another played the {N3@inst}.',
+      'They also helped the workers clean the {N1@flat} and wash the windows.',
+      'Before leaving, they gave each old person a hand-made {N4@gift}.',
+      'Everyone agreed it was a wonderful day.',
+      'On the way back they talked about what they had {V3@learnPast}.',
+      'They decided to {V4@goish} there again next month.',
+      'The head teacher was proud of what they did.',
+    ],
+  },
+  {
+    id: 'sencloze-craft',
+    theme: '传统手艺',
+    sents: [
+      'On {T1} afternoon our class visited a small workshop in the {PLACE1}.',
+      'An old craftsman showed the students how to use a {N1@craft}.',
+      'He said the skill took him {NUM1} years to learn.',
+      'The students watched {A1@feel} because they had never seen it before.',
+      'Then each of them {V1@sayPast} a question about the working process.',
+      'The craftsman {V2@sayPast} them that patience was the most important {N2@craft}.',
+      'He let the students try with a {N3@craft} in their own hands.',
+      'Some of the works looked {A2@room} in the end.',
+      'The visit taught us to {V3@goish} the old art.',
+      'The class decided to {V4@play} a part in protecting the art.',
+    ],
+  },
+  {
+    id: 'sencloze-interview',
+    theme: '校园采访',
+    sents: [
+      'Last {T1}, the school newspaper interviewed a famous reporter in the {PLACE1}.',
+      '{HE} answered every {N1@interview} patiently.',
+      'He said he read {N2@news} every {T2}.',
+      'Reading made him think {R1@leisure} and write better.',
+      'When asked about his success, he {V1@sayPast} it was all about hard work.',
+      'The whole team {V2@newsPast} the story the next day.',
+      'It became one of the most popular {N3@news} in our school.',
+      'Students still {V3@sayPast} about it weeks later.',
+      'We learned that a good {N4@interview} needs both skill and respect.',
+      'The experience changed how we look at news.',
+    ],
+  },
+  {
+    id: 'sencloze-green',
+    theme: '环保科技',
+    sents: [
+      'Our city has built a new {N2@tech} to keep the {PLACE1} clean.',
+      'The {N1@tech} can sort waste automatically every day.',
+      'It works {R1@leisure} and never breaks down.',
+      'Last year the city {V1@sayPast} the plan in several schools.',
+      'Students were asked to {V2@goish} plastic bottles to special bins.',
+      'The result was {A1@green} than anyone had expected.',
+      'Roughly {NUM1} kilograms of {N4@litter} were saved each week.',
+      'Experts call it a {A2@outing} example for other cities.',
+      'People believe the idea will {V3@play} an important part in the future.',
+      'It shows that small {N3@act} can change a city.',
+    ],
+  },
+];
+
+/**
+ * 高中阅读：每篇 4 题 = 细节 2 + 主旨 1 + 词义 1（高考阅读每题 2 分的常见形态）。
+ * 正解机制与初中一致：细节答案来自短文事实、主旨来自本篇、词义来自文中词的释义。
+ */
+export const SENIOR_READING_SKELETONS = [
+  {
+    id: 'senread-teaching',
+    mainIdea: '一次难忘的支教经历',
+    howManyQ: 'According to the passage, how many students went to the village? ___',
+    sents: [
+      'Last {T1}, {NAME} and {NUM1} other students went to teach in a small {N1@place}.',
+      'The village lay {NUM2} kilometres from the nearest town.',
+      'Classes there were held in a {N2} without modern equipment.',
+      '{HE} taught the children {N3@subject} and told them stories about the {PLACE1}.',
+      'After class the children {V1@playPast} with {HIM} on the hill.',
+      '{HE} gave each child a {N4@gift} before leaving.',
+      'On the last day the whole village came to say goodbye.',
+      '{HE} promised to {V2@goish} back the next summer.',
+    ],
+    facts: ['when', 'howMany'],
+  },
+  {
+    id: 'senread-city',
+    mainIdea: '城市与乡村生活方式的对比',
+    howManyQ: 'According to the passage, how many years did the man work in the city? ___',
+    sents: [
+      'For about {NUM1} years {NAME} worked in a big city near the {PLACE1}.',
+      'Life there was {A1@busy} but never boring.',
+      'Every morning {HE} {V1@goish} to the office by subway.',
+      '{HE} liked the city because of its {N1@tech} and convenient services.',
+      'However, {HE} missed the quiet {N2@town} where he grew up.',
+      'So every {T1} {HE} returned to visit {HISHER} parents.',
+      'The village now has {NUM2} new houses and a small library.',
+      'People say the two places are becoming more and more alike.',
+    ],
+    facts: ['howMany', 'where'],
+  },
+  {
+    id: 'senread-habit',
+    mainIdea: '一项关于阅读习惯的调查',
+    howManyQ: 'According to the passage, how many students were surveyed? ___',
+    sents: [
+      'A recent survey shows that {NUM1} students in our city were asked about reading.',
+      'About half of them read {N1@news} every week.',
+      'Students who read more often usually feel {A1@busy} about their study.',
+      'The library near the {PLACE1} stays open until nine in the evening.',
+      'On {T1} the library held a reading corner where many book lovers met.',
+      'They exchanged ideas about their favourite {N2@bookish}.',
+      'Experts believe the habit helps young people think {R1@leisure}.',
+      'The survey report {V1@newsPast} at the end of last month.',
+    ],
+    facts: ['howMany', 'where'],
+  },
+  {
+    id: 'senread-craftsman',
+    mainIdea: '一位工匠的坚持',
+    howManyQ: 'According to the passage, how many years has he made umbrellas? ___',
+    sents: [
+      '{NAME} has made umbrellas by hand for {NUM1} years.',
+      'His small shop stands at the end of a narrow {N1@town}.',
+      'Each umbrella needs about {NUM2} steps before it is ready.',
+      'He works carefully and never {V1@sayPast} when a piece is wrong.',
+      'Young people rarely choose this {A1@outing} job today.',
+      'Still, {HE} believes the skill should not disappear in history.',
+      'Last {T1} a museum invited {HIM} to show his {N2@craft} to visitors.',
+      'Many visitors called the work a piece of living history.',
+    ],
+    facts: ['when', 'howMany'],
+  },
+  {
+    id: 'senread-space',
+    mainIdea: '航天科普走进校园',
+    howManyQ: 'According to the passage, how many students joined the activity? ___',
+    sents: [
+      'On {T1} a scientist gave a talk on space at our school.',
+      'She showed pictures of the {N1@tech} used in space travel.',
+      'The {PLACE1} was full of students who love science.',
+      'She said a rocket must travel fast to leave the earth.',
+      '{NUM1} students joined the question-and-answer part after the talk.',
+      'Many of them hoped to study {N2@subject} at university.',
+      'The scientist asked us to stay {A1@curious} and keep asking why.',
+      'The activity made science feel {A2@outing} instead of difficult.',
+    ],
+    facts: ['when', 'howMany'],
+  },
+  {
+    id: 'senread-culture',
+    mainIdea: '跨文化交流中的一次误会',
+    howManyQ: 'According to the passage, how many days did the exchange programme last? ___',
+    sents: [
+      'A student from abroad came to our school for a {NUM1}-day exchange programme.',
+      'She stayed with a family near the {PLACE1}.',
+      'At first they had a small misunderstanding about daily {N1@news}.',
+      'Thanks to the host family, the problem was solved {R1@leisure}.',
+      'They cooked {N2@food} together on the evening of {T1}.',
+      'She recorded everything and shared {HISHER} {N3@interview} online.',
+      'The story received many comments from readers that night.',
+      'Everyone agreed that direct talk works better than silence.',
+    ],
+    facts: ['howMany', 'where'],
+  },
+];
+
+/**
+ * 七选五（gapped）：`sents` 是完整行文，`gaps` 抽走其中 5 句成空（0 起序号），
+ * 被抽走的句子就是正解；`distractors` 是 2 个**放不进任何位置**的干扰句
+ * —— 每题给同一份 7 句选项（5 正 + 2 干扰），与真实题型一致。
+ */
+export const GAPPED_SKELETONS = [
+  {
+    id: 'gap-method',
+    sents: [
+      'Many students want to improve their English but do not know how to start.',
+      'First, set a clear and realistic goal for each week.',
+      'Second, practise speaking with a partner whenever you have a chance.',
+      'Third, review what you have learned before you go to sleep.',
+      'A notebook of useful sentences also helps a lot in writing.',
+      'Fourth, listen to short English programmes twice a week.',
+      'In short, a good method makes progress much easier.',
+      'Do not try to remember everything in a single night.',
+    ],
+    gaps: [1, 2, 3, 5, 6],
+    distractors: [
+      'The weather in that city is usually freezing in winter.',
+      'He bought a new bike and rode it to the market every Sunday.',
+    ],
+  },
+  {
+    id: 'gap-survey',
+    sents: [
+      'A recent survey asked students how they spend their free time.',
+      'Some students reported that they spend most of their time online.',
+      'About half said they prefer outdoor activities to computer games.',
+      'Sports and short trips were chosen by a large number of students.',
+      'Reading remains the third most popular choice among them.',
+      'The survey covered more than one thousand students in different schools.',
+      'The results surprised many teachers in our city.',
+      'Music and drawing also became popular among girls in recent years.',
+      'Young people still enjoy activities that help them relax.',
+      'Experts suggest that a balanced plan is the key to a happy school life.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The price of oil rose sharply in the international market last week.',
+      'My little sister prefers milk to juice before she goes to bed.',
+    ],
+  },
+  {
+    id: 'gap-hobby',
+    sents: [
+      'Hobbies are more than simple ways to kill time.',
+      'They can also open a door to a future job or a lifelong interest.',
+      'A student who loves painting may discover talent in art classes.',
+      'Sports build courage, and team games teach players to cooperate.',
+      'Music, for example, trains the ear and the memory at the same time.',
+      'People with hobbies usually feel less stressed after busy days.',
+      'They also teach us to keep trying when something is difficult.',
+      'That is why schools often encourage students to join clubs.',
+      'In other words, a good hobby can change the way we study.',
+      'Choose one hobby, give it time, and you may surprise yourself.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The bus timetable changed again because of the road repair near the station.',
+      'She put the umbrella into her bag before she left the classroom.',
+    ],
+  },
+  {
+    id: 'gap-health',
+    sents: [
+      'Keeping healthy does not require expensive equipment.',
+      'Small changes in daily life make a bigger difference than people expect.',
+      'A twenty-minute walk after dinner is already a good beginning.',
+      'Regular sleep keeps the mind clear, especially before an exam.',
+      'Breakfast gives the brain the energy it needs for the first class.',
+      'Students who skip breakfast often feel tired in the morning.',
+      'Water is better than sweet drinks during a long school day.',
+      'Stretching between lessons protects the back and the eyes.',
+      'These small habits cost nothing but work very well.',
+      'Start with one habit and keep it for a month before adding another.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The museum will close earlier during the national holiday this year.',
+      'He scored twice in the second half and his team won the match.',
+    ],
+  },
+  {
+    id: 'gap-travel',
+    sents: [
+      'Travelling alone for the first time can be both exciting and difficult.',
+      'The secret is to prepare the important things before you leave.',
+      'A light bag makes it easier to move from one place to another.',
+      'Keeping your passport and money in safe places is never a waste of time.',
+      'Writing down daily costs also helps you stay within the budget.',
+      'A short list of stops keeps the whole journey simple and clear.',
+      'Talking with local people often gives you stories no guidebook has.',
+      'These conversations are usually the best memories of a trip.',
+      'Most importantly, keep your plans a little flexible.',
+      'A small change of plan may lead to something even better.',
+    ],
+    gaps: [1, 3, 5, 7, 9],
+    distractors: [
+      'The library purchased five hundred new books for the reading week.',
+      'My neighbour practices the piano every evening without exception.',
+    ],
+  },
+];
+
+/**
+ * 语法填空（高考）：短文 10 空。
+ *   · `Gv<序>|<原形>|<形态>` 有提示词 → 空后给 `(原形)`，答案查动词变位表
+ *   · `Ga<序>|<形容词>|<comp|sup>` → 空后给 `(形容词)`，多音节比较/最高级
+ *   · `Gf<序>|<答案>|<选项组>` 无提示词 → 空后不给词，答案在句中已定
+ * 与初中的「单句四选一」不同：空在**篇章**里，靠上下文定形态 —— 这才是语法填空。
+ */
+export const SENIOR_GRAMMAR_FILL_SKELETONS = [
+  {
+    id: 'gfill-letter',
+    sents: [
+      'Dear Tom,',
+      'I have {Gv1|write|pp} to you several times since last term.',
+      'Last month I {Gv2|take|past} part in a speech contest in our {N1@place}.',
+      'The topic was {Gf1|about|prep} how to protect the environment.',
+      'My teacher said the practice was {Ga1|important|comp} for me.',
+      'Everything here is fine, {Gf2|except|prep} the cold weather.',
+      'It has been two years since we {Gv3|meet|past} at the summer camp.',
+      'I am looking forward to {Gv4|hear|ing} from you.',
+      'My parents send their greetings to your family.',
+      'Please write back when you {Gv5|finish|s} your exams.',
+      'The photos I took will {Gv6|speak|b} for themselves.',
+      'Yours, Li Hua',
+    ],
+  },
+  {
+    id: 'gfill-science',
+    sents: [
+      'Science is changing our life in many ways.',
+      'With the help of modern {N1@tech}, people can work at home.',
+      'A report {Gv1|come|pp} out last week says that online study is rising.',
+      'Students who study online should be {Ga1|careful|comp} with their time.',
+      'The teacher explained the rule {Gf1|in|prep} a clear voice.',
+      'Not everyone agrees {Gf2|that|rel} this method is perfect.',
+      'Some students keep {Gv2|lose|ing} their notes after a long screen time.',
+      'Experts suggest {Gv3|take|ing} a short break every hour.',
+      'A good plan can {Gv4|make|b} online study much easier.',
+      'The problem usually {Gv5|get|s} better after a short break.',
+      'That is why {Gf3|both|det} teachers and parents care about it.',
+    ],
+  },
+  {
+    id: 'gfill-travel',
+    sents: [
+      'Last summer our family took a trip to a small town by the sea.',
+      'We arrived there {Gf1|at|prep} five in the afternoon.',
+      'The town is {Ga1|famous|comp} for its old {N1@road}.',
+      'My father {Gv1|take|past} many photos along the beach.',
+      'I {Gv2|see|b} so many fishing boats for the first time.',
+      'The local people were kind {Gf2|to|prep} visitors like us.',
+      'We had {Gv3|eat|pp} seafood in a small restaurant.',
+      'The trip ended with a wonderful evening show.',
+      'It was one of the {Ga2|wonderful|sup} trips I have ever had.',
+      'My mother {Gv4|take|s} a short video of the sunset.',
+      'I hope we can {Gv5|go|b} there again next summer.',
+    ],
+  },
+  {
+    id: 'gfill-reading',
+    sents: [
+      'Reading is still one of the {Ga1|useful|sup} ways to learn.',
+      'A student who reads widely usually writes {Gf1|better|adv} than others.',
+      'Last year our school {Gv1|build|past} a reading corner in the {N1@fac}.',
+      'Since then more and more students {Gv2|come|b} to the corner.',
+      'The corner is open to {Gf2|any|det} student who loves books.',
+      'Teachers advise us {Gv3|spend|ing} at least thirty minutes a day on it.',
+      'Some books are {Ga2|interesting|comp} than others, of course.',
+      'Good readers often ask questions {Gf3|while|conj} they read.',
+      'They also keep notes in a small notebook.',
+      'That habit alone {Gv4|make|s} learning much easier.',
+    ],
+  },
+  {
+    id: 'gfill-sport',
+    sents: [
+      'Our school {Gv1|hold|past} a sports meeting last Friday.',
+      'The {N1} was full of students and teachers that morning.',
+      'Jack ran {Gf1|faster|adv} than anyone in his class.',
+      'His coach was {Ga1|satisfied|comp} with the result.',
+      'Team sports teach us to {Gv2|work|b} with others.',
+      'Some students prefer {Gv3|sit|ing} at home after class.',
+      'A short run in the evening helps them sleep {Gf2|well|adv}.',
+      'Health always comes {Gf3|first|adv} in our class.',
+      'The runners who {Gv4|run|past} hard finally won the team prize.',
+      'So do some sport every day, {Gf4|and|conj} you will feel better.',
+      'Everyone cheered when they crossed the finish line.',
+    ],
+  },
+  {
+    id: 'gfill-festival',
+    sents: [
+      'The Mid-Autumn Festival is one of the {Ga1|important|sup} festivals in China.',
+      'People {Gv1|get|b} together with their families every year.',
+      'My grandmother always {Gv2|make|past} mooncakes by hand.',
+      'My father {Gv3|buy|past} a big lantern for the festival this year.',
+      'The guests were {Ga2|interested|comp} in the {N1@food} we prepared.',
+      'We showed them {Gf1|how|rel} to cut the mooncakes fairly.',
+      'Everyone enjoyed the evening {Gf2|although|conj} it was a little cold.',
+      'The foreigners kept {Gv4|take|ing} photos of the bright moon.',
+      'The festival gave us a chance to share our culture.',
+      'Everyone shared the mooncakes and told old stories.',
+      'The evening was {Ga3|meaningful|comp} for all of us.',
+    ],
+  },
+];
+
+/** 语法填空里「无提示词」空的选项组（答案由骨架烧死，选项成组给） */
+export const FUNCTION_SETS = {
+  prep: ['in', 'on', 'at', 'for', 'with', 'to', 'by', 'from', 'about', 'into', 'over', 'during', 'except'],
+  conj: ['and', 'but', 'because', 'so', 'although', 'while', 'if', 'when'],
+  rel: ['that', 'which', 'who', 'what', 'where', 'when', 'how'],
+  art: ['a', 'an', 'the', '—'],
+  det: ['some', 'any', 'every', 'no', 'another', 'both'],
+  adv: ['well', 'better', 'best', 'hard', 'fast', 'faster', 'first', 'early', 'late'],
+};
+
+/** 高考应用文写作（80 词） */
+export const SENIOR_WRITING = [
+  { genre: '建议信', prompt: '你收到英国笔友的来信，他说英语写作总是拿不到高分。请回信给出两条具体建议。', min: 80, max: 100 },
+  { genre: '建议信', prompt: '你校食堂浪费现象严重。请给校长写一封信，提出至少两条改进措施。', min: 80, max: 100 },
+  { genre: '邀请信', prompt: '你校将举办英语戏剧节。请写邮件邀请外教 Mr. Smith 担任评委并说明安排。', min: 80, max: 100 },
+  { genre: '邀请信', prompt: '你的朋友想了解中国春节。请写邮件邀请他来你家过节，并介绍两项活动。', min: 80, max: 100 },
+  { genre: '申请信', prompt: '你希望加入学校的英语广播站。请写一封申请信，说明你的优势与打算。', min: 80, max: 100 },
+  { genre: '申请信', prompt: '你申请担任国际交流活动的志愿者。请写信说明你的相关经历与优势。', min: 80, max: 100 },
+  { genre: '感谢信', prompt: '你在交换期间受到一户当地家庭的照顾。请写信感谢他们并回忆一件小事。', min: 80, max: 100 },
+  { genre: '道歉信', prompt: '你因病未能参加好友的生日聚会。请写信道歉并说明情况、提出补救办法。', min: 80, max: 100 },
+  { genre: '通知', prompt: '你校将举行英语演讲比赛。请以学生会名义写一则英文通知（时间、地点、要求）。', min: 80, max: 100 },
+  { genre: '通知', prompt: '学校图书馆将举办「一本好书」分享会。请写一则英文通知。', min: 80, max: 100 },
+  { genre: '邮件', prompt: '你参加了为期一周的研学旅行。请给国外笔友写邮件介绍行程与收获。', min: 80, max: 100 },
+  { genre: '邮件', prompt: '你的笔友想来你的城市上大学。请写邮件介绍这座城市与一所大学。', min: 80, max: 100 },
+  { genre: '发言稿', prompt: '请以 Learning from Failure 为题写一篇国旗下讲话的英文发言稿。', min: 80, max: 100 },
+  { genre: '发言稿', prompt: '请写一篇英文发言稿，在班会上介绍一次让你成长的挑战。', min: 80, max: 100 },
+  { genre: '介绍信', prompt: '请写邮件向外国朋友介绍一项中国传统文化（节日/技艺/饮食任选其一）。', min: 80, max: 100 },
+  { genre: '介绍信', prompt: '请写邮件介绍你所在社区的一项便民变化，并说明你的看法。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 The Power of Small Steps 为题，论述小步坚持为何比一次性努力更有效。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 What Makes a Good Teammate 为题，谈谈优秀队友的两项品质并举例。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 My View on Online Learning 为题，谈谈在线学习的优点与不足。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 Protecting the Environment Starts from Us 为题，写出两条你能坚持的做法。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 A Person Who Influenced Me 为题，描述一个人及其对你的影响。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 Reading Beyond Textbooks 为题，谈谈课外阅读对你的帮助。', min: 80, max: 100 },
+  { genre: '图表作文', prompt: '下图是某校学生课外活动时间分配的调查结果。请描述图表并分析原因。', min: 80, max: 100 },
+  { genre: '图表作文', prompt: '下图是近五年某市共享单车使用数量的变化。请描述趋势并给出你的预测。', min: 80, max: 100 },
+  { genre: '书信', prompt: '你收到一封求助信：朋友即将转学，感到难过。请回信安慰并给出建议。', min: 80, max: 100 },
+  { genre: '书信', prompt: '你向出版社推荐一本好书。请写信说明推荐理由与适合的读者。', min: 80, max: 100 },
+  { genre: '投稿', prompt: '向校报英文版投稿：以 One Meaningful Volunteer Day 为题记一次志愿活动。', min: 80, max: 100 },
+  { genre: '投稿', prompt: '向校报英文版投稿：介绍你所在班级最近开展的一项活动。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 How to Manage Your Time 为题，给出三条可执行的时间管理建议。', min: 80, max: 100 },
+  { genre: '话题作文', prompt: '以 The Value of Honesty 为题，用一个事例说明诚实的价值。', min: 80, max: 100 },
+];
+
+/** 高考读后续写：给定段落 + 续写要求（两段式，150 词左右） */
+export const SENIOR_CONTINUATION = [
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'Last Sunday, on the way home from the library, I found a wallet lying on the ground. Inside there was some money and a student card with a name I did not know. I decided to wait for the owner instead of going home right away.',
+    sub: '段落一：Suddenly, a worried girl came back and looked around carefully.\n段落二：After she got the wallet back, she invited me to…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'Our class planned to give the head teacher a special gift on Teachers\' Day. We had only three days and very little money, so we had to think of something simple but meaningful. Everyone offered an idea, but none of us felt sure.',
+    sub: '段落一：Just then, Lily raised her hand and said, "What about…"\n段落二：On that afternoon, when the teacher opened the door, she…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'I had promised to take part in the school running race, but a bad cold kept me in bed for a whole week. With only two days left before the race, my father asked me whether I still wanted to run.',
+    sub: '段落一：Looking out of the window, I made up my mind.\n段落二：When the starting gun finally went off, I…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'The old man always sat alone at the end of the park bench every evening. One day my friend and I decided to say hello to him. He smiled, but he did not say a word, and we began to wonder whether he could hear us.',
+    sub: '段落一：The next evening, we brought a small gift with us.\n段落二：Only then did we learn why he came to the park every day…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'Our basketball team was losing by ten points in the last quarter. Nobody spoke in the timeout until our captain stood up and said that the game was not over yet.',
+    sub: '段落一：Back on the court, we changed our plan completely.\n段落二：With three seconds left, the ball came to my hands…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'When the new student arrived, everyone noticed that she always ate lunch alone. One noon, instead of joining my friends, I walked towards her table and put my lunch box down.',
+    sub: '段落一：She looked at me in surprise, and then…\n段落二：A month later, when she finally spoke in class…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'My grandfather kept a small notebook in which he wrote down one sentence every day. Curious, I opened it one afternoon and found that the last page was dated ten years ago.',
+    sub: '段落一：I ran to my grandfather and asked him about the date.\n段落二：That evening, I took out a notebook of my own and…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'The science competition was only two weeks away, and our model plane still could not fly properly. Tired and frustrated, some teammates wanted to give up and hand in the simplest project.',
+    sub: '段落一：I picked up the broken wing and said that we still had time.\n段落二：On the day of the competition, our plane…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'It rained heavily on the morning of the sports meeting. Everyone believed the event would be put off, but the head teacher appeared on the playground with a smile.',
+    sub: '段落一：He clapped his hands and told us to line up as usual.\n段落二：Later that day, something unexpected happened…',
+    min: 110, max: 150,
+  },
+  {
+    genre: '读后续写',
+    prompt: '阅读下面材料，根据其内容和所给段落开头语续写两段，使之构成一篇完整的短文。',
+    passage: 'I had always been afraid of speaking in front of a crowd. When our teacher asked for a volunteer to present the group project, my hand went up before I could think twice.',
+    sub: '段落一：Standing in front of the class, my mind suddenly went blank.\n段落二：When I finished, the class…',
+    min: 110, max: 150,
+  },
+];

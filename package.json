@@ -1,7 +1,7 @@
 {
   "name": "qingci-cet4-xiuxian",
-  "version": "1.8.2",
-  "description": "青词天路 · 四级全卷修仙 —— CET-4 / CET-6 双词库 + 六种记忆题型 + 对战模式 + 学情看板（单文件自包含 HTML，零运行时依赖）",
+  "version": "1.9.0",
+  "description": "青词天路 · 全学段修仙 —— 初中 / 高中 / CET-4 / CET-6 四词库 + 六种记忆题型 + 对战模式 + 学情看板（单文件自包含 HTML，零运行时依赖）",
   "private": true,
   "type": "commonjs",
   "main": "src/core/quiz.js",

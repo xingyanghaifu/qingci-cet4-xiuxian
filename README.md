@@ -2,8 +2,8 @@
 
 > 把枯燥的 CET-4 背词，做成有进度感、有对抗、有反馈的修仙历程。
 
-[![version](https://img.shields.io/badge/version-1.8.2-0e6b53)](CHANGELOG.md)
-[![tests](https://img.shields.io/badge/tests-428%20passing-176b3f)](tests/)
+[![version](https://img.shields.io/badge/version-1.9.0-0e6b53)](CHANGELOG.md)
+[![tests](https://img.shields.io/badge/tests-448%20passing-176b3f)](tests/)
 [![coverage](https://img.shields.io/badge/coverage-100%25%20lines%20(core)-176b3f)](tests/)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-0-a56d22)](#技术特色)
 [![pwa](https://img.shields.io/badge/PWA-installable%20%2B%20offline-0e6b53)](#pwa-安装到桌面与离线可用)

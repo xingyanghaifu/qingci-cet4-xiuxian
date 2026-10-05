@@ -1033,9 +1033,86 @@ function reportError(msg, detail){
 window.addEventListener('error',(e)=>{ reportError('页面脚本执行出错，部分功能可能暂时不可用。', e.message||''); });
 window.addEventListener('unhandledrejection',(e)=>{ reportError('有一个异步操作失败了。', (e.reason&&e.reason.message)||e.reason||''); });
 const SCHEMA_VERSION = 4;
-const WORDS = JSON.parse(document.getElementById("lexicon").textContent);
+/* ── 词库词源（v1.9.0 阶段 A）─────────────────────────────────
+   WORDS / byWord 是背单词、形近干扰项、选词填空、模考、词谱、斗法的共同词源。
+   切词库若不换词源，等于换了名字没换内容 ——「初中词库」会考四级的词。
+   默认 CET-4 用内联那份，**一个请求都不发**；其余词库按需取
+   lexicons/<id>/wordlist.json（~100 KB，SW 可缓存、离线可用）。
+   硬约束：词库数据不内联进主文件，所以必须是独立 JSON。 */
+const LEXICON_INLINE = JSON.parse(document.getElementById("lexicon").textContent);
+let WORDS = LEXICON_INLINE;
 const PAPERS = JSON.parse(document.getElementById("papers").textContent);
-const byWord = new Map(WORDS.map((w) => [w.w, w]));
+let byWord = new Map(WORDS.map((w) => [w.w, w]));
+const LX_WORD_CACHE = Object.create(null);
+let LX_WORD_REQ = 0;
+function applyLexiconWords(id, list) {
+  WORDS = list;
+  byWord = new Map(list.map((w) => [w.w, w]));
+  LX_WORD_CACHE[id] = list;
+  return list.length;
+}
+/** 词源切换：回调 (ok, changed)。changed=false 表示词源本来就没变（启动时的 CET-4）。 */
+function useLexiconWords(id, done) {
+  const lex = String(id || 'cet4');
+  const finish = (ok, changed) => { try { done && done(ok, changed); } catch (e) { /* 回调异常不打断 */ } };
+  if (!lex || lex === 'cet4') {
+    if (WORDS !== LEXICON_INLINE) { applyLexiconWords('cet4', LEXICON_INLINE); finish(true, true); return; }
+    finish(true, false); return;
+  }
+  const cached = LX_WORD_CACHE[lex];
+  if (cached && cached.length) {
+    if (WORDS !== cached) { applyLexiconWords(lex, cached); finish(true, true); return; }
+    finish(true, false); return;
+  }
+  const seq = ++LX_WORD_REQ;
+  fetch('lexicons/' + lex + '/wordlist.json', { cache: 'force-cache' })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+    .then(function (arr) {
+      if (!Array.isArray(arr) || !arr.length) throw new Error('词源为空');
+      if (seq !== LX_WORD_REQ) return;              // 期间又切走了，丢弃过期响应
+      applyLexiconWords(lex, arr);
+      finish(true, true);
+    })
+    .catch(function (err) {
+      if (seq !== LX_WORD_REQ) return;
+      try { console.warn('词源取回失败，保持当前词库的词', err); } catch (e) { /* ignore */ }
+      finish(false, false);
+    });
+}
+/** 当前词库 id —— 进度/错题本/复习队列按它隔离；模块未就绪时回落 CET-4 */
+function lxScope() {
+  try { return (window.__lexiconId && window.__lexiconId()) || 'cet4'; } catch (e) { return 'cet4'; }
+}
+function onLexiconWords(id) {
+  useLexiconWords(id, function (ok, changed) {
+    if (!ok) { try { toast('词源加载失败，练习暂用上一个词库的词'); } catch (e) { /* ignore */ } return; }
+    if (changed) { try { render(); } catch (e) { /* ignore */ } }
+  });
+}
+/* 题库来源跟随词库（v1.9.0 阶段 A/B）：
+   1) 切题库来源，杜绝「初中练习抽到四级题」；
+   2) 预取该词库的考试题卷，让「切换 → 开卷」之间多半已就绪（取不到也不打断切换）；
+   3) 模考考试项与词库对齐（初中 → 中考卷、高中 → 高考卷），即 C2 的题型自适配。 */
+function onLexiconBank(id) {
+  try {
+    var svc = window.__QINGCI_BANK__;
+    if (!svc || !svc.setLexicon) return;
+    svc.setLexicon(id);
+    var examId = EXAM_CONFIGS[id] ? id : null;
+    if (examId && state.examId !== examId) {
+      state.examId = examId;
+      save();
+      // renderExamMeta() 会把 state.examId 同步进 #examSelect，无需手动写 value
+      try { if (typeof renderExamMeta === 'function') renderExamMeta(); } catch (e) { /* ignore */ }
+    }
+    if (id && id !== 'cet4') svc.load();
+  } catch (e) { /* 题库不可用不影响切换与做题 */ }
+}
+window.addEventListener('qingci:lexicon', function (e) { onLexiconBank(e && e.detail && e.detail.id); });
+// 启动：若上次选了非默认词库，把内联词源换成它的词
+window.addEventListener('qingci:lexicon-ready', function (e) { onLexiconWords(e && e.detail && e.detail.id); });
+window.addEventListener('qingci:lexicon', function (e) { onLexiconWords(e && e.detail && e.detail.id); });
+window.addEventListener('qingci:lexicon-ready', function (e) { onLexiconBank(e && e.detail && e.detail.id); });
 const $ = (id) => document.getElementById(id);
 const state = load();
 let current = null, locked = false, paper = null, timer = 0, speakStep = 0, duel = null, duelTick = 0;
@@ -1176,10 +1253,72 @@ function playAudio(){ const text=audioText(); if(!text) return; if(state.audioBo
 function replayAudio(){ if(window.speechSynthesis) speechSynthesis.cancel(); clearInterval(audioState.timer); audioState.paused=false; $("audioProgress").value=0; speak(audioText(),$("audioRate").value); }
 function saveActivePaper(){ if(!paper){ delete state.activePaper; } else { state.activePaper={paperId:paper.meta.id,cursor:paper.cursor,left:paper.left,got:paper.got}; } save(); }
 function restorePaper(){ const a=state.activePaper; if(!a) return false; const meta=PAPERS.find(p=>p.id===a.paperId); if(!meta) return false; const queue=[]; const add=(gate,kind,n)=>{ for(let i=0;i<n;i++) queue.push({gate,kind}); }; add('write','write',1); add('news','news',7); add('talk','talk',8); add('passage','passage',10); add('bank','bank',10); add('match','match',10); add('detail','detail',10); add('trans','trans',1); paper={meta,queue,cursor:Math.min(a.cursor,queue.length),left:Math.max(0,a.left),got:a.got||{}}; if(paper.cursor>=queue.length){delete state.activePaper;return false;} return true; }
-function buildExamQueue(examId=state.examId||'cet4'){ const ex=EXAM_CONFIGS[examId]||EXAM_CONFIGS.cet4; const queue=[]; let meta={id:ex.id,name:ex.name,scene:'原创整套模拟',focus:'按当前境界动态调难'}; if(examId==='cet4'&&state.selected){ meta=selectedPaper(); const add=(gate,kind,n)=>{for(let i=0;i<n;i++)queue.push({gate,kind,source:'original-simulation'});}; add('write','write',1);add('news','news',7);add('talk','talk',8);add('passage','passage',10);add('bank','bank',10);add('match','match',10);add('detail','detail',10);add('trans','trans',1); return {exam:ex,meta,queue,source:'原创模拟'}; } for(let i=0;i<ex.count;i++){ const kind=i%5===0?'exam-read':i%4===0?'exam-grammar':'exam-words'; queue.push({gate:kind,kind,source:'原创练习'}); } return {exam:ex,meta,queue,source:'原创练习'}; }
-function startPaper(){ const built=buildExamQueue(); paper={examId:built.exam.id,exam:built.exam,meta:built.meta,queue:built.queue,cursor:0,left:built.exam.minutes*60,got:{},right:0,source:built.source}; state.examId=built.exam.id; saveActivePaper(); $("paperProgress").textContent=built.exam.name+' · 0 / '+built.queue.length+' · '+built.source; $("sidePaper").textContent=built.exam.name+'进行中'; $("clock").textContent=String(built.exam.minutes).padStart(2,'0')+':00'; switchTab('trial'); ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); toast(built.exam.name+'整套开卷 · '+built.source); }
+/* ── v1.9.0：词库自带题卷（中考/高考）────────────────────────────
+   中学词库各有自己的题库（grammar/cloze/reading/bankfill/writing 分片），
+   模考直接按题库清单里的「模拟卷构成」组卷 —— 篇章完整性由构建期保证
+   （完形 10 空整组、阅读 2 篇整组、选词 5 空整组），运行时只按 id 取题。
+   返回 null 表示「不适用或未就绪」，由调用方走原有程序化组卷。 */
+const EXAM_KIND_TITLE = {
+  grammar: '语法选择', cloze: '完形填空', reading: '阅读理解', bankfill: '选词填空',
+  writing: '书面表达', grammarfill: '语法填空', gapped: '七选五', continuation: '读后续写',
+};
+function bankExamQueue(ex) {
+  try {
+    const svc = window.__QINGCI_BANK__;
+    if (!svc || !svc.lexicon || !svc.examMeta || !svc.current) return null;
+    if (ex.id !== svc.lexicon()) return null;          // 考试与当前词库不匹配 → 走原有逻辑
+    const meta = svc.examMeta();
+    const bank = svc.current();
+    if (!meta || !bank) return null;                   // 未就绪（startPaper 会先等一拍）
+    const keys = Object.keys(meta.papers || {});
+    if (!keys.length) return null;
+    const pick = keys[(state.examPaperIdx || 0) % keys.length];
+    const paper = meta.papers[pick];
+    if (!paper || !paper.ids || !paper.ids.length) return null;
+    const byId = Object.create(null);
+    for (const q of bank.questions) byId[q.id] = q;
+    const rows = [];
+    for (const qid of paper.ids) {
+      const q = byId[qid];
+      if (!q) return null;                              // 缺题 → 不硬凑，回退程序化组卷
+      rows.push({ gate: q.kind, kind: 'exam-bank', qid: qid, source: '词库题卷' });
+    }
+    const label = meta.exam === 'zhongkao' ? '中考' : meta.exam === 'gaokao' ? '高考' : ex.name;
+    return {
+      exam: { ...ex, count: rows.length },
+      meta: { id: ex.id + ':' + pick, name: paper.name || (label + '原创模拟'), scene: label + '原创模拟', focus: ex.description },
+      queue: rows,
+      source: (paper.name || label + '模拟卷') + ' · 词库题卷',
+    };
+  } catch (e) { return null; }
+}
+/** 词库匹配、但题卷还没载入 → startPaper 会先等它一拍再开卷 */
+function examBankPending(ex) {
+  try {
+    const svc = window.__QINGCI_BANK__;
+    if (!svc || !svc.lexicon || !svc.examMeta) return false;
+    if (ex.id !== svc.lexicon()) return false;
+    if (svc.current && svc.current()) return false;
+    return true;
+  } catch (e) { return false; }
+}
+function buildExamQueue(examId=state.examId||'cet4'){ const ex=EXAM_CONFIGS[examId]||EXAM_CONFIGS.cet4; const queue=[]; let meta={id:ex.id,name:ex.name,scene:'原创整套模拟',focus:'按当前境界动态调难'}; if(examId==='cet4'&&state.selected){ meta=selectedPaper(); const add=(gate,kind,n)=>{for(let i=0;i<n;i++)queue.push({gate,kind,source:'original-simulation'});}; add('write','write',1);add('news','news',7);add('talk','talk',8);add('passage','passage',10);add('bank','bank',10);add('match','match',10);add('detail','detail',10);add('trans','trans',1); return {exam:ex,meta,queue,source:'原创模拟'}; } const bankBuilt=bankExamQueue(ex); if(bankBuilt){ state.examPaperIdx=((state.examPaperIdx||0)+1)%1000; return bankBuilt; } for(let i=0;i<ex.count;i++){ const kind=i%5===0?'exam-read':i%4===0?'exam-grammar':'exam-words'; queue.push({gate:kind,kind,source:'原创练习'}); } return {exam:ex,meta,queue,source:'原创练习'}; }
+function startPaper(){ if(!startPaper.tried && examBankPending(EXAM_CONFIGS[state.examId||'cet4']||EXAM_CONFIGS.cet4)){ startPaper.tried=true; toast('正在载入词库题卷…'); const go=function(){ if(!paper) startPaper(); }; try{ const p=window.__QINGCI_BANK__.load(); if(p&&p.then){ p.then(go,go); return; } }catch(e){} go(); return; } startPaper.tried=false; const built=buildExamQueue(); paper={examId:built.exam.id,exam:built.exam,meta:built.meta,queue:built.queue,cursor:0,left:built.exam.minutes*60,got:{},right:0,source:built.source}; state.examId=built.exam.id; saveActivePaper(); $("paperProgress").textContent=built.exam.name+' · 0 / '+built.queue.length+' · '+built.source; $("sidePaper").textContent=built.exam.name+'进行中'; $("clock").textContent=String(built.exam.minutes).padStart(2,'0')+':00'; switchTab('trial'); ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); toast(built.exam.name+'整套开卷 · '+built.source); }
 function buildExamQuestion(item,index){ const ex=paper.exam; const realmIndex=realm().index; const difficulty=difficultyForRealm(realmIndex); const pool=WORDS.filter(w=>w.w!==item.w); const rand=rng(hash('exam|'+ex.id+'|'+realmIndex+'|'+index)); const opts=[item,...pick(pool,3,rand)].map(w=>[rand(),w]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); return {kind:'words',examKind:true,source:item.source||paper.source||'原创练习',difficulty,prompt:index%2?item.w:item.short,sub:ex.name+' · 难度 '+difficulty+' / 5 · '+(item.ipa||''),choices:index%2?opts.map(w=>w.short):opts.map(w=>w.w),answer:index%2?item.short:item.w,word:item.w,explain:item.w+' '+item.ipa+' '+item.zh,title:ex.name+' · '+(index%3===0?'词汇理解':'词义辨析')}; }
-function nextExamQuestion(){ if(!paper)return null; const row=paper.queue[paper.cursor]; if(row.kind==='exam-words'||row.kind==='exam-read'||row.kind==='exam-grammar'){ const difficulty=difficultyForRealm(realm().index); const examLevel=paper.exam.level; const targetLen=Math.min(12,Math.max(3,2+difficulty+Math.floor(examLevel/2))); const bank=WORDS.filter(w=>{ const len=w.w.length; return difficulty<=2?len<=Math.max(5,targetLen):difficulty<=4?len>=Math.max(3,targetLen-2)&&len<=targetLen+2:len>=targetLen; }); const candidates=bank.filter(w=>w.w.length>=3); const item=candidates[(paper.cursor*37+state.seen*13)%candidates.length]||WORDS[(paper.cursor*37+state.seen*13)%WORDS.length]; const q=buildExamQuestion({...item,source:row.source},paper.cursor); if(row.kind==='exam-read'){ q.prompt='阅读词义后选择最合适的表达：'+item.short; q.title=paper.exam.name+' · 阅读理解'; } if(row.kind==='exam-grammar'){ q.prompt='判断 '+item.w+' 的词性或释义'; q.title=paper.exam.name+' · 语法词汇'; } return q; } return makeQuestion(row.kind,paper.meta,paper.cursor); }
+/** v1.9.0：按 qid 取词库题库里的题，并套上模考标题（题干/选项/解析均由题库自带） */
+function bankQuestionById(qid, gate){
+  try{
+    const svc=window.__QINGCI_BANK__; if(!svc||!svc.current||!svc.toAppQuestion) return null;
+    const bank=svc.current(); if(!bank) return null;
+    let raw=null; for(const q of bank.questions){ if(q.id===qid){ raw=q; break; } }
+    if(!raw) return null;
+    const q=svc.toAppQuestion(raw);
+    const kindTitle=EXAM_KIND_TITLE[gate]||EXAM_KIND_TITLE[raw.kind]||'原创题';
+    q.title=((paper&&paper.exam&&paper.exam.name)||'模考')+' · '+kindTitle;
+    return q;
+  }catch(e){ return null; }
+}
+function nextExamQuestion(){ if(!paper)return null; const row=paper.queue[paper.cursor]; if(row.qid){ const bq=bankQuestionById(row.qid,row.gate); if(bq) return bq; } if(row.kind==='exam-words'||row.kind==='exam-read'||row.kind==='exam-grammar'){ const difficulty=difficultyForRealm(realm().index); const examLevel=paper.exam.level; const targetLen=Math.min(12,Math.max(3,2+difficulty+Math.floor(examLevel/2))); const bank=WORDS.filter(w=>{ const len=w.w.length; return difficulty<=2?len<=Math.max(5,targetLen):difficulty<=4?len>=Math.max(3,targetLen-2)&&len<=targetLen+2:len>=targetLen; }); const candidates=bank.filter(w=>w.w.length>=3); const item=candidates[(paper.cursor*37+state.seen*13)%candidates.length]||WORDS[(paper.cursor*37+state.seen*13)%WORDS.length]; const q=buildExamQuestion({...item,source:row.source},paper.cursor); if(row.kind==='exam-read'){ q.prompt='阅读词义后选择最合适的表达：'+item.short; q.title=paper.exam.name+' · 阅读理解'; } if(row.kind==='exam-grammar'){ q.prompt='判断 '+item.w+' 的词性或释义'; q.title=paper.exam.name+' · 语法词汇'; } return q; } return makeQuestion(row.kind,paper.meta,paper.cursor); }
 function finishPaper(){ if(!paper)return; if(paper.cursor<paper.queue.length&&!confirm('当前已完成 '+paper.cursor+' / '+paper.queue.length+' 题，交卷后不计未答题。'))return; clearInterval(timer); const ex=paper.exam||selectedExam(); const score=Math.round(((paper.right||0)/paper.queue.length)*ex.total); const passed=score>=ex.pass; const completed=paper.cursor>=paper.queue.length; state.records[paper.meta.id]={score,pass:passed,completed,examId:ex.id,source:paper.source,at:Date.now()}; if(window.QingciFinishPaper) window.QingciFinishPaper(paper,ex,score,passed,completed); state.papers++; state.bestScore=Math.max(state.bestScore,score); if(completed&&passed){ const gain=Math.max(10,Math.round((ex.total-score+ex.pass)/10)); state.qi+=gain; state.breakthroughExam=ex.id; state.breakthroughs=(state.breakthroughs||0)+1; } save(); renderTop(); renderShelf(); const resultTitle=passed&&completed?'整套通过 · 境界突破！':'尚未达到及格线 · 继续修炼'; $("report").innerHTML='<h3>'+esc(ex.name)+' · '+score+' / '+ex.total+'</h3><p><b>'+resultTitle+'</b> · 及格线 '+ex.pass+' · '+(passed?'通过':'未通过')+'</p><p class="muted">完成 '+paper.cursor+' / '+paper.queue.length+' 题 · 来源：'+esc(paper.source||'原创练习')+'。按当前境界 '+difficultyForRealm(realm().index)+'/5 难度生成；未完成整套不触发突破。</p>'; $("sidePaper").textContent=ex.name+'：'+score+' / '+ex.total+(completed&&passed?' · 已突破':' · 未突破'); paper=null; delete state.activePaper; save(); switchTab('paper'); }
 const SPEAK=[["自我介绍","20 秒","用三句介绍姓名、年级和正在做的事。"],["短文朗读","准备 45 秒，读 1 分钟","The library opens a quiet room for night study."],["简短回答","40 秒","Why do students need a quiet room?"],["个人陈述","准备 45 秒，说 1 分钟","Describe one habit that helps you learn words."],["两人互动","准备 1 分钟，谈 3 分钟","Plan a weekend study group: time, place and one rule."]];
 let recorder=null,recordChunks=[],recordUrl='';
@@ -1318,6 +1457,10 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     var l = manifest && manifest.lexicons.filter(function (x) { return x.id === cur; })[0];
     return l ? l.shortName : 'CET-4';
   };
+  /** 供外部查询当前词库 id（词源、进度、错题本、复习队列都按它作用域隔离） */
+  window.__lexiconId = function () {
+    return LX.current(manifest ? manifest.lexicons : undefined);
+  };
 
   /** 顶栏徽标与词库作用域徽标同步 */
   function paintBadges() {
@@ -1333,6 +1476,10 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
 
   load();
   paintBadges();
+  // 通知主脚本按当前词库换词源（启动时若选了初中/高中/CET-6，需要把内联 CET-4 换掉）
+  try {
+    window.dispatchEvent(new CustomEvent('qingci:lexicon-ready', { detail: { id: window.__lexiconId() } }));
+  } catch (e) { /* 主脚本未就绪则忽略 */ }
   if (document.getElementById('panel-map')) {
     window.addEventListener('qingci:lexicon', function () {
       // 洞府统计与卷面表依赖当前词库，切换后重绘
@@ -1616,7 +1763,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
             ? { kind: 'paper', paperId: paperRef.paperId, gate: paperRef.gate, index: paperRef.index, excerpt: String(prompt).slice(0, 80) }
             : { kind: current.word ? 'word' : 'free', word: current.word, excerpt: String(prompt).slice(0, 80) },
         knowledgeTags: tags,
-      }).then(function () { render(); });
+      }, lxScope()).then(function () { render(); });
     } catch (e) { /* 错题本失败不影响做题 */ }
   };
 
@@ -1662,7 +1809,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   function render() {
     var panel = byId('mistakePanel');
     if (!panel) return;
-    store().all().then(function (all) {
+    store().all(lxScope()).then(function (all) {
       var now = new Date();
       var dueList = S.srs.dueQueue(all, now, 50);
       var list = reviewMode ? dueList : all;
@@ -1710,7 +1857,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       if (rateBtn && card) {
         var id = card.getAttribute('data-id');
         var rating = rateBtn.getAttribute('data-rate');
-        store().rate(id, rating).then(function (outcome) {
+        store().rate(id, rating, undefined, lxScope()).then(function (outcome) {
           if (!outcome) return;
           openIds[id] = false;
           flash('已记录：' + S.srs.describeInterval(outcome));
@@ -1857,7 +2004,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   /* —— 评分回写：与错题本共用 SM-2，但写进 vocab 队列 —— */
   window.QingciRateVocab = function (word, rating, questionId) {
     try {
-      store().rate(word, rating).then(function () {
+      store().rate(word, rating, undefined, lxScope()).then(function () {
         if (rating === 'again' && window.QingciRecordMistake) {
           // 联动心魔：SRS 复习中出错 → 错题本 + 心魔（心魔由 rateWord 内部维护）
           window.QingciRecordMistake({
@@ -1874,7 +2021,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   function collectQueue(mode, plan, skipWords) { var skip={}; (skipWords||[]).forEach(function(w){ skip[w]=1; });
     var s = store();
     var want = mode === 'new' ? Math.max(5, plan.newPerDay) : Math.max(5, Math.min(60, plan.reviewTarget));
-    return s.all().then(function (rows) {
+    return s.all(lxScope()).then(function (rows) {
       var seen = {};
       rows.forEach(function (r) { seen[r.w] = r; });
       var tierOrder = ['high', 'core', 'low', 'recognition'];
@@ -1932,7 +2079,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       byId('vsrsSummary').textContent = '离线数据库不可用';
       return;
     }
-    Promise.all([s.all(), s.stats()]).then(function (res) {
+    Promise.all([s.all(lxScope()), s.stats(undefined, lxScope())]).then(function (res) {
       var rows = res[0];
       var stats = res[1];
       var known = Object.keys(window.state && window.state.known ? window.state.known : {}).length;

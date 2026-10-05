@@ -19,6 +19,8 @@ export interface BankContent {
   answer: string;
   explain?: string;
   passage?: string;
+  /** 篇章分组 id（v1.9.0）：完形/阅读/选词填空的同一篇章共享它，组卷时整组取用 */
+  group?: string;
   write?: boolean;
   min?: number;
   max?: number;

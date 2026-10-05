@@ -1,0 +1,200 @@
+{
+  "schema": "qingci-exam-bank/1",
+  "lexicon": "junior",
+  "exam": "zhongkao",
+  "counts": {
+    "total": 3510,
+    "byKind": {
+      "grammar": 1376,
+      "cloze": 959,
+      "reading": 712,
+      "bankfill": 433,
+      "writing": 30
+    }
+  },
+  "kinds": {
+    "grammar": {
+      "file": "grammar.json",
+      "count": 1376
+    },
+    "cloze": {
+      "file": "cloze.json",
+      "count": 959
+    },
+    "reading": {
+      "file": "reading.json",
+      "count": 712
+    },
+    "bankfill": {
+      "file": "bankfill.json",
+      "count": 433
+    },
+    "writing": {
+      "file": "writing.json",
+      "count": 30
+    }
+  },
+  "papers": {
+    "zk-01": {
+      "name": "中考模拟卷一",
+      "structure": {
+        "grammar": 14,
+        "cloze": 10,
+        "reading": 10,
+        "bankfill": 5,
+        "writing": 1
+      },
+      "ids": [
+        "q_jun_grammar_0001",
+        "q_jun_grammar_0002",
+        "q_jun_grammar_0003",
+        "q_jun_grammar_0004",
+        "q_jun_grammar_0005",
+        "q_jun_grammar_0006",
+        "q_jun_grammar_0007",
+        "q_jun_grammar_0008",
+        "q_jun_grammar_0009",
+        "q_jun_grammar_0010",
+        "q_jun_grammar_0011",
+        "q_jun_grammar_0012",
+        "q_jun_grammar_0013",
+        "q_jun_grammar_0014",
+        "q_jun_cloze_0001",
+        "q_jun_cloze_0002",
+        "q_jun_cloze_0003",
+        "q_jun_cloze_0004",
+        "q_jun_cloze_0005",
+        "q_jun_cloze_0006",
+        "q_jun_cloze_0007",
+        "q_jun_cloze_0008",
+        "q_jun_cloze_0009",
+        "q_jun_cloze_0010",
+        "q_jun_reading_0001",
+        "q_jun_reading_0002",
+        "q_jun_reading_0003",
+        "q_jun_reading_0004",
+        "q_jun_reading_0005",
+        "q_jun_reading_0006",
+        "q_jun_reading_0007",
+        "q_jun_reading_0008",
+        "q_jun_reading_0009",
+        "q_jun_reading_0010",
+        "q_jun_bankfill_0001",
+        "q_jun_bankfill_0002",
+        "q_jun_bankfill_0003",
+        "q_jun_bankfill_0004",
+        "q_jun_bankfill_0005",
+        "q_jun_writing_0001"
+      ]
+    },
+    "zk-02": {
+      "name": "中考模拟卷二",
+      "structure": {
+        "grammar": 14,
+        "cloze": 10,
+        "reading": 10,
+        "bankfill": 5,
+        "writing": 1
+      },
+      "ids": [
+        "q_jun_grammar_0015",
+        "q_jun_grammar_0016",
+        "q_jun_grammar_0017",
+        "q_jun_grammar_0018",
+        "q_jun_grammar_0019",
+        "q_jun_grammar_0020",
+        "q_jun_grammar_0021",
+        "q_jun_grammar_0022",
+        "q_jun_grammar_0023",
+        "q_jun_grammar_0024",
+        "q_jun_grammar_0025",
+        "q_jun_grammar_0026",
+        "q_jun_grammar_0027",
+        "q_jun_grammar_0028",
+        "q_jun_cloze_0031",
+        "q_jun_cloze_0032",
+        "q_jun_cloze_0033",
+        "q_jun_cloze_0034",
+        "q_jun_cloze_0035",
+        "q_jun_cloze_0036",
+        "q_jun_cloze_0037",
+        "q_jun_cloze_0038",
+        "q_jun_cloze_0039",
+        "q_jun_cloze_0040",
+        "q_jun_reading_0021",
+        "q_jun_reading_0022",
+        "q_jun_reading_0023",
+        "q_jun_reading_0024",
+        "q_jun_reading_0025",
+        "q_jun_reading_0026",
+        "q_jun_reading_0027",
+        "q_jun_reading_0028",
+        "q_jun_reading_0029",
+        "q_jun_reading_0030",
+        "q_jun_bankfill_0016",
+        "q_jun_bankfill_0017",
+        "q_jun_bankfill_0018",
+        "q_jun_bankfill_0019",
+        "q_jun_bankfill_0020",
+        "q_jun_writing_0002"
+      ]
+    },
+    "zk-03": {
+      "name": "中考模拟卷三",
+      "structure": {
+        "grammar": 14,
+        "cloze": 10,
+        "reading": 10,
+        "bankfill": 5,
+        "writing": 1
+      },
+      "ids": [
+        "q_jun_grammar_0029",
+        "q_jun_grammar_0030",
+        "q_jun_grammar_0031",
+        "q_jun_grammar_0032",
+        "q_jun_grammar_0033",
+        "q_jun_grammar_0034",
+        "q_jun_grammar_0035",
+        "q_jun_grammar_0036",
+        "q_jun_grammar_0037",
+        "q_jun_grammar_0038",
+        "q_jun_grammar_0039",
+        "q_jun_grammar_0040",
+        "q_jun_grammar_0041",
+        "q_jun_grammar_0042",
+        "q_jun_cloze_0061",
+        "q_jun_cloze_0062",
+        "q_jun_cloze_0063",
+        "q_jun_cloze_0064",
+        "q_jun_cloze_0065",
+        "q_jun_cloze_0066",
+        "q_jun_cloze_0067",
+        "q_jun_cloze_0068",
+        "q_jun_cloze_0069",
+        "q_jun_cloze_0070",
+        "q_jun_reading_0041",
+        "q_jun_reading_0042",
+        "q_jun_reading_0043",
+        "q_jun_reading_0044",
+        "q_jun_reading_0045",
+        "q_jun_reading_0046",
+        "q_jun_reading_0047",
+        "q_jun_reading_0048",
+        "q_jun_reading_0049",
+        "q_jun_reading_0050",
+        "q_jun_bankfill_0031",
+        "q_jun_bankfill_0032",
+        "q_jun_bankfill_0033",
+        "q_jun_bankfill_0034",
+        "q_jun_bankfill_0035",
+        "q_jun_writing_0003"
+      ]
+    }
+  },
+  "papersIndex": [
+    "zk-01",
+    "zk-02",
+    "zk-03"
+  ]
+}

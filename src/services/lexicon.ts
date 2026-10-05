@@ -88,6 +88,19 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/cet6/',
   },
   {
+    // v1.9.0 阶段 A：初中（中考）——默认不选中，用户需主动切换（硬约束 8）
+    id: 'junior',
+    name: '初中词汇（中考）',
+    shortName: '初中',
+    wordCount: 2028,
+    description: '中考课标核心 1603 词 + 拓展词；进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'lexicons/junior/vocab-detail/',
+    wordListPath: 'lexicons/junior/',
+  },
+  {
     id: 'kaoyan',
     name: '考研词汇',
     shortName: '考研',

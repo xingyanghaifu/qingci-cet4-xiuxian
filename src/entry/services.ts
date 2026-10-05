@@ -16,6 +16,7 @@ import { initTheme } from './../services/theme';
 import { cacheInlineDatasets, createOfflineStore } from './../services/offline-store';
 import { createMistakeStore } from './../services/mistake-store';
 import { createBankService } from './../services/question-bank';
+import { currentLexiconId } from './../services/lexicon';
 import { createVocabSrsStore } from './../services/vocab-srs';
 import { createReportStore } from './../services/report-store';
 import { runLegacyMigration, describeMigration, LEGACY_STATE_KEY } from './../services/migrate';
@@ -35,6 +36,13 @@ host.QingciServices = QingciServices;
 
 // 固化题库服务：单例，供随机练习入口复用（含 IndexedDB 缓存与防重复窗口）
 host.__QINGCI_BANK__ = createBankService();
+// v1.9.0：题库来源跟随词库 —— 默认词库继续用单文件题库（v1.8.x 行为），
+// 中学词库切换过去后 load() 才去取各自的分片，避免一上来就多拉 2~3 MB。
+try {
+  host.__QINGCI_BANK__.setLexicon(currentLexiconId());
+} catch {
+  /* 本地存储不可用 → 保持默认题库，不影响做题 */
+}
 
 // 词汇 SRS 仓库：与错题本共用 SM-2 引擎，但队列分开（vocab 仓库）
 host.__QINGCI_VOCAB__ = createVocabSrsStore();

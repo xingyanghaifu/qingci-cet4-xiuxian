@@ -39,6 +39,13 @@ const LEX_DIR = path.join(ROOT, 'src', 'data', 'lexicons');
 const MAX_SHARD_BYTES = 1_500_000;
 const MANIFEST_VERSION = '1';
 
+// 仓库常量放在 LEXICONS 之前：清单里要引用它们做 sourceUrl（否则撞 TDZ）
+const WORDLIST_REPO = 'mahavivo/english-wordlists';
+const CORPUS_REPO = 'ruizer/vocabulary-corpus';
+const ECDICT_REPO = 'skywind3000/ECDICT';
+/** 中学词表与词组增补源（MIT；`json/` 目录为结构化 JSON，含 translations + phrases） */
+const KYLEBING_REPO = 'KyleBing/english-vocabulary';
+
 /* ---------------- 词库定义（与 src/services/lexicon.ts 的 FALLBACK_LEXICONS 对齐） ---------------- */
 
 const LEXICONS = {
@@ -52,6 +59,8 @@ const LEXICONS = {
     reuseExistingDetail: true,
     dataPath: 'vocab-detail/',
     detailDir: path.join(ROOT, 'src', 'data', 'vocab-detail'),
+    // CET-4 的词源就是模板内联那份，不额外产出 wordlist.json（默认词库零请求）
+    wordDir: null,
   },
   cet6: {
     id: 'cet6',
@@ -73,6 +82,36 @@ const LEXICONS = {
      */
     unionWith: ['cet4'],
     markOverlap: 'inCET4',
+    wordDir: path.join(LEX_DIR, 'cet6'),
+  },
+  /**
+   * 初中（中考）—— v1.9.0 阶段 A。
+   *
+   * 词表不再取自 mahavivo 的 `*_edited.txt`（该仓库只有四六级等考纲表），
+   * 而是**双源并集**（谕令给的回退链，实测后取舍）：
+   *   核心：ECDICT `tag` 含 `zk` → 1603 词，正对教育部 2022 课标的 1600 核心词
+   *   拓展：KyleBing/english-vocabulary `1 初中-乱序` 独有 425 词
+   *   合计 2028 词，落在验收区间 [1600, 2200]
+   * 核心词打 `core: true`，UI 可按「只看课标核心」筛选（三处关键说明第 1 条）。
+   *
+   * KyleBing 的 JSON 只参与**词表**（拓展词与释义）；详情仍走
+   * corpus → ECDICT → 词表兜底这条既有链，实测 corpus 覆盖 2010/2028
+   * （自带词组 2010 条），无需再插一个详情源。
+   */
+  junior: {
+    id: 'junior',
+    name: '初中词汇（中考）',
+    shortName: '初中',
+    description: '中考课标核心 1603 词 + 拓展词；进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/junior/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'junior', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'junior'),
+    tagFilter: 'zk',
+    extrasFile: 'json/1-初中-顺序.json',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
 };
 
@@ -87,9 +126,7 @@ const SOURCES = [
   },
   { name: 'raw.githubusercontent', url: (repo, p) => `https://raw.githubusercontent.com/${repo}/master/${p}` },
 ];
-const WORDLIST_REPO = 'mahavivo/english-wordlists';
-const CORPUS_REPO = 'ruizer/vocabulary-corpus';
-const ECDICT_REPO = 'skywind3000/ECDICT';
+// （WORDLIST_REPO / CORPUS_REPO / ECDICT_REPO / KYLEBING_REPO 已声明在 LEXICONS 之前）
 
 const sourceStats = Object.create(null);
 const sourceSeen = new Set();
@@ -145,6 +182,102 @@ function writeCache(lexiconId, rel, text) {
   const f = cachePath(lexiconId, rel);
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(f, text, 'utf8');
+}
+
+/* ---------------- 共享 ECDICT（62.9 MB，全项目只存一份） ---------------- */
+
+const SHARED_ECDICT = path.join(CACHE_DIR, '_shared', 'ecdict.csv');
+
+/**
+ * 读取 ECDICT 全量 CSV。
+ * 中学词表要按 `tag` 筛核心词，详情也要用它兜底，因此改为**跨词库共享一份**——
+ * 早先每个词库各存一份，两个新词库会白占 126 MB。
+ */
+async function sharedEcdict() {
+  if (fs.existsSync(SHARED_ECDICT)) return fs.readFileSync(SHARED_ECDICT, 'utf8');
+  // 复用任一词库已下载的那份（cet6 构建时下过）
+  if (fs.existsSync(CACHE_DIR)) {
+    for (const id of fs.readdirSync(CACHE_DIR)) {
+      const f = path.join(CACHE_DIR, id, 'ecdict.csv');
+      if (fs.existsSync(f)) {
+        fs.mkdirSync(path.dirname(SHARED_ECDICT), { recursive: true });
+        fs.copyFileSync(f, SHARED_ECDICT);
+        console.log(`♻️  复用 ${id} 缓存的 ECDICT → .cache/lexicons/_shared/`);
+        return fs.readFileSync(SHARED_ECDICT, 'utf8');
+      }
+    }
+  }
+  console.log('⬇️  下载 ECDICT（约 63 MB，存档一次后各词库共用）…');
+  const r = await fetchFile(ECDICT_REPO, 'ecdict.csv', { treat404AsFailure: true, timeoutMs: 600000 });
+  if (r.missing) {
+    console.warn(`   ⚠️ ECDICT 不可达（${r.reason || '三源均失败'}）`);
+    return null;
+  }
+  fs.mkdirSync(path.dirname(SHARED_ECDICT), { recursive: true });
+  fs.writeFileSync(SHARED_ECDICT, r.text, 'utf8');
+  return r.text;
+}
+
+/**
+ * 按 ECDICT `tag` 字段筛词（`zk` = 中考、`gk` = 高考、`cet4`/`cet6`…）。
+ * 返回词条对象，音标与释义一并带出，省得详情阶段再查一次。
+ */
+function ecdictRowsByTag(csv, tag) {
+  const rows = parseCsv(csv);
+  const idx = Object.fromEntries(rows[0].map((h, i) => [h, i]));
+  const re = new RegExp(`(^|\\s)${tag}($|\\s)`);
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!re.test(row[idx.tag] || '')) continue;
+    const w = row[idx.word];
+    if (!w) continue;
+    out.push({
+      w,
+      ipa: row[idx.phonetic] || '',
+      zh: clip(row[idx.pos] ? `${row[idx.pos]}.${row[idx.translation] || ''}` : (row[idx.translation] || ''), 200),
+      pos: row[idx.pos] || '',
+      translation: row[idx.translation] || '',
+      definition: row[idx.definition] || '',
+    });
+  }
+  return out;
+}
+
+/**
+ * 取 KyleBing 结构化 JSON（`word` / `translations[]` / `phrases[]`）。
+ * 词组带中文释义，是中高考固定搭配的考点来源。
+ */
+async function loadExtrasJson(lexiconId, file) {
+  const ck = 'extras.json';
+  let text = readCache(lexiconId, ck);
+  if (text === null) {
+    console.log(`📗 [${lexiconId}] 拉取 KyleBing ${file}…`);
+    const r = await fetchFile(KYLEBING_REPO, file, { treat404AsFailure: true, timeoutMs: 120000 });
+    if (r.missing) {
+      console.warn(`   ⚠️ 拓展词表不可达（${r.reason || ''}），本轮只用 tag 核心词`);
+      return [];
+    }
+    text = r.text;
+    writeCache(lexiconId, ck, text);
+  }
+  try {
+    const arr = JSON.parse(text);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    console.warn('   ⚠️ extras.json 解析失败，忽略');
+    return [];
+  }
+}
+
+/** KyleBing 条目 → 词表行（zh 用其 translations 按词性拼装） */
+function extrasToRow(e) {
+  const zh = (Array.isArray(e.translations) ? e.translations : [])
+    .slice(0, 4)
+    .map((t) => (t && t.translation ? `${t.type || ''}${t.type ? '.' : ''}${t.translation}` : ''))
+    .filter(Boolean)
+    .join('；');
+  return { w: String(e.word || '').trim(), ipa: '', zh: clip(zh, 200) };
 }
 
 const safeName = (w) => String(w).toLowerCase().replace(/[^a-z0-9._-]/g, '_');
@@ -367,6 +500,65 @@ function parseCsv(text) {
 
 /* ---------------- 分片 ---------------- */
 
+/** 详情条目 → 词表条目（运行时背单词/干扰项/模考的词源，字段与内联 lexicon 对齐） */
+function shortEntry(w, d) {
+  const meanings = d.meanings || [];
+  const allDefs = meanings.flatMap((m) => (m.definitions || [])).filter((x) => x && x.chinese);
+  const zh = allDefs.map((x) => x.chinese).join('');
+  // `short` 是选择题的选项与「中译英」的题干，必须是**一个干净的短义项**。
+  // 直接把所有义项拼起来会出现「能力才能或技能权限或职权」这种拼接残影，
+  // 因此只取**首个义项的第一小句**，并截到 12 字。
+  const first = allDefs.length ? allDefs[0].chinese : '';
+  // 这段踩过两个坑，别改回去：
+  //  1) 分隔符必须**全角半角都收**：`abbr. （拉）午前` 只切 `（` 不切 `）`
+  //     会切出「拉）午前」这种残片；
+  //  2) 剥掉词性前缀后要**优先取含中文、长度 ≥2 的小句**，
+  //     否则 `abbr. （拉）午前` 的第一个非空片段是「拉」。
+  const clauses = first.split(/[；;，,、（）()\/]/).map((s) => s.trim()).filter(Boolean);
+  // 必须是 `abbr.`（带点）或 `abbr `（带空格）才算词性前缀，
+  // 否则 `n` 会把 `night` 的首字母吃掉（`^(n)\.?\s*` 就是这么错的）。
+  const POS_PREFIX = /^(?:abbr|syn|prep|conj|art|pron|num|int|n|v|vt|vi|adj|adv|aux|pl)(?:\.\s*|\s+)/i;
+  const CJK = /[一-鿿]/;
+  let picked = '';
+  let fallback = '';
+  for (const c of clauses) {
+    const stripped = c.replace(POS_PREFIX, '').trim();
+    if (!stripped) continue;
+    if (!fallback) fallback = stripped;
+    if (CJK.test(stripped) && stripped.length >= 2) { picked = stripped; break; }
+  }
+  const short = clip(picked || fallback || first, 12);
+  const ipa = (d.phonetic && (d.phonetic.british || d.phonetic.american)) || '';
+  const e = { w, ipa: clip(ipa, 48), zh: clip(zh, 200), short };
+  if (d.core === true) e.core = true;
+  return e;
+}
+
+/**
+ * 从详情分片派生 `wordlist.json`。
+ *
+ * 为什么需要它：应用里的 `WORDS` 是**内联**的 CET-4 词表，背单词、形近干扰项、
+ * 选词填空、模考、词谱、斗法全都吃它。切到别的词库而不换词源，等于换了名字没换内容。
+ * 词源数据按约束「不内联进主文件」，因此做成按需取的独立 JSON（~100 KB 级）。
+ * 默认 CET-4 仍用内联那份、一个请求都不发。
+ */
+function writeWordlistFromDetail(L) {
+  if (!L.wordDir) return 0; // 显式声明不产出（CET-4 用内联词源）
+  const mfPath = path.join(L.detailDir, 'manifest.json');
+  if (!fs.existsSync(mfPath)) return 0;
+  const mf = JSON.parse(fs.readFileSync(mfPath, 'utf8'));
+  const out = [];
+  for (const f of new Set(Object.values(mf.files))) {
+    const data = JSON.parse(fs.readFileSync(path.join(L.detailDir, f), 'utf8'));
+    for (const [w, d] of Object.entries(data)) out.push(shortEntry(w, d || {}));
+  }
+  out.sort((a, b) => a.w.localeCompare(b.w));
+  const dir = L.wordDir || path.dirname(L.detailDir);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'wordlist.json'), JSON.stringify(out), 'utf8');
+  return out.length;
+}
+
 const shardNameOf = (prefix) => prefix.replace(/[^a-z0-9#]/gi, '_') + '.json';
 
 function splitShard(prefix, list, out) {
@@ -444,15 +636,8 @@ async function buildLexicon(key) {
   if (missing.length) {
     console.log(`🔁 [${key}] ${missing.length} 词回退 ECDICT…`);
     let csv = readCache(key, 'ecdict.csv');
-    if (csv === null) {
-      const r = await fetchFile(ECDICT_REPO, 'ecdict.csv', { treat404AsFailure: true, timeoutMs: 600000 });
-      if (r.missing) {
-        console.warn(`   ⚠️ ECDICT 不可达（${r.reason || ''}），改用词表兜底`);
-      } else {
-        csv = r.text;
-        writeCache(key, 'ecdict.csv', csv);
-      }
-    }
+    if (csv === null) csv = await sharedEcdict(); // 跨词库共享，中学词库不再重复下 63 MB
+    if (csv === null) console.warn('   ⚠️ ECDICT 不可达，改用词表兜底');
     if (csv !== null) {
       const rows = parseCsv(csv);
       const idx = Object.fromEntries(rows[0].map((h, i) => [h, i]));
@@ -501,14 +686,20 @@ async function buildLexicon(key) {
       d.__src = 'wordlist';
       usage.wordlist++;
     }
+    // 课标核心标记（中学词库：ECDICT tag 命中的核心词，UI 可按此筛选）
+    if (r.core === true) d.core = true;
     return { word: r.w, detail: d };
   });
 
   // 重叠标记（A3：与 CET-4 重叠的词打 inCET4，便于 UI 显示「四级已学」与进度复用提示）
+  // `overlapWith` 与 `unionWith` 解耦：cet6 要把四级词并进词表（unionWith），
+  // 而中学词库只是**打标记**、绝不把四级 4540 词并进来（那会让初中词库变成 6500 词）。
+  const overlapKeys = Array.isArray(L.overlapWith) ? L.overlapWith
+    : (Array.isArray(L.unionWith) ? L.unionWith : []);
   let overlap = 0;
-  if (L.markOverlap && Array.isArray(L.unionWith)) {
+  if (L.markOverlap && overlapKeys.length) {
     const base = new Set();
-    for (const bk of L.unionWith) {
+    for (const bk of overlapKeys) {
       for (const w of await loadWordlist(bk, LEXICONS[bk])) base.add(w.w.toLowerCase());
     }
     for (const it of list) {
@@ -548,6 +739,10 @@ async function buildLexicon(key) {
   manifest.prefixes.sort((a, b) => b.length - a.length || a.localeCompare(b.length));
   fs.writeFileSync(path.join(L.detailDir, 'manifest.json'), JSON.stringify(manifest), 'utf8');
 
+  // 词源（运行时背单词/模考取词用，按需加载、不内联）
+  const wlCount = writeWordlistFromDetail(L);
+  if (wlCount) console.log(`   词源 wordlist.json：${wlCount} 词（${path.relative(ROOT, path.join(L.wordDir, 'wordlist.json'))}）`);
+
   // 体积报告
   console.log('');
   console.log(`📊 [${key}] 分片体积（raw / gzip）：`);
@@ -570,6 +765,9 @@ async function buildLexicon(key) {
 }
 
 async function loadWordlist(key, L) {
+  // 中学词库走「ECDICT tag 核心词 ∪ KyleBing 拓展词」，不取 txt 词表
+  if (L.tagFilter) return loadTagWordlist(key, L);
+
   let text = readCache(key, 'wordlist.txt');
   if (text === null) {
     console.log(`📖 [${key}] 拉取词表 ${L.wordList}（jsDelivr → api.github → raw）…`);
@@ -603,10 +801,57 @@ async function loadWordlist(key, L) {
   return words;
 }
 
+/**
+ * 中学词库词表：ECDICT `tag` 核心词 ∪ KyleBing 拓展词。
+ *
+ * 为什么不直接用某个 txt 词表：
+ *   · mahavivo 只有四六级等考纲表（`中考英语词汇表.txt` 有 1887 词但音标行混排、
+ *     括号词形如 `a (an)` 需特判）；
+ *   · ECDICT 的 `tag` 字段本身就是考纲标记，实测 `zk` 恰好 1603 词
+ *     —— 正对教育部 2022 课标 1600 核心词，且自带音标与释义；
+ *   · KyleBing 的 JSON 补上拓展词（初中独有 425 词），并作为详情增补源。
+ *
+ * 结果按 `core` 区分课标核心与拓展，UI 可筛选。
+ */
+async function loadTagWordlist(key, L) {
+  const ck = 'wordlist-tag.json';
+  const cached = readCache(key, ck);
+  if (cached !== null) {
+    try {
+      const words = JSON.parse(cached);
+      console.log(`📖 [${key}] 复用已合成词表缓存：${words.length} 词（核心 ${words.filter((w) => w.core).length}）`);
+      return words;
+    } catch { /* 缓存坏了就重新合成 */ }
+  }
+
+  const csv = await sharedEcdict();
+  if (!csv) throw new Error(`${key} 需要按 ECDICT tag=${L.tagFilter} 筛核心词，但 ECDICT 不可达`);
+  const core = ecdictRowsByTag(csv, L.tagFilter).map((r) => ({ w: r.w, ipa: r.ipa, zh: r.zh, core: true }));
+  console.log(`🎯 [${key}] ECDICT tag=${L.tagFilter} 核心词 ${core.length} 词`);
+
+  const byKey = new Map(core.map((r) => [r.w.toLowerCase(), r]));
+  if (L.extrasFile) {
+    const extras = await loadExtrasJson(key, L.extrasFile);
+    let added = 0;
+    for (const e of extras) {
+      const r = extrasToRow(e);
+      if (!r.w || byKey.has(r.w.toLowerCase())) continue;
+      byKey.set(r.w.toLowerCase(), { w: r.w, ipa: r.ipa, zh: r.zh, core: false });
+      added++;
+    }
+    console.log(`   ∪ KyleBing 拓展（独有）${added} 词`);
+  }
+
+  const words = Array.from(byKey.values()).sort((a, b) => a.w.localeCompare(b.w));
+  console.log(`   合计 ${words.length} 词（核心 ${words.filter((w) => w.core).length} / 拓展 ${words.filter((w) => !w.core).length}）`);
+  writeCache(key, ck, JSON.stringify(words));
+  return words;
+}
+
 /* ---------------- 清单 ---------------- */
 
 function writeManifest(built) {
-  const order = ['cet4', 'cet6'];
+  const order = ['cet4', 'cet6', 'junior'];
   const lexicons = order.map((id) => {
     const L = LEXICONS[id];
     const b = built.find((x) => x.key === id);
@@ -622,9 +867,9 @@ function writeManifest(built) {
       shortName: L.shortName,
       wordCount,
       description: L.description,
-      sourceUrl: `https://github.com/${WORDLIST_REPO}`,
+      sourceUrl: L.sourceUrl || `https://github.com/${WORDLIST_REPO}`,
       sourceLicense: 'MIT',
-      enabled: true,
+      enabled: L.enabled !== false,
       dataPath: L.dataPath,
       wordListPath: L.dataPath.startsWith('lexicons/') ? L.dataPath.replace('vocab-detail/', '') : '',
     };
@@ -667,6 +912,15 @@ async function main() {
   if (argv.includes('--list')) {
     const manifest = writeManifest([]);
     console.log(JSON.stringify(manifest, null, 2));
+    return;
+  }
+
+  // 只从既有详情分片重派生词源（纯本地、不联网）
+  if (argv.includes('--wordlist')) {
+    for (const k of keys) {
+      const n = writeWordlistFromDetail(LEXICONS[k]);
+      console.log(n ? `✅ [${k}] wordlist.json：${n} 词` : `⏭️  [${k}] 无需产出（未声明 wordDir 或详情缺失）`);
+    }
     return;
   }
 

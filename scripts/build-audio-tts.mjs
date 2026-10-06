@@ -27,7 +27,7 @@
  * 输出：dist/audio/tts/<questionId>.mp3 + dist/audio/tts/manifest.json
  * 用法：npm run build:audio   （--backend=python|edgejs 可强制指定后端）
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -61,7 +61,37 @@ function loadBank() {
     process.exit(1);
   }
   const bank = JSON.parse(readFileSync(BANK_PATH, 'utf8'));
-  return Array.isArray(bank.questions) ? bank.questions : [];
+  const cet4 = Array.isArray(bank.questions) ? bank.questions : [];
+  return [...cet4, ...loadLexiconBanks()];
+}
+
+/**
+ * 各词库的分片题库（src/data/lexicons/<id>/question-bank/*.json）。
+ *
+ * 背景（2026-10-06 用户反馈「点了真实音频，没有实际音频」）：
+ * 本脚本原先**只**读 dist/question-bank.json（CET-4 主题库），
+ * 所以 TTS 只覆盖了 CET-4 的 4690 条。切到初中/高中/考研/PRETCO 后，
+ * 题目 id 是 q_<前缀>_<题型>_<序号>（q_pt_* / q_ky_* …），
+ * 清单里一条都没有 → pickTtsSrc 返回 null → 「该题暂无生成音频」。
+ * 词库题库是分片的，必须一起扫，否则新词库永远是哑的。
+ */
+function loadLexiconBanks() {
+  const lexRoot = join(root, 'src', 'data', 'lexicons');
+  if (!existsSync(lexRoot)) return [];
+  const out = [];
+  for (const id of readdirSync(lexRoot)) {
+    const dir = join(lexRoot, id, 'question-bank');
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir)) {
+      // manifest.json 是索引（含 papers/plan），不是题目本身
+      if (!file.endsWith('.json') || file === 'manifest.json') continue;
+      let parsed;
+      try { parsed = JSON.parse(readFileSync(join(dir, file), 'utf8')); } catch { continue; }
+      const items = Array.isArray(parsed) ? parsed : parsed.questions || parsed.items;
+      if (Array.isArray(items)) out.push(...items);
+    }
+  }
+  return out;
 }
 function loadManifest() {
   try {

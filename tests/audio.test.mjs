@@ -244,3 +244,64 @@ test('audio：听写逐词比对（漏写/多写/标点与大小写不敏感）'
   assert.deepEqual(empty.missing, ['hello', 'world']);
   assert.equal(checkDictation('', '').correct, true);
 });
+
+/* ============ audioDock 进度条 vs 真实发声（2026-10-06 用户实机反馈） ============ */
+
+test('回归：暂停会停进度条 —— speechSynthesis.pause() 不触发任何事件', async () => {
+  // 症状：点「暂停」后声音停了，但进度条一路走到 99%。
+  // 根因：那个 setInterval 只在 u.onstart / u.onend 里被 clearInterval，
+  // 而 Web Speech 的 pause() **既不触发 onend 也不触发 onstart**，
+  // 于是暂停后计时器继续跑，进度条继续涨 —— 而声音早没了。
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const html = readFileSync(join(import.meta.dirname, '..', 'src', 'index.template.html'), 'utf8');
+
+  // ① 存在一个幂等的停表函数
+  assert.ok(html.includes('function stopProgressTimer()'), '缺 stopProgressTimer');
+  assert.ok(/clearInterval\(audioState\.timer\); audioState\.timer=0;/.test(html),
+    'stopProgressTimer 必须同时清表并把句柄归零（否则残留句柄会误判为活表）');
+
+  // ② 暂停分支必须调它（这一条里有多条语句，不能只看到第一个分号）
+  const pauseIdx = html.indexOf('speechSynthesis.pause();');
+  assert.ok(pauseIdx > 0, '找不到暂停分支');
+  const afterPause = html.slice(pauseIdx, pauseIdx + 260);
+  assert.ok(afterPause.includes('stopProgressTimer()'),
+    '暂停分支未停进度条 —— 这正是「暂停还会动」的成因');
+
+  // ③ 续播要重新起表
+  const resumeIdx = html.indexOf('speechSynthesis.resume();');
+  assert.ok(resumeIdx > 0, '找不到续播分支');
+  const afterResume = html.slice(resumeIdx, resumeIdx + 260);
+  assert.ok(afterResume.includes('startProgressTimer('), '续播未重启进度条');
+
+  // ④ 换题 / 重播也要停表，否则旧计时器会跨题泄漏
+  assert.ok(/function replayAudio\(\)\{[^}]*stopProgressTimer\(\)/.test(html), '重播未停表');
+  const showIdx = html.indexOf('function show(q){');
+  assert.ok(showIdx > 0, '找不到 show()');
+  const showBody = html.slice(showIdx, showIdx + 4000);
+  assert.ok(showBody.includes('stopProgressTimer()'), '换题未停表');
+
+  // ⑤ 不能再有裸 clearInterval(audioState.timer) 绕过句柄归零
+  const bare = [...html.matchAll(/clearInterval\(audioState\.timer\)/g)];
+  assert.equal(bare.length, 1,
+    `clearInterval(audioState.timer) 应只出现在 stopProgressTimer 内，实得 ${bare.length} 处`);
+});
+
+test('回归：build:audio 覆盖各词库分片题库（否则新词库永远没有真实音频）', async () => {
+  // 症状：切到 PRETCO 后「真实音频」点了没声音。
+  // 根因：build-audio-tts 只读 dist/question-bank.json（CET-4 主题库），
+  // 词库分片题库（lexicons/<id>/question-bank/*.json）一条都没扫，
+  // 于是新词库题目的 id 在清单里查不到 → pickTtsSrc 返回 null。
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const src = readFileSync(join(import.meta.dirname, '..', 'scripts', 'build-audio-tts.mjs'), 'utf8');
+
+  assert.ok(src.includes('loadLexiconBanks'), '未扫描词库分片题库');
+  assert.ok(src.includes('question-bank'), '未定位词库题库目录');
+  // 必须跳过 manifest.json —— 它是索引（papers/plan），不是题目数组
+  assert.ok(/file === ['"]manifest\.json['"]/.test(src),
+    '扫描时必须跳过 manifest.json（它是索引，不是题目）');
+  // loadBank 必须把两处合并
+  assert.ok(/return \[\.\.\.cet4, \.\.\.loadLexiconBanks\(\)\]/.test(src),
+    'loadBank 未合并 CET-4 与词库分片');
+});

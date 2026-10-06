@@ -398,6 +398,10 @@ aside.side{display:flex;flex-direction:column;gap:12px;min-width:0}
   /* 任务 B：导航已迁入 #navMenu，旧 `.tabs{grid-area:nav}` 栅格行规则整行移除（nav 不再是栅格项） */
   /* 任务 C：桌面侧栏导航样式已删除（导航在 #navMenu 内，由 .nav-menu .tabs 接管） */
   aside.side{grid-area:side;overflow-y:auto;min-height:0;padding-right:4px;scrollbar-width:thin}
+  /* 侧栏是 flex 列容器且自身可滚动：子项默认 flex-shrink:1，
+     空间不足时会把每张面板等比压扁，导致标题文字被裁切。
+     面板一律不参与收缩 —— 该滚动的是侧栏自己，不是里面的内容。 */
+  aside.side>*{flex-shrink:0}
   .side .road{grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
   .side .gate{min-height:0;padding:7px 6px;text-align:center}
   .side .gate b{font-size:14px}

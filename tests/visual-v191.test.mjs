@@ -241,6 +241,20 @@ test('层次 4：等宽数字只加在会逐位变化的数值上', () => {
 
 /* ============ 全局不被顺手改坏 ============ */
 
+test('侧栏面板不被 flex 压扁（面板高度 = 内容高度）', () => {
+  // 回归测试：aside.side 是 display:flex;flex-direction:column 且自身 overflow-y:auto。
+  // 子项默认 flex-shrink:1，空间不足时每张面板被等比压扁 → 面板内 <h2> 文字被裁切。
+  // （2026-10-06 用户实机反馈：侧栏「今日 / 学情看板 / 最近斩获…」标题被切掉上半截。）
+  // 该滚动的是侧栏自己，不是里面的内容，所以子项一律 flex-shrink:0。
+  assert.ok(/aside\.side\{[^}]*display:flex[^}]*flex-direction:column/.test(html),
+    '前提变了：侧栏不再是 flex 列容器，本测试口径需重写');
+  assert.ok(/aside\.side\{[^}]*overflow-y:auto/.test(html), '前提变了：侧栏不再自带滚动');
+  assert.ok(/aside\.side>\*\{flex-shrink:0\}/.test(html),
+    '侧栏子项缺 flex-shrink:0 —— 面板会被压扁、标题文字被裁切');
+  // 产物里也要在（部署后的线上版本才修得了）
+  assert.ok(distHtml.includes('aside.side>*{flex-shrink:0}'), '产物缺侧栏防压扁规则');
+});
+
 test('视觉升级没有动导航语义与既有 a11y 钩子', () => {
   assert.equal((html.match(/role="tab"/g) || []).length, 9, 'role="tab" 应仍为 9 个');
   assert.ok(html.includes('trial-sticky'), '阶段 B2 粘性题面类缺失');

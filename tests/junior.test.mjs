@@ -256,7 +256,11 @@ test('A-9 运行时接线：词源切换、作用域、中考组卷都已进产�
   const html = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
   // 1) 词源切换：切词库后背单词/干扰项/模考的词源跟着换
   assert.ok(html.includes('useLexiconWords'), '缺词源切换函数');
-  assert.ok(html.includes("lexicons/' + lex + '/wordlist.json'"), '缺词源分片 URL');
+  // 词表 URL 由服务层按清单的 wordListPath 给出，不再由主脚本按 id 硬拼。
+  // （2026-10-06：pretco 按设计没有独立词表，硬拼会取到不存在的地址 →
+  //   SPA 把 404 回落到 index.html，.json() 抛错 → 切换失败。见 tests/pretco.test.mjs F6-12）
+  assert.ok(html.includes('__lexiconWordListUrl'), '缺词表 URL 访问器');
+  assert.ok(html.includes('wordlist.json'), '缺词表文件名');
   // 2) 进度作用域：评分与错题本按当前词库隔离
   assert.ok(html.includes('function lxScope()'), '缺词库作用域函数');
   assert.ok(html.includes('lxScope()'), '调用点未传作用域');

@@ -258,7 +258,10 @@ test('B-9 运行时接线：高中词源与组卷都已进产物，且数据不�
   const html = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
   // 1) 词源切换对 senior 同样生效（A 阶段已接 useLexiconWords，这里确认产物在）
   assert.ok(html.includes('useLexiconWords'), '缺词源切换函数');
-  assert.ok(html.includes("lexicons/' + lex + '/wordlist.json'"), '缺词源分片 URL');
+  // 词表 URL 由服务层按清单的 wordListPath 给出，不再由主脚本按 id 硬拼
+  // （原因见 tests/pretco.test.mjs F6-12）。
+  assert.ok(html.includes('__lexiconWordListUrl'), '缺词表 URL 访问器');
+  assert.ok(html.includes('wordlist.json'), '缺词表文件名');
   // 2) 高考组卷：按题库清单组模拟卷（与中考共用 bankExamQueue，按 manifest 分流）
   assert.ok(html.includes('bankExamQueue'), '缺词库题卷组卷函数');
   // 3) 词库数据不内联（硬约束 9）

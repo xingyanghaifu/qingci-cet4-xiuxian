@@ -223,3 +223,42 @@ test('F6-3 pretco 目录只含题库（无重复词库数据）', () => {
   const stray = files.filter((f) => f !== 'question-bank');
   assert.deepEqual(stray, [], `pretco 目录不应有其他文件（省体积）：${stray.join(', ')}`);
 });
+
+/* ---------------- F6-12 切换真实可用（2026-10-06 用户实机反馈的回归） ---------------- */
+
+test('F6-12 切到 pretco 不发起任何词表请求（F6-3 的设计在运行时真的成立）', () => {
+  // 实机症状：点 PRETCO 卡片 → 底部 toast「词源加载失败，练习暂用上一个词库的词」。
+  // 根因：useLexiconWords 一律按 id 拼 `lexicons/pretco/wordlist.json`，
+  // 而 pretco 按 F6-3 **刻意没有**这个文件；Cloudflare Pages 又把 404 回落到
+  // index.html，res.ok 为真、.json() 拿到 HTML 抛错 → finish(false) → toast。
+  // F6-3 只断言了目录长什么样，没断言运行时行为，所以这个洞一直漏到线上。
+  const html = readFileSync(join(ROOT, 'src', 'index.template.html'), 'utf8');
+
+  // ① 不能再有「按 id 硬拼路径」的老写法
+  assert.ok(!/fetch\(\s*['"]lexicons\/['"]\s*\+/.test(html),
+    '仍在按 id 硬拼词表路径 —— 对 pretco 会取到不存在的地址');
+
+  // ② 改为问服务层要；服务层对「无独立词表」的词库返回 null
+  assert.ok(html.includes('window.__lexiconWordListUrl'), '缺 __lexiconWordListUrl 访问器');
+  assert.ok(html.includes("if (own === null)"), 'useLexiconWords 未处理「无独立词表」分支');
+
+  // ③ 访问器语义：wordListPath 为空 → 返回 null（而不是拼出一个坏 URL）。
+  //    访问器写在模板的词库壳里（清单在运行时才拿到，TS 侧只负责解析条目）。
+  assert.ok(/if\s*\(\s*!l\s*\|\|\s*!l\.wordListPath\s*\)\s*return null;/.test(html),
+    '__lexiconWordListUrl 应对无独立词表的词库返回 null');
+  assert.ok(/return l\.wordListPath \+ ['"]wordlist\.json['"];/.test(html),
+    '__lexiconWordListUrl 应按 wordListPath 拼词表 URL');
+
+  // ④ 产物里也得在（部署后才修得了）
+  const dist = join(ROOT, 'dist', 'index.html');
+  if (existsSync(dist)) {
+    const d = readFileSync(dist, 'utf8');
+    assert.ok(d.includes('__lexiconWordListUrl'), '产物缺 __lexiconWordListUrl');
+    assert.ok(!/fetch\(\s*['"]lexicons\/['"]\s*\+/.test(d), '产物仍在按 id 硬拼词表路径');
+  }
+
+  // ⑤ 清单侧：pretco 必须确实没有 wordListPath，否则上面整套都不成立
+  const mf = JSON.parse(readFileSync(join(LEX_DIR, 'manifest.json'), 'utf8'));
+  const pt = mf.lexicons.find((l) => l.id === 'pretco');
+  assert.ok(pt && !pt.wordListPath, 'pretco 不应有独立词表路径（与 F6-3 一致）');
+});

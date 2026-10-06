@@ -1264,6 +1264,13 @@ function applyLexiconWords(id, list) {
   LX_WORD_CACHE[id] = list;
   return list.length;
 }
+/** 该词库是否「与当前词源共用一份词」（PRETCO 近似方案：词表复用 CET-4）。
+ *  共用时 WORDS 这份数组就是它的词，无需重新取回，也无需重建 byWord。 */
+function isSharedWordSource(id) {
+  const lex = String(id || 'cet4');
+  const cached = LX_WORD_CACHE[lex];
+  return !!cached && cached === WORDS;
+}
 /** 词源切换：回调 (ok, changed)。changed=false 表示词源本来就没变（启动时的 CET-4）。 */
 function useLexiconWords(id, done) {
   const lex = String(id || 'cet4');
@@ -1277,8 +1284,17 @@ function useLexiconWords(id, done) {
     if (WORDS !== cached) { applyLexiconWords(lex, cached); finish(true, true); return; }
     finish(true, false); return;
   }
+  /* 没有独立词表的词库（PRETCO 近似方案）：词源就是当前这份，
+     只换作用域（词库 id），不重新取词 —— 否则会去取一个不存在的地址，
+     SPA 又把 404 回落到首页 HTML，.json() 抛错 → 切换「失败」。 */
+  const own = (typeof window.__lexiconWordListUrl === 'function') ? window.__lexiconWordListUrl(lex) : null;
+  if (own === null) {
+    applyLexiconWords(lex, WORDS);
+    finish(true, !isSharedWordSource(lex));
+    return;
+  }
   const seq = ++LX_WORD_REQ;
-  fetch('lexicons/' + lex + '/wordlist.json', { cache: 'force-cache' })
+  fetch(own, { cache: 'force-cache' })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
     .then(function (arr) {
       if (!Array.isArray(arr) || !arr.length) throw new Error('词源为空');
@@ -1849,6 +1865,16 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   /** 供外部查询当前词库 id（词源、进度、错题本、复习队列都按它作用域隔离） */
   window.__lexiconId = function () {
     return LX.current(manifest ? manifest.lexicons : undefined);
+  };
+  /** 供外部查询某词库的**独立词表** URL。
+   *  返回 null 表示「这个词库没有自己的词表，主词源内联的那份就是它的词」——
+   *  典型是 pretco（近似方案：复用 CET-4 词表，见 docs/probe-pretco.md）。
+   *  有了这个，之前「一律按 id 拼 lexicons/<id>/wordlist.json」就会对 pretco 取到
+   *  一个不存在的地址，而 SPA 会把 404 回落到首页 HTML，.json() 必然抛错 → 切换失败。 */
+  window.__lexiconWordListUrl = function (id) {
+    var l = manifest && manifest.lexicons.filter(function (x) { return x.id === id; })[0];
+    if (!l || !l.wordListPath) return null;
+    return l.wordListPath + 'wordlist.json';
   };
 
   /** 顶栏徽标与词库作用域徽标同步 */

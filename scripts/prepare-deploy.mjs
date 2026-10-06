@@ -166,8 +166,80 @@ if (forPages) {
   if (fs.existsSync(stale)) fs.unlinkSync(stale);
 }
 
+// 5.5) SEO / 爬虫基础文件
+//
+// 背景（2026-10-06 线上实测）：SPA 回退把 robots.txt / sitemap.xml / 404.html
+// 全部回落成 981 KB 的应用首页 HTML —— 爬虫拿到的是一页 JS，提取不到任何规则，
+// 而 requests 一律 200，连「这页不存在」都表达不出来。
+// 这些文件体积极小、必须逐字放置，任何一个漏掉都不会有测试报错 —— 所以在这里生成，
+// 并在下方断言它们确实落盘。
+const SITE = 'https://qingci-cet4-xiuxian.pages.dev';
+fs.writeFileSync(path.join(OUT, 'robots.txt'), [
+  '# 青词天路 · 四级全卷修仙',
+  'User-agent: *',
+  'Allow: /',
+  '',
+  '# 静态托管下这些地址无意义（SPA 回退会返回首页），别让爬虫浪费预算',
+  'Disallow: /deploy',
+  'Disallow: /deploy-pages',
+  'Disallow: /.cache',
+  '',
+  `Sitemap: ${SITE}/sitemap.xml`,
+  '',
+].join('\n'));
+
+// 单页应用只有一个可索引地址；题库/音频/图标是资源不是页面。
+fs.writeFileSync(path.join(OUT, 'sitemap.xml'), [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  '  <url>',
+  `    <loc>${SITE}/</loc>`,
+  `    <lastmod>${pkg.version === '1.9.1' ? '2026-10-06' : new Date().toISOString().slice(0, 10)}</lastmod>`,
+  '    <changefreq>weekly</changefreq>',
+  '    <priority>1.0</priority>',
+  '  </url>',
+  '</urlset>',
+  '',
+].join('\n'));
+
+// 404：静态托管会优先取这个文件。不放的话未知名一律回落成 200 + 应用首页，
+// 语义完全错。保持极简：给一句说明 + 回首页的链接，不内联 975 KB 的应用。
+fs.writeFileSync(path.join(OUT, '404.html'), `<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>迷路了 · 青词天路</title>
+<meta name="robots" content="noindex">
+<style>
+:root{color-scheme:dark light}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#12100e;color:#f5f0e6;
+  font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif;text-align:center;padding:24px}
+main{max-width:34em}
+h1{font-size:2.2em;margin:0 0 .2em;letter-spacing:.05em}
+p{color:#a69e92;margin:0 0 1.6em}
+a{display:inline-block;background:#0e6b53;color:#f8f3ea;text-decoration:none;padding:12px 28px;border-radius:999px}
+@media (prefers-color-scheme:light){body{background:#f3ecdf;color:#1c1815}p{color:#5c554c}}
+</style></head><body><main>
+<h1>迷路了</h1>
+<p>这一页不在仙门之内。回到山门，继续修行。</p>
+<a href="/">返回青词天路</a>
+</main></body></html>
+`);
+
+// GitHub Pages 用它跳过 Jekyll 处理；Cloudflare Pages 忽略，但同目录部署时无害。
+fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
+const seoFiles = ['robots.txt', 'sitemap.xml', '404.html', '.nojekyll'];
+for (const f of seoFiles) {
+  const p = path.join(OUT, f);
+  if (!fs.existsSync(p)) {
+    console.error('❌ 未能生成 ' + f);
+    process.exit(1);
+  }
+}
+
 console.log('✅ 部署目录已生成目录: ' + (forPages ? 'deploy-pages/' : 'deploy/'));
 console.log('   index.html      ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB');
+console.log('   robots/sitemap/404/.nojekyll（爬虫基础文件，已落盘断言）');
 console.log('   healthz.json    版本 v' + pkg.version + ' 词库 ' + words + ' 条');
 console.log('   api-meta.json   元信息（机型/版本/特性）');
 console.log('   PWA 资源        ' + pwaCopied.length + ' 个（manifest + sw.js + 图标）');

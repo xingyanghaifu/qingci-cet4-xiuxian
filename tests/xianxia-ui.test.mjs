@@ -148,7 +148,16 @@ test('可访问性：焦点金框只加强不削弱', () => {
 
 test('零外部资源：不引图片/字体/脚本外链', () => {
   assert.ok(!/url\((?!['"]?data:)/.test(visualBlock), '谕令三样式块不得引用外部 url()');
-  assert.ok(!/<link[^>]+href="https?:/i.test(html), '不得新增外部样式/字体链接');
+  // 只拦「会拉取外部资源的 link」。canonical 是纯元数据（告诉搜索引擎本站
+  // 规范地址在哪），og:image 走 meta 而非 link —— 两者都不产生网络请求，
+  // 与「单文件、零外部依赖」这条硬约束无关，不能一并拦掉（2026-10-06 加 canonical 时修正）。
+  const RESOURCE_RELS = new Set(['stylesheet', 'preload', 'prefetch', 'preconnect', 'dns-prefetch', 'modulepreload']);
+  for (const tag of html.match(/<link\b[^>]*>/gi) || []) {
+    if (!/href="https?:/i.test(tag)) continue;
+    const rel = (tag.match(/rel="([^"]+)"/i) || [])[1] || '';
+    assert.ok(!RESOURCE_RELS.has(rel.toLowerCase()),
+      `不得新增外部资源链接（会发起网络请求，破坏单文件约束）：${tag.slice(0, 120)}`);
+  }
   assert.ok(!/<script[^>]+src="https?:/i.test(html), '不得新增外部脚本');
   assert.ok(!/<img[^>]+cloud/i.test(html), '云纹不得走位图');
 });

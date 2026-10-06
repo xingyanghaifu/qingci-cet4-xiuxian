@@ -113,6 +113,14 @@ if (!stamp) stamp = new Date().toISOString(); // 首次构建才生成
 const meta = '<!-- build: qingci-cet4-xiuxian v' + pkg.version + ' @ ' + stamp + ' -->';
 html = metaRe.test(html) ? html.replace(metaRe, meta) : html.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + meta);
 
+// —— 4b. 版本号注入模板 ——
+// 之前页首 <small id="brandVer">v1.8.2</small> 是手工维护的静态字符串，只有打开设置面板
+// 才会被 S.version 改写，首屏一直显示旧版本号（实测 build 注释 v1.9.1 vs 页首 v1.8.2）。
+// 这里在构建期直接替换，改版本号只需要动 package.json 一处。
+// 占位符写成 __BUILD_VERSION__，构建后不得残留（下面 fail() 兜底）。
+html = html.replace(/__BUILD_VERSION__/g, pkg.version);
+if (html.includes('__BUILD_VERSION__')) fail('模板里仍有未替换的 __BUILD_VERSION__ 占位符');
+
 // —— 5. 输出 ——
 // 同时产出 index.html：静态托管（含本地 npm start）把 / 映射到 index.html，
 // Service Worker 的预缓存清单也以 ./index.html 为准。
@@ -155,6 +163,14 @@ const swOut = swSource.replace(/__CACHE_VERSION__/g, cacheVersion);
 writeFileSync(join(OUT_DIR, 'sw.js'), swOut, 'utf8');
 
 const icons = makeIcons(OUT_DIR);
+
+// —— 6.2. 分享卡 og-cover.png ——
+// 源资产在 src/assets/（不进 dist/，dist 整个被 gitignore），构建时拷进 icons/。
+// 由 scripts/make-og-cover.py 生成后提交，保证任何一次干净构建都能拿到它 ——
+// og:image 是外链，线上少一张图就是所有分享静默降级成裸文字，且不会有任何测试报错。
+const ogCoverSrc = join(root, 'src', 'assets', 'og-cover.png');
+if (!existsSync(ogCoverSrc)) fail('缺 src/assets/og-cover.png（分享卡）：运行 python scripts/make-og-cover.py 生成');
+copyFileSync(ogCoverSrc, join(OUT_DIR, 'icons', 'og-cover.png'));
 
 // —— 6.5. 公开更新日志页（P1 任务 E）：由 CHANGELOG.md 生成静态页，随部署一起发布 ——
 const changelog = buildChangelog({ outHtml: join(OUT_DIR, 'changelog.html') });

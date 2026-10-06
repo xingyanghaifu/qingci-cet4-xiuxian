@@ -63,7 +63,13 @@ test('v1.9.1 新增样式零外部资源（只允许 data: URI）', () => {
     const ok = u.startsWith('data:') || /^%23[\w-]+$/.test(u) || /^#[\w-]+$/.test(u);
     assert.ok(ok, `css url() 引用了非 data: 资源：${u.slice(0, 60)}`);
   }
-  assert.ok(!/<link[^>]+href="https?:/i.test(html), '不得新增外部样式/字体链接');
+  // 只拦会拉取外部资源的 link；canonical 是纯元数据，不发起请求（同 xianxia-ui 一致）
+  const RESOURCE_RELS = new Set(['stylesheet', 'preload', 'prefetch', 'preconnect', 'dns-prefetch', 'modulepreload']);
+  for (const tag of html.match(/<link\b[^>]*>/gi) || []) {
+    if (!/href="https?:/i.test(tag)) continue;
+    const rel = (tag.match(/rel="([^"]+)"/i) || [])[1] || '';
+    assert.ok(!RESOURCE_RELS.has(rel.toLowerCase()), `不得新增外部资源链接：${tag.slice(0, 120)}`);
+  }
   assert.ok(!/<script[^>]+src="https?:/i.test(html), '不得新增外部脚本');
 });
 

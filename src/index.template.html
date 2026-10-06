@@ -1595,7 +1595,43 @@ function startDuel(){ duel={player:100,foe:100,round:0,active:true,hits:0,miss:0
 function duelStartTimer(){ clearInterval(duelTick); let left=15; $("duelTimer").classList.remove('warn'); $("duelTimer").textContent=left+'s'; duelTick=setInterval(()=>{ left--; if(left<=5) $("duelTimer").classList.add('warn'); $("duelTimer").textContent=Math.max(0,left)+'s'; if(left<=0){ clearInterval(duelTick); if(duel&&duel.active&&!locked){ toast('超时，视为答错'); const wrong=current.choices.findIndex(c=>c!==current.answer); answerDuel(wrong); } } },1000); }
 function showDuelQuestion(){ if(!duel||!duel.active)return; const q=duelQuestion(); current=q; locked=false; duelStartTimer(); duelSay('第 <b>'+(duel.round+1)+'</b> 回合：辨明词义，出手吧。'); $("duelKind").textContent=q.title.replace('斗法场 · ','')+' · 中译英'; $("duelPrompt").textContent=q.prompt; $("duelSubline").textContent=q.sub||'选出与题面匹配的英文单词'; $("duelChoices").innerHTML=q.choices.map((c,i)=>"<button class='duel-choice' data-i='"+i+"'><span class='key'>"+"ABCD"[i]+"</span><span class='txt'>"+esc(c)+"</span><span class='mark'>✓</span></button>").join(''); renderDuel(); }
 function answerDuel(i){ if(!duel||!duel.active||locked)return; locked=true; clearInterval(duelTick); const ok=current.choices[i]===current.answer; [...$("duelChoices").children].forEach((b,idx)=>{ b.disabled=true; if(current.choices[idx]===current.answer){ b.classList.add('good'); b.querySelector('.mark').textContent='✓'; } else if(idx===i){ b.classList.add('bad'); b.querySelector('.mark').textContent='✗'; } }); if(ok){ duel.foe-=24; duel.hits++; duel.combo=(duel.combo||0)+1; duelFloat('duelFoeCard','-24','dmg'); duelSay('<b>灵诀命中！</b> 对手气血 <span class="num">-24</span>'+(duel.combo>1?' · <b>连击 '+duel.combo+'</b>':'')+'。<br><span class="muted">'+esc(current.explain||'')+'</span>'); } else { duel.player-=18; duel.miss++; duel.combo=0; duelFloat('duelPlayerCard','-18','dmg'); duelSay('<b>答错，遭到反击！</b> 我方气血 <span class="num">-18</span>。正确答案：<b>'+esc(current.answer)+'</b><br><span class="muted">'+esc(current.explain||'')+'</span>'); } duel.round++; renderDuel(); if(duel.player<=0||duel.foe<=0||duel.round>=5){ duel.active=false; clearInterval(duelTick); const win=duel.foe<=0||duel.player>duel.foe; duelSay('<b>'+(win?'斗法胜出！':'斗法落败。')+'</b> '+(win?'获得灵石 <span class="num">+30</span>，灵气 +20。':'稳住心神，再战一场。')+' <span class="muted">最终 我方 '+Math.max(0,duel.player)+' · 对手 '+Math.max(0,duel.foe)+' · 命中 '+duel.hits+'/'+duel.round+'</span>'); if(win){ var ESd=window.QingciServices&&window.QingciServices.economy; if(ESd) ESd.earnSpirit(state,30,'duel_win'); else state.spirit=(state.spirit||0)+30; state.qi+=20; state.duelWins=(state.duelWins||0)+1; } else { state.duelLoses=(state.duelLoses||0)+1; } save(); renderTop(); renderDuel(); } }
-function switchTab(name,srcBtn){ document.querySelectorAll(".tabs button").forEach(b=>{ const on=b.dataset.tab===name && (name!=="trial" || (srcBtn ? b===srcBtn : (b.dataset.mode==="words")===(state.pool==="words" && !paper))); b.classList.toggle("on",on); b.setAttribute('aria-selected',on?'true':'false');}); ["paper","trial","speak","book","codex","map","duel","field"].forEach(id=>$("panel-"+id).classList.toggle("hidden",id!==name)); if(name==="book") renderBook(); if(name==="codex") renderCodex(); if(name==="map") { renderMap(); renderShop(); } if(name==="speak") renderSpeak(); if(name==="paper") renderShelf(); if(name==="duel") renderDuel(); if(name==="field" && window.__fieldRefresh) window.__fieldRefresh(); }
+function switchTab(name,srcBtn){ document.querySelectorAll(".tabs button").forEach(b=>{ const on=b.dataset.tab===name && (name!=="trial" || (srcBtn ? b===srcBtn : (b.dataset.mode==="words")===(state.pool==="words" && !paper))); b.classList.toggle("on",on); b.setAttribute('aria-selected',on?'true':'false');}); ["paper","trial","speak","book","codex","map","duel","field"].forEach(id=>$("panel-"+id).classList.toggle("hidden",id!==name)); if(name==="book") renderBook(); if(name==="codex") renderCodex(); if(name==="map") { renderMap(); renderShop(); } if(name==="speak") renderSpeak(); if(name==="paper") renderShelf(); if(name==="duel") renderDuel(); if(name==="field" && window.__fieldRefresh) window.__fieldRefresh(); syncRoute(name); }
+
+/* ── 深链路由：location.hash = #/<模块> ──
+   为什么用 hash 而不是 pushState：静态托管（含 Cloudflare Pages）下 pushState
+   的路径需要服务端配合回落到 index.html，否则刷新直接 404。hash 不需要任何
+   服务端支持，却同样能拿到「可收藏 / 可分享 / 前进后退有效」这三件事。
+
+   统一挂在 switchTab 里 —— 全站 23 处切模块最终都过这个函数，
+   不必逐个调用点补，也就不会漏。 */
+const LX_TABS = ["paper","trial","speak","book","codex","map","duel","field"];
+/** 抑制 hash 写入：hashchange 里回放 switchTab 时不能再写回，否则死循环 */
+let ROUTE_SILENT = false;
+function routeFromHash(){ const m=/^#\/([a-z]+)$/.exec(String(location.hash||"")); return (m && LX_TABS.indexOf(m[1])>=0) ? m[1] : null; }
+function syncRoute(name){
+  if (ROUTE_SILENT) return;
+  if (LX_TABS.indexOf(name)<0) return;              // 非模块名（比如清场复位）不写 URL
+  const want = '#/' + name;
+  if (location.hash !== want) location.hash = want;
+}
+window.addEventListener('hashchange', function(){
+  const want = routeFromHash();
+  if (!want) return;                                  // 空/非法 hash：保持当前模块，不动
+  ROUTE_SILENT = true;
+  try { switchTab(want); } finally { ROUTE_SILENT = false; }
+});
+/** 首屏按 hash 直达（分享链接 / 收藏），无 hash 才落默认模块。
+    用 location.replace 而不是赋值：首次落地不应该凭空多出一条历史记录，
+    否则用户按「后退」会退回到「同一个页面的空 hash」，看起来像按钮失灵。 */
+(function routeBoot(){
+  const want = routeFromHash();
+  ROUTE_SILENT = true;
+  try { switchTab(want || 'paper'); } finally { ROUTE_SILENT = false; }
+  if (!want && location.hash !== '#/paper') {
+    try { location.replace(location.pathname + location.search + '#/paper'); }
+    catch (e) { try { location.hash = '#/paper'; } catch (e2) { /* file:// 忽略 */ } }
+  }
+})();
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{ if(b.dataset.mode==='words'){ state.pool='words'; save(); } switchTab(b.dataset.tab, b); if(b.dataset.mode==='words') ask(); }));
 $("quickWords").onclick=()=>{ state.pool='words'; save(); switchTab('trial'); ask(); }; $("memKindSel")&&($("memKindSel").onchange=()=>{ const v=$("memKindSel").value; state.memRotate=v==='rotate'; state.memKind=v==='rotate'?0:Number(v); state.pool='words'; save(); switchTab('trial'); ask(); toast(v==='rotate'?'题型轮换已开启':'已锁定：'+$("memKindSel").selectedOptions[0].textContent); }); $("startAssessment").onclick=()=>{ if(window.__assessStartSimple&&window.__assessStartSimple()) return; state.assessmentIndex=1; state.assessmentCorrect=0; state.pool='words'; save(); switchTab('trial'); const q=assessmentQuestion(); show({kind:'assessment',title:'词汇摸底 · 第 1 / 10 题',prompt:q.item.w,sub:q.item.ipa,choices:q.opts.map(x=>x.short),answer:q.item.short,explain:q.item.w+' '+q.item.zh,word:q.item.w}); }; $("saveDailyTarget").onclick=()=>{ const n=Math.min(100,Math.max(5,Number($("dailyTarget").value)||20)); state.dailyTarget=n; save(); renderTop(); toast('每日目标已设为 '+n+' 词'); }; $("quickWrong").onclick=()=>{ state.pool='wrong'; save(); switchTab('trial'); ask(); }; $("road").addEventListener("click",(e)=>{ const g=e.target.closest("[data-gate]"); if(!g) return; const map={write:"write",news:"listen",talk:"listen",passage:"listen",bank:"read",match:"read",detail:"read",trans:"trans",speak:"speak"}; if(g.dataset.gate==="speak") return switchTab("speak"); state.pool=map[g.dataset.gate]; save(); switchTab("trial"); ask(); });
 document.querySelectorAll('.shop-item').forEach(b=>b.onclick=()=>buyItem(b.dataset.item)); $("shelf").addEventListener("click",(e)=>{ const b=e.target.closest("[data-paper]"); if(!b) return; state.selected=b.dataset.paper; save(); renderShelf(); $("sidePaper").textContent=selectedPaper().name+" · "+selectedPaper().scene; });

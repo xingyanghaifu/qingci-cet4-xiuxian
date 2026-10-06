@@ -88,8 +88,9 @@ test('灵田/道场/心魔图标同基线（currentColor + 去描边点）', () 
     assert.ok(m[1].includes('class="ic"') && m[1].includes('stroke="currentColor"'), `作物 ${key} 未统一基线`);
   }
   // 道场设施图标
+  // 行尾是 \r?\n：模板可能被检出设置换成 CRLF，只认裸 \n 会误报「图标缺失」。
   for (const key of ['scripture_hall', 'alchemy_room', 'arena']) {
-    const m = html.match(new RegExp("    " + key + ": '([\\s\\S]*?)',?\\n"));
+    const m = html.match(new RegExp("    " + key + ": '([\\s\\S]*?)',?\\r?\\n"));
     assert.ok(m, `设施 ${key} 图标缺失`);
     assert.ok(m[1].includes('<path') || m[1].includes('<circle'), `设施 ${key} 应为路径/圆点`);
     assert.ok(/<(circle|rect)[^>]*fill="currentColor"/.test(m[1]), `设施 ${key} 缺强调点`);

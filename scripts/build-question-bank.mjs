@@ -49,7 +49,9 @@ export function extractFunction(html, name) {
 
 /** 抽取 `const NAME = ...;` 形式的常量（到行尾分号） */
 export function extractConst(html, name) {
-  const m = new RegExp(`const ${name}\\s*=\\s*([\\s\\S]*?);\\n`).exec(html);
+  // 行尾必须是「LF 或 CRLF」两种都认 —— 模板可能因编辑器/检出设置被换成 CRLF，
+  // 只匹配裸 \n 会让构建在 Windows 上直接失败（且失败信息极具迷惑性：常量明明还在）。
+  const m = new RegExp(`const ${name}\\s*=\\s*([\\s\\S]*?);\\r?\\n`).exec(html);
   if (!m) throw new Error(`模板中找不到常量 ${name}`);
   return `const ${name} = ${m[1]};`;
 }

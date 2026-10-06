@@ -37,6 +37,12 @@ export interface Lexicon {
   dataPath: string;
   /** 词表分片目录（相对站点根），未构建时为空 */
   wordListPath?: string;
+  /**
+   * 近似词库标记（v1.9.1 阶段 F · PRETCO）。
+   * true 表示「词库数据复用另一词库、只新增特色题库」，UI 据此明示近似关系，
+   * 不让用户误以为这是官方词表。缺省即 false。
+   */
+  approximation?: boolean;
 }
 
 /** 词库清单 */
@@ -150,28 +156,21 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     dataPath: 'lexicons/toefl/vocab-detail/',
   },
   {
-    // v1.9.1 探活结论（docs/probe-pretco.md）：五路径全扫无 PRETCO 词表，
-    // 占位卡如实标注「数据源不可用」而非「规划中」，避免后续误以为只是没做。
-    id: 'pretco-a',
-    name: 'PRETCO-A（三级）',
-    shortName: 'PRETCO-A',
-    wordCount: 0,
-    description: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
-    sourceUrl: '',
-    sourceLicense: '',
-    enabled: false,
-    dataPath: 'lexicons/pretco-a/vocab-detail/',
-  },
-  {
-    id: 'pretco-b',
-    name: 'PRETCO-B（二级）',
-    shortName: 'PRETCO-B',
-    wordCount: 0,
-    description: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
-    sourceUrl: '',
-    sourceLicense: '',
-    enabled: false,
-    dataPath: 'lexicons/pretco-b/vocab-detail/',
+    // v1.9.1 阶段 F：PRETCO 近似卡（探活结论见 docs/probe-pretco.md）。
+    // 公开领域无 PRETCO 词表（五路径全零命中），而 PRETCO-A 词汇 ≈ CET-4 核心子集 ——
+    // 真正的差异在**题型**。故词库数据复用 CET-4 分片（不重复占用空间），
+    // 只新增 PRETCO 特色题库（语法结构 / 听力短对话 / 英译汉 / 应用文）。
+    // 进度按 `pretco` 独立作用域存储（复合键仓），与 CET-4 互不污染。
+    id: 'pretco',
+    name: 'PRETCO 高等学校英语应用能力考试（近似）',
+    shortName: 'PRETCO',
+    wordCount: 4540,
+    description: '基于 CET-4 词库 + PRETCO 特色题型（语法结构 / 英译汉）。',
+    sourceUrl: '近似方案，非官方词表（词库数据复用 CET-4 / MIT）',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'vocab-detail/',
+    approximation: true,
   },
 ];
 
@@ -272,6 +271,7 @@ export function parseManifest(raw: unknown): LexiconManifest {
       enabled: l.enabled !== false,
       dataPath: String(l.dataPath || ''),
       wordListPath: l.wordListPath ? String(l.wordListPath) : undefined,
+      approximation: l.approximation === true,
     });
   }
   if (!lexicons.length) return { ...FALLBACK_MANIFEST, lexicons: [...FALLBACK_LEXICONS] };

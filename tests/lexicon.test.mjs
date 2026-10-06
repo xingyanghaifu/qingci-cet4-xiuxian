@@ -282,15 +282,27 @@ test('A-11 未上线词库：灰显 + aria-disabled，且拒绝切换', () => {
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'cet4');
   });
   const disabled = FALLBACK_MANIFEST.lexicons.filter((l) => !l.enabled).map((l) => l.id);
-  // v1.9.1 起 kaoyan 已上线；仍应灰显的样本改为 ielts/toefl + 两张 PRETCO 近似占位卡
-  for (const id of ['ielts', 'toefl', 'pretco-a', 'pretco-b']) {
+  // v1.9.1 起 kaoyan（阶段 E）、pretco（阶段 F）均已上线；仍灰显的只有 ielts/toefl
+  for (const id of ['ielts', 'toefl']) {
     assert.ok(disabled.includes(id), `${id} 应在兜底清单中标记为未上线`);
+  }
+  // PRETCO 占位卡已撤：探活无官方词表，改走「复用 CET-4 词库 + 特色题库」的近似卡
+  for (const gone of ['pretco-a', 'pretco-b']) {
+    assert.ok(!disabled.includes(gone) && !FALLBACK_MANIFEST.lexicons.some((l) => l.id === gone),
+      `${gone} 占位卡应已从兜底清单撤下`);
   }
   // 已上线的考研卡必须是 enabled，且带 MIT 许可与真实词数
   const ky = FALLBACK_MANIFEST.lexicons.find((l) => l.id === 'kaoyan');
   assert.ok(ky && ky.enabled, 'kaoyan 应在兜底清单中标记为已上线');
   assert.equal(ky.wordCount, 4801);
   assert.equal(ky.sourceLicense, 'MIT');
+  // PRETCO 近似卡：enabled + approximation 标记 + 复用 CET-4 详情分片
+  const pt = FALLBACK_MANIFEST.lexicons.find((l) => l.id === 'pretco');
+  assert.ok(pt && pt.enabled, 'pretco 应在兜底清单中标记为已上线');
+  assert.equal(pt.approximation, true, 'pretco 必须明示为近似方案，不冒充官方词表');
+  assert.equal(pt.dataPath, 'vocab-detail/', 'pretco 复用 CET-4 详情分片，不另建词库数据');
+  assert.equal(pt.wordCount, 4540);
+  assert.equal(pt.sourceLicense, 'MIT');
 });
 
 test('A-12 现有测试兼容：不传词库时行为与 v1.8.1 完全一致', async () => {

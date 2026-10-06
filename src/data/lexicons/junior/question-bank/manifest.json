@@ -3,11 +3,11 @@
   "lexicon": "junior",
   "exam": "zhongkao",
   "counts": {
-    "total": 3510,
+    "total": 3514,
     "byKind": {
       "grammar": 1376,
       "cloze": 959,
-      "reading": 712,
+      "reading": 716,
       "bankfill": 433,
       "writing": 30
     }
@@ -23,7 +23,7 @@
     },
     "reading": {
       "file": "reading.json",
-      "count": 712
+      "count": 716
     },
     "bankfill": {
       "file": "bankfill.json",

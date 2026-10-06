@@ -157,6 +157,28 @@ const LEXICONS = {
     overlapWith: ['cet4'],
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
+  /**
+   * PRETCO 近似（v1.9.1 阶段 F）。
+   *
+   * 探活确认公开领域无 PRETCO 词表（docs/probe-pretco.md：五路径全零命中），
+   * 而 PRETCO-A 词汇 ≈ CET-4 核心子集 —— 真正差异在**题型**（语法结构 + 英译汉）。
+   * 故本词库**不生成任何词库数据**，dataPath 直接指向 CET-4 的 `vocab-detail/`，
+   * 进度按 `pretco` 独立作用域存储（复合键仓），与 CET-4 互不污染。
+   * `approximation: true` 让 UI 明示「基于 CET-4 词库」，不冒充官方词表。
+   */
+  pretco: {
+    id: 'pretco',
+    name: 'PRETCO 高等学校英语应用能力考试（近似）',
+    shortName: 'PRETCO',
+    description: '基于 CET-4 词库 + PRETCO 特色题型（语法结构 / 英译汉）。',
+    // 复用 CET-4 详情分片（`src/data/vocab-detail/`），不重新生成
+    reuseExistingDetail: true,
+    dataPath: 'vocab-detail/',
+    detailDir: path.join(ROOT, 'src', 'data', 'vocab-detail'),
+    wordDir: null, // 词源同 CET-4：模板内联，不产出 wordlist.json
+    sourceUrl: '近似方案，非官方词表（词库数据复用 CET-4 / MIT）',
+    approximation: true,
+  },
 };
 
 /* ---------------- 镜像链 ---------------- */
@@ -896,7 +918,7 @@ async function loadTagWordlist(key, L) {
 
 function writeManifest(built) {
   // 顺序即选择器卡片顺序（C1 规格：初中 → 高中 → CET-4 → CET-6 → 灰显词库）
-  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan'];
+  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'pretco'];
   const lexicons = order.map((id) => {
     const L = LEXICONS[id];
     const b = built.find((x) => x.key === id);
@@ -917,22 +939,16 @@ function writeManifest(built) {
       enabled: L.enabled !== false,
       dataPath: L.dataPath,
       wordListPath: L.dataPath.startsWith('lexicons/') ? L.dataPath.replace('vocab-detail/', '') : '',
+      // 近似词库（PRETCO）：词库数据复用 CET-4，UI 据此标注「基于 CET-4 词库」
+      ...(L.approximation ? { approximation: true } : {}),
     };
   });
   /* 未上线词库：声明但关闭，选择器里灰显（kaoyan 已于 v1.9.1 上线，移出此列）。
-     PRETCO-A/B 的文案如实标注探活结论（docs/probe-pretco.md）：五路径全扫
-     数据源不存在，非「规划中」而是「无源可采」——避免后续误以为只是没做。 */
+     PRETCO-A/B 占位已撤 —— 阶段 F 改用单张 pretco 近似卡（复用 CET-4 词库数据，
+     不重复生成分片），探活结论见 docs/probe-pretco.md。 */
   const PLACEHOLDERS = [
     { id: 'ielts', name: '雅思词汇', shortName: 'IELTS', desc: '规划中：尚未构建词表。' },
     { id: 'toefl', name: '托福词汇', shortName: 'TOEFL', desc: '规划中：尚未构建词表。' },
-    {
-      id: 'pretco-a', name: 'PRETCO-A（三级）', shortName: 'PRETCO-A',
-      desc: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
-    },
-    {
-      id: 'pretco-b', name: 'PRETCO-B（二级）', shortName: 'PRETCO-B',
-      desc: '数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。',
-    },
   ];
   for (const p of PLACEHOLDERS) {
     lexicons.push({

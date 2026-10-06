@@ -1,0 +1,190 @@
+{
+  "schema": "qingci-exam-bank/1",
+  "lexicon": "pretco",
+  "exam": "pretco",
+  "counts": {
+    "total": 3398,
+    "byKind": {
+      "grammar": 1300,
+      "talk": 811,
+      "trans": 1050,
+      "writing": 237
+    }
+  },
+  "kinds": {
+    "grammar": {
+      "file": "grammar.json",
+      "count": 1300
+    },
+    "talk": {
+      "file": "talk.json",
+      "count": 811
+    },
+    "trans": {
+      "file": "trans.json",
+      "count": 1050
+    },
+    "writing": {
+      "file": "writing.json",
+      "count": 237
+    }
+  },
+  "plan": [
+    {
+      "kind": "grammar",
+      "type": "direct",
+      "count": 15
+    },
+    {
+      "kind": "talk",
+      "type": "direct",
+      "count": 10
+    },
+    {
+      "kind": "trans",
+      "type": "direct",
+      "count": 5
+    },
+    {
+      "kind": "writing",
+      "type": "direct",
+      "count": 2
+    }
+  ],
+  "papers": {
+    "pt-01": {
+      "name": "PRETCO 模拟卷一",
+      "structure": {
+        "grammar": 15,
+        "talk": 10,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_pt_grammar_0001",
+        "q_pt_grammar_0002",
+        "q_pt_grammar_0003",
+        "q_pt_grammar_0004",
+        "q_pt_grammar_0005",
+        "q_pt_grammar_0006",
+        "q_pt_grammar_0007",
+        "q_pt_grammar_0008",
+        "q_pt_grammar_0009",
+        "q_pt_grammar_0010",
+        "q_pt_grammar_0011",
+        "q_pt_grammar_0012",
+        "q_pt_grammar_0013",
+        "q_pt_grammar_0014",
+        "q_pt_grammar_0015",
+        "q_pt_talk_0001",
+        "q_pt_talk_0002",
+        "q_pt_talk_0003",
+        "q_pt_talk_0004",
+        "q_pt_talk_0005",
+        "q_pt_talk_0006",
+        "q_pt_talk_0007",
+        "q_pt_talk_0008",
+        "q_pt_talk_0009",
+        "q_pt_talk_0010",
+        "q_pt_trans_0001",
+        "q_pt_trans_0002",
+        "q_pt_trans_0003",
+        "q_pt_trans_0004",
+        "q_pt_trans_0005",
+        "q_pt_writing_0001",
+        "q_pt_writing_0002"
+      ]
+    },
+    "pt-02": {
+      "name": "PRETCO 模拟卷二",
+      "structure": {
+        "grammar": 15,
+        "talk": 10,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_pt_grammar_0016",
+        "q_pt_grammar_0017",
+        "q_pt_grammar_0018",
+        "q_pt_grammar_0019",
+        "q_pt_grammar_0020",
+        "q_pt_grammar_0021",
+        "q_pt_grammar_0022",
+        "q_pt_grammar_0023",
+        "q_pt_grammar_0024",
+        "q_pt_grammar_0025",
+        "q_pt_grammar_0026",
+        "q_pt_grammar_0027",
+        "q_pt_grammar_0028",
+        "q_pt_grammar_0029",
+        "q_pt_grammar_0030",
+        "q_pt_talk_0011",
+        "q_pt_talk_0012",
+        "q_pt_talk_0013",
+        "q_pt_talk_0014",
+        "q_pt_talk_0015",
+        "q_pt_talk_0016",
+        "q_pt_talk_0017",
+        "q_pt_talk_0018",
+        "q_pt_talk_0019",
+        "q_pt_talk_0020",
+        "q_pt_trans_0006",
+        "q_pt_trans_0007",
+        "q_pt_trans_0008",
+        "q_pt_trans_0009",
+        "q_pt_trans_0010",
+        "q_pt_writing_0003",
+        "q_pt_writing_0004"
+      ]
+    },
+    "pt-03": {
+      "name": "PRETCO 模拟卷三",
+      "structure": {
+        "grammar": 15,
+        "talk": 10,
+        "trans": 5,
+        "writing": 2
+      },
+      "ids": [
+        "q_pt_grammar_0031",
+        "q_pt_grammar_0032",
+        "q_pt_grammar_0033",
+        "q_pt_grammar_0034",
+        "q_pt_grammar_0035",
+        "q_pt_grammar_0036",
+        "q_pt_grammar_0037",
+        "q_pt_grammar_0038",
+        "q_pt_grammar_0039",
+        "q_pt_grammar_0040",
+        "q_pt_grammar_0041",
+        "q_pt_grammar_0042",
+        "q_pt_grammar_0043",
+        "q_pt_grammar_0044",
+        "q_pt_grammar_0045",
+        "q_pt_talk_0021",
+        "q_pt_talk_0022",
+        "q_pt_talk_0023",
+        "q_pt_talk_0024",
+        "q_pt_talk_0025",
+        "q_pt_talk_0026",
+        "q_pt_talk_0027",
+        "q_pt_talk_0028",
+        "q_pt_talk_0029",
+        "q_pt_talk_0030",
+        "q_pt_trans_0011",
+        "q_pt_trans_0012",
+        "q_pt_trans_0013",
+        "q_pt_trans_0014",
+        "q_pt_trans_0015",
+        "q_pt_writing_0005",
+        "q_pt_writing_0006"
+      ]
+    }
+  },
+  "papersIndex": [
+    "pt-01",
+    "pt-02",
+    "pt-03"
+  ]
+}

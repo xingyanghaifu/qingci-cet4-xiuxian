@@ -71,6 +71,27 @@ const LEX = {
     writeKinds: ['writing', 'trans'],
     parts: ['读', '写', '译'],
   },
+  /**
+   * PRETCO（v1.9.1 阶段 F · 近似方案）：词库数据复用 CET-4，只考特色题型 ——
+   * 语法结构（单选）、听力短对话（带 TTS 的对话理解）、英译汉（write）、应用文（write）。
+   * 四类全是 direct 题（不成组），故 groups 为空。
+   * 卷面 32 题 = 语法 15 + 短对话 10 + 翻译 5 + 写作 2。
+   */
+  pretco: {
+    tag: 'pretco',
+    kinds: ['grammar', 'talk', 'trans', 'writing'],
+    choiceCount: () => 4,
+    passageKinds: [],
+    groups: [],
+    paper: {
+      size: 32, kinds: 4,
+      structure: { grammar: 15, talk: 10, trans: 5, writing: 2 },
+    },
+    writeKinds: ['writing', 'trans'],
+    parts: ['听', '写', '译', '读'],
+    // 英译汉题面给英文、sample 给中文参考译文（非空串）
+    sampleWriteKinds: ['trans'],
+  },
 };
 const C = LEX[lex];
 if (!C) {
@@ -119,6 +140,9 @@ for (const q of byId.values()) {
     ck(c.write === true, `${q.id}: 主观题 write=true`);
     ck(typeof c.answer === 'string' && c.answer === '', `${q.id}: 主观题 answer 为空串`);
     ck(typeof c.min === 'number' && typeof c.max === 'number', `${q.id}: 主观题有字数区间`);
+    if ((C.sampleWriteKinds || []).includes(q.kind)) {
+      ck(typeof c.sample === 'string' && c.sample.length > 0, `${q.id}: 英译汉有中文参考译文`);
+    }
     continue;
   }
   mcq++;

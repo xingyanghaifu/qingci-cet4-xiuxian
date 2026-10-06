@@ -62,6 +62,19 @@
       "wordListPath": "lexicons/kaoyan/"
     },
     {
+      "id": "pretco",
+      "name": "PRETCO 高等学校英语应用能力考试（近似）",
+      "shortName": "PRETCO",
+      "wordCount": 4540,
+      "description": "基于 CET-4 词库 + PRETCO 特色题型（语法结构 / 英译汉）。",
+      "sourceUrl": "近似方案，非官方词表（词库数据复用 CET-4 / MIT）",
+      "sourceLicense": "MIT",
+      "enabled": true,
+      "dataPath": "vocab-detail/",
+      "wordListPath": "",
+      "approximation": true
+    },
+    {
       "id": "ielts",
       "name": "雅思词汇",
       "shortName": "IELTS",
@@ -84,30 +97,6 @@
       "enabled": false,
       "dataPath": "lexicons/toefl/vocab-detail/",
       "wordListPath": "lexicons/toefl/"
-    },
-    {
-      "id": "pretco-a",
-      "name": "PRETCO-A（三级）",
-      "shortName": "PRETCO-A",
-      "wordCount": 0,
-      "description": "数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。",
-      "sourceUrl": "",
-      "sourceLicense": "",
-      "enabled": false,
-      "dataPath": "lexicons/pretco-a/vocab-detail/",
-      "wordListPath": "lexicons/pretco-a/"
-    },
-    {
-      "id": "pretco-b",
-      "name": "PRETCO-B（二级）",
-      "shortName": "PRETCO-B",
-      "wordCount": 0,
-      "description": "数据源不可用：五路径探活均无 PRETCO 词表（详见 docs/probe-pretco.md）。",
-      "sourceUrl": "",
-      "sourceLicense": "",
-      "enabled": false,
-      "dataPath": "lexicons/pretco-b/vocab-detail/",
-      "wordListPath": "lexicons/pretco-b/"
     }
   ],
   "defaultLexiconId": "cet4"

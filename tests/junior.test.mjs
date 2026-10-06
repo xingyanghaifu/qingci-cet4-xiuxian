@@ -45,10 +45,16 @@ test('A-1 词库清单含 junior：启用、路径正确、默认仍是 CET-4', 
   assert.equal(junior.dataPath, 'lexicons/junior/vocab-detail/');
   assert.equal(junior.wordListPath, 'lexicons/junior/', '词源路径供运行时换词表用');
   // 未上线词库仍然禁用（灰显 + aria-disabled，切换被拒）
-  // 注：kaoyan 已于 v1.9.1 阶段 E 上线，从本列表移出（见 tests/kaoyan.test.mjs）
-  for (const id of ['ielts', 'toefl', 'pretco-a', 'pretco-b']) {
+  // 注：kaoyan（阶段 E）与 pretco（阶段 F）已于 v1.9.1 上线，从本列表移出
+  //     （见 tests/kaoyan.test.mjs 与 tests/pretco.test.mjs）
+  for (const id of ['ielts', 'toefl']) {
     const l = manifest.lexicons.find((x) => x.id === id);
     assert.equal(l && l.enabled, false, `${id} 仍应为未上线`);
+  }
+  // PRETCO 近似卡上线后，两张「数据源不可用」占位卡应已撤（探活结论见 docs/probe-pretco.md）
+  for (const gone of ['pretco-a', 'pretco-b']) {
+    assert.equal(manifest.lexicons.some((x) => x.id === gone), false,
+      `${gone} 占位卡应已撤，改由单张 pretco 近似卡承载`);
   }
 });
 

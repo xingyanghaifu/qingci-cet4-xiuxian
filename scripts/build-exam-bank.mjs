@@ -33,6 +33,7 @@ import {
   SENIOR_GRAMMAR_FILL_SKELETONS, FUNCTION_SETS, SENIOR_WRITING, SENIOR_CONTINUATION,
   KAOYAN_CLOZE_SKELETONS, KAOYAN_READING_SKELETONS, KAOYAN_GAPPED_SKELETONS,
   KAOYAN_WRITING,
+  PRETCO_DIALOGUE_SKELETONS, PRETCO_DIALOGUE_DECOYS, PRETCO_WRITING,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -132,6 +133,36 @@ const LEXICONS = {
     clozeBlanks: 20,
     content: 'kaoyan',
   },
+  /**
+   * PRETCO 近似（v1.9.1 阶段 F）：词库数据复用 CET-4（词源从模板内联读，
+   * `wordlist: 'template'` 哨兵），只生成 PRETCO **特色题型**：
+   *   · 语法结构（单选） grammar  1500+（复用既有 grammar builder）
+   *   · 英译汉          trans    1000+（素材 = CET-4 详情例句，12761 条可用）
+   *   · 听力短对话       talk     800+（21 骨架 × 槽位变体，带 TTS 播放）
+   *   · 应用文写作       writing  200+
+   */
+  pretco: {
+    id: 'pretco', exam: 'pretco', label: 'PRETCO', prefix: 'pt',
+    wordlist: 'template',
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'pretco', 'question-bank'),
+    // 翻译素材取自 CET-4 详情分片（复用，不新建词库数据）
+    detailDir: path.join(ROOT, 'src', 'data', 'vocab-detail'),
+    paperNames: ['PRETCO 模拟卷一', 'PRETCO 模拟卷二', 'PRETCO 模拟卷三'],
+    paperKeys: ['pt-01', 'pt-02', 'pt-03'],
+    plan: [
+      { kind: 'grammar', type: 'direct', count: 15 },
+      { kind: 'talk', type: 'direct', count: 10 },
+      { kind: 'trans', type: 'direct', count: 5 },
+      { kind: 'writing', type: 'direct', count: 2 },
+    ],
+    // direct 类目标是**题数**。
+    // 语法 1300：GRAMMAR_FRAMES 在 CET-4 词表上**饱和于 1376 题**（初中同为 1376，
+    //   是框架 × 词槽组合的天然上限），再加目标也只会在 idle 里空转，故取 1300
+    //   作「够刷」的下限而非虚构的 1500。英译汉 1000+ / 短对话 800+ / 应用文 200+。
+    targets: { grammar: 1300, talk: 820, trans: 1050, writing: 220 },
+    detailQs: 3,
+    content: 'pretco',
+  },
 };
 
 /** 语法填空的形态标记 → 动词变位表字段 */
@@ -176,6 +207,15 @@ function mulberry32(seed) {
 /* ---------------- 词池准备 ---------------- */
 
 function loadWordlist(file) {
+  // `TEMPLATE` 哨兵：词源内联在模板的 <script id="lexicon"> 里（CET-4 / PRETCO 近似
+  // 不产出独立 wordlist.json）。走这条路避免为近似词库复制一份 4540 词的词表。
+  if (file === 'template') {
+    const html = fs.readFileSync(path.join(ROOT, 'src', 'index.template.html'), 'utf8');
+    const m = /<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+    if (!m) throw new Error('模板缺少 <script id="lexicon">');
+    const arr = JSON.parse(m[1]);
+    return { arr, map: new Map(arr.map((w) => [String(w.w).toLowerCase(), w])) };
+  }
   const arr = JSON.parse(fs.readFileSync(file, 'utf8'));
   const map = new Map(arr.map((w) => [String(w.w).toLowerCase(), w]));
   return { arr, map };
@@ -927,6 +967,66 @@ function buildTranslation(target, rand) {
   }));
 }
 
+
+/**
+ * 听力短对话（PRETCO 特色，阶段 F）：一段对话 + 一道理解题。
+ *
+ * 复用既有听力链路 —— 题目带 `passage`（对话文本），`show()` 会因 `speak` 自动
+ * 显示播放条（TTS 朗读对话），用户听后选答案。kind 用 `talk`（与 CET-4 卷的
+ * 「长对话」同一题型标识，`EXAM_KIND_TITLE` 与 `question-bank.ts` 均已支持）。
+ *
+ * 变体机制与 cloze/reading 同源：骨架句带槽位 → makeFiller 按 seed 填词 →
+ * 每个 vi 一篇新对话。正解是骨架烧死的场景短语，干扰项从 PRETCO_DIALOGUE_DECOYS
+ * 确定性取 3 个（与正解不同、互不重复）。
+ */
+function buildDialogue(target, rand, pool) {
+  const sks = PRETCO_DIALOGUE_SKELETONS;
+  const DECOYS = PRETCO_DIALOGUE_DECOYS;
+  const questions = [];
+  const seenQ = new Set();
+  for (let v = 0; v < target; v++) {
+    const sk = sks[v % sks.length];
+    const vi = Math.floor(v / sks.length);
+    const fill = makeFiller(`${sk.id}|${vi}|t`, pool);
+    const text = renderPassage(sk.sents, fill, { blanked: false }).sentences.join('\n');
+    // 干扰项：从 DECOYS 里确定性取 3 个与正解不同的（DECOYS 有 30 条，恒够）
+    const poolD = DECOYS.filter((d) => d !== sk.answer);
+    const start = (vi * 3 + v) % poolD.length;
+    const decoys = [];
+    for (let i = 0; i < 3; i++) decoys.push(poolD[(start + i * 7) % poolD.length]);
+    if (new Set(decoys).size !== 3 || decoys.includes(sk.answer)) {
+      console.error(`❌ 短对话 ${sk.id} 干扰项不唯一或含正解：${JSON.stringify(decoys)}`);
+      process.exit(1);
+    }
+    const key = text + '\u0000' + sk.answer;
+    if (seenQ.has(key)) continue;   // 同文本同答案的重复变体跳过
+    seenQ.add(key);
+    const choices = shuffle4([sk.answer, ...decoys], rand);
+    const rec = {
+      prompt: sk.question,
+      sub: '先听对话，再选最合适的答案。',
+      passage: text,
+      choices,
+      answer: sk.answer,
+      explain: `对话的关键信息指向「${sk.answer}」；其余选项与对话内容无关。`,
+    };
+    validateChoice(rec, `talk#${questions.length + 1}`, { requirePassage: true, choices: 4 });
+    questions.push({
+      id: `q_${ID_PREFIX}_talk_${String(questions.length + 1).padStart(4, '0')}`,
+      kind: 'talk',
+      part: '听',
+      difficulty: clamp01(0.35 + (v % 5) * 0.05),
+      discrimination: 0.35,
+      knowledgeTags: [SK.tagBase, `talk:${sk.id}`],
+      content: rec,
+    });
+  }
+  if (questions.length < target) {
+    console.log(`   （短对话变体去重后 ${questions.length}/${target}，骨架 ${sks.length} 个 × 槽位变体）`);
+  }
+  return { questions };
+}
+
 /* ---------------- 组卷 ---------------- */
 
 /**
@@ -1134,15 +1234,20 @@ function main() {
         byKind.gapped = buildGapped(t, rand, pool).questions;
         break;
       case 'trans':
-        // 英译汉（E4）：素材取自本词库 vocab-detail 的例句 + 中文译文
+        // 英译汉（E4/F3）：素材取自本词库 vocab-detail 的例句 + 中文译文
         byKind.trans = buildTranslation(t, rand);
+        break;
+      case 'talk':
+        // 听力短对话（F3 PRETCO 特色）：21 骨架 × 槽位变体
+        byKind.talk = buildDialogue(t, rand, pool).questions;
         break;
       case 'grammarfill':
         byKind.grammarfill = buildGrammarFill(pool, t, rand).questions;
         break;
       case 'writing':
         byKind.writing = buildWriting(
-          isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING : WRITING_TASKS, 'writing', L.id);
+          isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING
+            : L.content === 'pretco' ? PRETCO_WRITING : WRITING_TASKS, 'writing', L.id);
         break;
       case 'continuation':
         byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);
@@ -1154,7 +1259,7 @@ function main() {
     const label = {
       grammar: '语法选择', cloze: '完形填空', reading: '阅读理解', bankfill: '选词填空',
       gapped: '七选五', grammarfill: '语法填空', writing: '书面表达', continuation: '读后续写',
-      trans: '英译汉',
+      trans: '英译汉', talk: '听力短对话',
     }[step.kind];
     console.log(`   ${label} ${byKind[step.kind].length}${pass ? `（${pass}）` : ''}`);
   }

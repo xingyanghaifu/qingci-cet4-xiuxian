@@ -2400,3 +2400,556 @@ export const KAOYAN_WRITING = (() => {
   return out;
 })();
 
+
+/**
+ * PRETCO 特色素材（v1.9.1 阶段 F · 近似方案）。
+ *
+ * 探活结论（docs/probe-pretco.md）：公开领域无 PRETCO 词表，故词库数据复用 CET-4；
+ * 本文件只提供 **PRETCO 特色题型** 的素材 —— 语法结构、英译汉、听力短对话、应用文。
+ *
+ * 听力短对话：2–4 轮 + 一道理解题。`answer` 是中文正解（对话考点），
+ * `speak` 由 passage 承载（运行时 TTS 朗读）。句子带槽位 → 变体篇章，
+ * 否则 20 骨架最多 20 题，到不了 E4/F3 的 800+。
+ * 干扰项从 PRETCO_DIALOGUE_DECOYS 取（与正解同为「场景短语」，互不雷同）。
+ */
+export const PRETCO_DIALOGUE_DECOYS = [
+  '讨论期末考试的复习计划', '比较两种品牌的价格差异', '抱怨食堂饭菜的质量',
+  '询问图书馆的开放时间', '商量周末去哪里郊游', '说明迟到的原因并道歉',
+  '推荐一本刚读完的小说', '介绍校园社团的招新安排', '讨论兼职工作的时薪',
+  '描述一次旅行中的意外', '询问机场登机牌的办理', '讨论如何减少塑料使用',
+  '商量合租房子的分摊费用', '说明课程设计的进度', '请教邮件写作的格式',
+  '讨论运动会的报名项目', '描述新邻居的第一印象', '询问医院挂号的流程',
+  '商量归还借书的日期', '讨论宿舍熄灯时间的调整', '介绍家乡的一道名菜',
+  '询问地铁换乘的路线', '讨论一次小组展示的分工', '解释为什么改变了计划',
+  '描述学习乐器的经历', '询问奖学金的申请条件', '讨论网购退换货的流程',
+  '说明手机没电借充电器', '商量班级聚餐的时间地点', '询问实习面试的准备',
+];
+
+export const PRETCO_DIALOGUE_SKELETONS = [
+  {
+    id: 'pdlg-bus',
+    question: 'What are the two speakers mainly doing?',
+    answer: '问路并确认公交路线',
+    sents: [
+      'M: Excuse me, does this bus go to {PLACE1}?',
+      'W: Yes, but you need to change at the {N1@road}.',
+      'M: Thanks a lot. How long does it take?',
+      'W: About {NUM1} minutes by {N2@vehicle}.',
+    ],
+  },
+  {
+    id: 'pdlg-library',
+    question: 'What does the woman suggest the man do?',
+    answer: '改天再来借书',
+    sents: [
+      'M: I want to borrow this book on {N1@bookish}.',
+      'W: Sorry, it is out. You can {V1@do} it next {T1}.',
+      'M: That is a pity. I need it today.',
+      'W: Maybe the {N2@fac} has a copy.',
+    ],
+  },
+  {
+    id: 'pdlg-clinic',
+    question: 'Why does the man feel worried?',
+    answer: '担心自己的身体状况',
+    sents: [
+      'W: You look tired. What is {A1@feel} you?',
+      'M: I have a headache and I feel very {N1@tired}.',
+      'W: You should see a doctor at the {N2@work}.',
+      'M: Thank you. I will go this {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-movie',
+    question: 'What will the two speakers probably do next?',
+    answer: '一起去看电影',
+    sents: [
+      'M: There is a good film on at the {N1@scene} tonight.',
+      'W: Great! I have wanted to see it for {NUM1} weeks.',
+      'M: Shall we book the {T1} show then?',
+      'W: Sure. I will {V1@goish} with you after class.',
+    ],
+  },
+  {
+    id: 'pdlg-restaurant',
+    question: 'What does the man order?',
+    answer: '点了主食和饮料',
+    sents: [
+      'W: What would you like to {V1@eat}, sir?',
+      'M: I will have the {N1@food} with some fresh {N2@crop}.',
+      'W: Would you like {A1@fresh} vegetables with it?',
+      'M: Yes, please. And the bill, {NUM1} dollars.',
+    ],
+  },
+  {
+    id: 'pdlg-weather',
+    question: 'How is the weather today?',
+    answer: '天气晴朗温暖',
+    sents: [
+      'W: What {A1@weather} weather we have today!',
+      'M: Yes, it is warm and the {N1@scene} looks clear.',
+      'W: Let us go {R1@leisure} to the park.',
+      'M: Good idea. Take a {N2@rainGear} just in case.',
+    ],
+  },
+  {
+    id: 'pdlg-class',
+    question: 'What did the teacher ask the students to do?',
+    answer: '课后完成作业',
+    sents: [
+      'M: Miss, shall we hand in the {N1@homework} now?',
+      'W: No, {V1@do} it before {T1} morning, please.',
+      'M: Okay. Is the {N2@subject} test the same day?',
+      'W: Yes, right after the first {N3@act}.',
+    ],
+  },
+  {
+    id: 'pdlg-sport',
+    question: 'What are they talking about?',
+    answer: '讨论运动会的准备',
+    sents: [
+      'M: Our class will {V1@play} in the school match.',
+      'W: Have you practised at the {N1@sportPlace} yet?',
+      'M: Not yet. We train every {T1} afternoon.',
+      'W: Then you must run {R1@study} to win.',
+    ],
+  },
+  {
+    id: 'pdlg-shopping',
+    question: 'What does the woman want to buy?',
+    answer: '想买一件外套',
+    sents: [
+      'W: I need a warm {N1@colour} for the winter.',
+      'M: This {A1@itemAdj} one is on sale today.',
+      'W: How much does it cost?',
+      'M: {NUM1} yuan, and you get a free {N2@colour}.',
+    ],
+  },
+  {
+    id: 'pdlg-travel',
+    question: 'Where are the speakers going?',
+    answer: '准备外出旅行',
+    sents: [
+      'M: Have you ever been to {PLACE1} before?',
+      'W: No, but I {V1@goish} there next month.',
+      'M: Take a {N1@vehicle} — it is faster than a bus.',
+      'W: Good point. I will book it this {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-job',
+    question: 'What is the man looking for?',
+    answer: '正在找工作',
+    sents: [
+      'W: Are you still looking for a {N1@chance}?',
+      'M: Yes, I sent out {NUM1} applications last week.',
+      'W: Maybe you should {V1@do} a clearer resume.',
+      'M: I will {V2@do} that tonight.',
+    ],
+  },
+  {
+    id: 'pdlg-study',
+    question: 'What does the woman advise?',
+    answer: '建议制定学习计划',
+    sents: [
+      'M: I cannot keep up with all the {N1@homework}.',
+      'W: You should make a plan and {V1@do} it step by step.',
+      'M: Will that really {A1@habit} help?',
+      'W: It will, if you start this {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-neighbour',
+    question: 'What is the problem?',
+    answer: '邻居噪音打扰休息',
+    sents: [
+      'W: The flat above us is very noisy at night.',
+      'M: I know. It {V1@do} my head in every {T1}.',
+      'W: Shall we write a note to the {N1@neighbour}?',
+      'M: Yes, let us {V2@talkV} to them tomorrow.',
+    ],
+  },
+  {
+    id: 'pdlg-email',
+    question: 'What does the man ask the woman to do?',
+    answer: '帮忙检查邮件',
+    sents: [
+      'M: Could you {V1@do} me a favour with this email?',
+      'W: Of course. Is the {N1@news} ready to send?',
+      'M: Almost. Just check the {N2@note} at the end.',
+      'W: Sure, I will read it {R1@leisure}.',
+    ],
+  },
+  {
+    id: 'pdlg-hobby',
+    question: 'What does the woman enjoy?',
+    answer: '喜欢画画的爱好',
+    sents: [
+      'W: I spend my free time on {N1@hobby}.',
+      'M: Really? How often do you {V1@play}?',
+      'W: Almost every {T1}. It helps me relax.',
+      'M: That sounds {A1@outing} fun.',
+    ],
+  },
+  {
+    id: 'pdlg-news',
+    question: 'What did the man read?',
+    answer: '读了一篇报道',
+    sents: [
+      'M: I read an interesting {N1@news} today.',
+      'W: What was it about?',
+      'M: It was about the new {N2@road} near {PLACE1}.',
+      'W: I will {V1@do} it after dinner.',
+    ],
+  },
+  {
+    id: 'pdlg-money',
+    question: 'What is the woman worried about?',
+    answer: '担心花钱太多',
+    sents: [
+      'W: I have spent too much money this month.',
+      'M: You should {V1@do} a budget and save {NUM1}.',
+      'W: You are right. I {A1@feel} bad about it.',
+      'M: Start from this {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-team',
+    question: 'What does the man propose?',
+    answer: '提议分工合作',
+    sents: [
+      'M: Let us divide the work {R1@leisure}.',
+      'W: Good. I will {V1@do} the slides.',
+      'M: Then I will write the {N1@note}.',
+      'W: We can {V2@talkV} about it at {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-food',
+    question: 'What does the woman think of the food?',
+    answer: '觉得饭菜不错',
+    sents: [
+      'W: The {N1@food} here tastes really good.',
+      'M: Yes, and the {A1@fresh} fruit is cheap too.',
+      'W: Shall we {V1@eat} here again next week?',
+      'M: Sure, maybe on {T1}.',
+    ],
+  },
+  {
+    id: 'pdlg-apology',
+    question: 'Why does the man apologise?',
+    answer: '因迟到而道歉',
+    sents: [
+      'M: I am sorry I am late for the {N1@act}.',
+      'W: That is all right. What {A1@feel} happened?',
+      'M: The traffic was heavy and the {N2@vehicle} broke down.',
+      'W: Please {V1@do} not let it happen again.',
+    ],
+  },
+  {
+    id: 'pdlg-advice',
+    question: 'What does the woman recommend?',
+    answer: '建议早点起床',
+    sents: [
+      'W: You should {V1@do} up {R1@really} early tomorrow.',
+      'M: Why? The test is not until noon.',
+      'W: The {N1@road} is crowded in the morning.',
+      'M: I see. I will set the alarm tonight.',
+    ],
+  },
+];
+
+/**
+ * PRETCO 应用文素材（写作题，F3 要求 200+）。
+ *
+ * 与考研写作（KAOYAN_WRITING，100–200 词议论文/书信）不同，PRETCO 写的是
+ * **应用文**：通知、便条、启事、建议信、求职信等，60–100 词，格式与称谓固定。
+ * 这里按 PRETCO-A 真实考过的八类文体重写 30×N 条（题材 × 情境两维组合），
+ * 每条 prompt 自带具体情境，避免模板化雷同。
+ */
+export const PRETCO_WRITING = (() => {
+  const out = [];
+  const push = (genre, prompt, min = 60, max = 100) => out.push({ genre, prompt, min, max });
+
+  /* 1) 通知 Notice：布告栏口吻，含时间/地点/对象/联系方式 */
+  const noticeTopics = [
+    ['英语角活动', '你校英语社团将举办「English Corner」活动，请以社团名义写一则通知，说明时间、地点、面向对象与报名方式。'],
+    ['图书漂流', '学校图书馆将推出「图书漂流」活动，请写一则通知，说明规则：每人带两本已读过的书参与，可在留言卡上写推荐语。'],
+    ['演讲比赛', '学生会将举办英文演讲比赛，请以学生会名义写一则通知，说明主题、报名截止日期与评分标准。'],
+    ['义卖活动', '你班将举办义卖活动为贫困山区捐款，请写一则通知，说明时间、地点、义卖物品与捐款去向。'],
+    ['春游报名', '学校将组织一次春季郊游，请写一则通知，说明目的地、出发时间、交通方式与报名截止日期。'],
+    ['暑期社团招新', '学生社团联合会将开始暑期招新，请写一则通知，说明招新社团、报名方式与面试安排。'],
+    ['讲座邀请', '学校将邀请外教举办「英语写作入门」讲座，请写一则通知，说明时间、地点、主讲人与参加对象。'],
+    ['失物招领', '本校图书馆拾到一串钥匙和一本书，请写一则失物招领启事，说明拾获物品、时间地点与认领方式。'],
+    ['设备报修', '教学楼三楼的多媒体设备出现故障，请写一则通知，说明故障情况、影响范围与预计修复时间。'],
+    ['问卷调查', '学校将就学生课外阅读情况开展问卷调查，请写一则通知，说明调查目的、填写方式与截止时间。'],
+  ];
+  for (const [topic, prompt] of noticeTopics) push('通知', `${prompt}（主题：${topic}）`);
+
+  /* 2) 求职信 / 求职申请：岗位 + 能力 + 联系方式 */
+  const jobTopics = [
+    ['英文报编辑', '你看到校报招聘英文版编辑，请写一封求职信，说明你的写作经历、语言水平与可投入的时间。'],
+    ['夏令营辅导员', '你校国际夏令营招募英语辅导员，请写一封求职信，说明你的口语能力、相关经历与获奖情况。'],
+    ['翻译助理', '一家出版社招聘英文翻译助理，请写一封求职信，说明你的翻译实践、词汇量与可实习的时段。'],
+    ['书店店员', '你想应聘一家英文书店的兼职店员，请写一封求职信，说明你的推荐能力、阅读兴趣与可工作的时间。'],
+    ['社团干事', '学生会文艺部招聘干事，请写一封求职信，说明你的组织能力、参与过的活动与职责设想。'],
+    ['翻译实习', '你申请一家公司的英文客服实习岗位，请写一封求职信，说明你的语言基础、沟通经验与可实习时长。'],
+    ['志愿者', '博物馆招募英文讲解志愿者，请写一封求职信，说明你的口语水平、对历史的兴趣与可服务的时间。'],
+    ['写作助教', '你申请担任留学生的写作助教，请写一封求职信，说明你的成绩、方法与可投入的辅导时间。'],
+    ['字幕校对', '一家影视公司招聘英文字幕校对，请写一封求职信，说明你的细致程度、词汇量与试译经验。'],
+    ['教辅编辑', '出版社招聘英语教辅编辑，请写一封求职信，说明你的命题思路、教学经历与图表制作能力。'],
+  ];
+  for (const [role, prompt] of jobTopics) push('求职信', `你应聘${role}。${prompt}`);
+
+  /* 3) 建议信 / 投诉信：向对方提出具体要求或建议 */
+  const letterTopics = [
+    ['图书馆噪音', '你常在自习时被图书馆内的说话声打扰。请写一封投诉信，说明具体情况并提出两条改进建议。'],
+    ['宿舍作息', '你的室友提议把熄灯时间推迟到凌晨一点。请写信提出异议，说明理由并给出折中办法。'],
+    ['食堂窗口', '你发现某个食堂窗口的饭菜价格与标价不符。请写一封投诉信，说明经过并要求澄清。'],
+    ['网络速度', '你所在的宿舍楼宽带速度很慢。请写一封信给网络中心，说明情况并请其安排检修。'],
+    ['空调开放', '夏天教室的空调开放时间太短。请写信给教务处，说明影响并请求延长开放时段。'],
+    ['停车位', '你发现小区停车位长期被占。请写一封建议信，说明现象并提出管理的办法。'],
+    ['活动时长', '你所在社团的活动常被打断，成员难以投入。请写信给负责人，说明问题并建议调整安排。'],
+    ['打印费用', '图书馆打印费用偏高，影响同学使用。请写一封建议信，说明情况并提出可行的收费方案。'],
+    ['课程安排', '某门选修课时间与必修课冲突。请写一封信说明问题，并请求协调安排。'],
+    ['考试安排', '你发现考试座位安排不合理，影响了发挥。请写一封建议信，说明情况并提出改进办法。'],
+  ];
+  for (const [topic, prompt] of letterTopics) push('建议信', `${prompt}（针对：${topic}）`);
+
+  /* 4) 便条 / 请假条 / 留言条：短格式，5–8 句 */
+  const noteTopics = [
+    ['请假', '你因发烧需要请一天病假。请给英语老师写一张英文请假条，说明原因与补课安排。'],
+    ['早退', '你下午要去医院复查，需提前离校。请给班主任写一张英文请假条。'],
+    ['代请假', '你的同学需要请半天假。请以同学的名义写一张英文便条，说明事由和联系人。'],
+    ['迟到', '你在公交车上遇到故障，迟到了十五分钟。请给老师写一张英文便条说明情况。'],
+    ['请假参加比赛', '你将代表学校参加英语演讲比赛，需要请一天的假。请写一张英文请假条说明安排。'],
+    ['代取快递', '你的室友出差了，请你替他取快递。请写一张英文便条告知家人和快递信息。'],
+    ['留言', '你的朋友来访但你不在家。请写一张英文便条说明你回来的时间。'],
+    ['托人带话', '你今天要加班，无法参加晚上的活动。请写一张英文便条向朋友说明。'],
+    ['会议改期', '你临时有事不能参加小组讨论。请写一张英文便条说明并提议改期。'],
+    ['请假陪家人', '你的家人需要做手术，你需要请假一天陪同。请写一张英文请假条。'],
+  ];
+  for (const [topic, prompt] of noteTopics) push(topic === '留言' || topic === '托人带话' || topic === '代取快递' ? '便条' : '请假条', `${prompt}（场景：${topic}）`, 40, 60);
+
+  /* 5) 启事 / 失物启事 / 转让 / 招聘启事 */
+  const adTopics = [
+    ['寻物', '你在操场捡到一个运动水壶，请写一则寻物启事，说明物品特征与联系方式。'],
+    ['物品转让', '你毕业要离开这座城市，想转让一张健身年卡。请写一则转让启事，说明价格与联系方式。'],
+    ['房屋出租', '你想出租自己家的一间次卧。请写一则招租启事，说明条件、租金与交通情况。'],
+    ['兼职招聘', '你在经营的咖啡店招兼职店员。请写一则招聘启事，说明工作内容、待遇与联系方式。'],
+    ['物品交换', '你想用一台旧相机换一台电子书阅读器。请写一则交换启事，说明成色与交换条件。'],
+    ['拾物招领', '你在教室捡到一副眼镜。请写一则失物招领启事，说明时间地点与认领方式。'],
+    ['课程代售', '你考完的复习资料已无用。请写一则转让启事说明资料内容与价格。'],
+    ['宠物寻找', '你家的猫走丢了。请写一则寻宠启事，说明宠物特征与联系方式。'],
+    ['场地预订', '你校篮球队要预定周末的训练场地。请写一则通知说明预订需求与联系人。'],
+    ['图书交换', '你想组织一次同学间的图书交换活动。请写一则活动启事，说明规则与时间地点。'],
+  ];
+  for (const [topic, prompt] of adTopics) push('启事', `${prompt}（类型：${topic}）`);
+
+  /* 6) 口语任务型短文：PRETCO 写作部分常见叙述 / 描述 */
+  const oralTopics = [
+    ['介绍家乡', '请用英语写一段话介绍你的家乡：地理位置、气候、一个特色景点与一种当地食物。'],
+    ['介绍朋友', '请介绍你的一位朋友：他/她的性格、爱好，你们常一起做的事，以及你对他的评价。'],
+    ['叙述经历', '请叙述一次难忘的经历：什么时候、在哪里、发生了什么、你学到了什么。'],
+    ['描述一天', '请描述你普通的一天：从早上起床到晚上休息，按时间顺序写。'],
+    ['介绍假期', '请介绍你上学期的假期：你去了哪里、做了什么、有什么收获。'],
+    ['描述季节', '请描述你最喜欢的季节：天气、景物、人们的生活，以及你为什么喜欢。'],
+    ['介绍兴趣', '请介绍你的一个爱好：你什么时候开始的、怎么学的、带来什么好处。'],
+    ['叙述帮助', '请叙述一次你帮助别人的经历：事情经过、对方的反应、你的感受。'],
+    ['介绍学校生活', '请介绍你的学校生活：一节课是什么样的、课余活动、老师的教学特点。'],
+    ['描述运动', '请描述你参加过的一次体育运动：项目、过程、感受与坚持的原因。'],
+  ];
+  for (const [topic, prompt] of oralTopics) push('短文', `${prompt}（主题：${topic}）`);
+
+  /* 7) 道歉信 / 感谢信 / 确认信 / 答复信 */
+  const socialTopics = [
+    ['失约道歉', '你答应参加朋友生日聚会却因故未能前往。请写信道歉，说明原因并提出补救办法。'],
+    ['道歉', '你不小心弄坏了同学的实验报告。请写信道歉，说明经过与解决方案。'],
+    ['感谢', '外教帮你修改了作文。请写信感谢他，说明具体帮助与你的收获。'],
+    ['感谢', '同学在你生病时照顾了你几天。请写信感谢，说明细节与你的感激。'],
+    ['确认', '你收到了活动邀请。请写一封确认信，确认参加并询问具体安排。'],
+    ['答复', '社团邀请你参加活动，但你时间冲突。请写一封婉拒信，说明原因并祝活动顺利。'],
+    ['祝贺', '朋友获得奖学金。请写一封信祝贺他，并谈谈你的建议与期望。'],
+    ['询问', '你想了解一个培训课程。请写一封信询问报名方式、费用与课程安排。'],
+    ['提醒', '你要提醒同学提交作业。请写一封邮件提醒，说明截止日期与提交方式。'],
+    ['祝贺', '你的笔友顺利通过了考试。请写一封信表示祝贺并分享你的学习方法。'],
+  ];
+  for (const [topic, prompt] of socialTopics) push(topic.includes('道歉') ? '道歉信' : topic.includes('感谢') ? '感谢信' : '邮件', `${prompt}（类型：${topic}）`);
+
+  /* 8) 图表 / 数据描述：PRETCO 常见的数据报告短文 */
+  const chartTopics = [
+    ['阅读时间', '下图是某班学生每天课外阅读时长的调查结果。请描述数据特点并给出你的建议。'],
+    ['上网时长', '下图是五类人群每日上网时长的对比。请描述趋势并分析原因。'],
+    ['出行方式', '下图是某市居民通勤方式的调查。请描述主要数据并说明你的看法。'],
+    ['消费结构', '下图是某家庭月度支出的构成。请描述结构并指出可调整的部分。'],
+    ['运动频率', '下图是学生每周运动次数的分布。请描述数据并提出改进建议。'],
+    ['睡眠时长', '下图是不同年级学生的平均睡眠时间。请描述差异并分析原因。'],
+    ['阅读偏好', '下图是不同题材图书的借阅量。请描述偏好差异并说明原因。'],
+    ['志愿活动', '下图是学生参加志愿服务的时长统计。请描述数据并谈你的看法。'],
+    ['学习方式', '下图是不同学习方式的使用比例。请描述现状并给出建议。'],
+    ['饮食偏好', '下图是食堂各窗口的受欢迎程度。请描述数据并提出改进建议。'],
+  ];
+  for (const [topic, prompt] of chartTopics) push('图表作文', `${prompt}（数据：${topic}）`);
+
+  /* 9) 议论文短文（观点明确 + 两点理由 + 结论） */
+  const argueTopics = [
+    ['在线学习', '有人认为在线学习会取代课堂。请写一篇短文说明你的观点并给出两点理由。'],
+    ['手机管理', '学校是否应禁止学生在课间使用手机。请写一篇短文说明你的立场与理由。'],
+    ['志愿服务', '志愿服务是否应计入大学学分。请写一篇短文讨论并给出理由。'],
+    ['作业量', '小学是否应取消家庭作业。请写一篇短文讨论利弊并表明立场。'],
+    ['阅读方式', '纸质书与电子书的优劣。请写一篇短文比较并说明你的选择。'],
+    ['考试方式', '是否应降低考试在评价中的比重。请写一篇短文讨论并给出理由。'],
+    ['志愿服务', '志愿活动应重在形式还是实质。请写一篇短文讨论并表明立场。'],
+    ['语言学习', '是否应在小学阶段开设第二外语。请写一篇短文讨论并给出理由。'],
+    ['课外培训', '课外培训对中学生弊大于利吗。请写一篇短文讨论并给出两点理由。'],
+    ['传统节日', '传统节日在现代生活中应该被保留吗。请写一篇短文讨论并表明立场。'],
+  ];
+  for (const [topic, prompt] of argueTopics) push('话题作文', `${prompt}（题目：${topic}）`);
+
+  /* 10) 便函式「我打算做…」：计划与安排类 */
+  const planTopics = [
+    ['春游计划', '你和同学计划周末郊游。请写一段话说明时间、地点、行程与分工。'],
+    ['读书计划', '你打算用一个月读完一本书。请写一段话说明你的计划与每天的安排。'],
+    ['学习方法', '请写一段话说明你准备如何提高英语写作水平。'],
+    ['作息计划', '你打算调整作息时间。请写一段话说明你的具体安排与理由。'],
+    ['活动策划', '你要组织一次班级活动。请写一段话说明流程、人员分工与应急预案。'],
+    ['学习计划', '请写一段话说明本学期的学习目标与具体措施。'],
+    ['旅行计划', '你计划暑假去一处地方旅行。请写一段话说明路线、预算与行李准备。'],
+    ['复习计划', '期末前你制定了复习计划。请写一段话说明科目安排与重点。'],
+    ['锻炼计划', '你打算坚持每天锻炼。请写一段话说明项目、时间与阶段目标。'],
+    ['读书笔记', '请写一段话说明你如何整理读书笔记并分享给他人。'],
+  ];
+  for (const [topic, prompt] of planTopics) push('计划', `${prompt}（主题：${topic}）`);
+
+  /* 11) 学校日常事务类应用文（PRETCO 高频，题材独立不复用上列） */
+  const campusTopics = [
+    ['选课', '选课系统开放了。请写一段话向同学介绍你选的课程与原因，并提醒选课注意事项。'],
+    ['课表', '请向新生介绍本班一周的课程安排：每天上什么课、几点开始、哪里上课。'],
+    ['班规', '你所在的班级要制定班规。请写一份班规草案，列出四条要求并说明理由。'],
+    ['值日', '请写一份值日安排表的要求说明：每天谁负责、做什么、几点完成。'],
+    ['家长会', '学校将召开家长会。请写一则通知，说明时间、地点、需要家长准备的事项。'],
+    ['缴费', '学校开始收取本学期教材费。请写一则通知，说明金额、缴费方式与截止日期。'],
+    ['校服', '学校统一订做冬季校服。请写一则通知，说明款式、尺码与领取方式。'],
+    ['体检', '学校将组织学生体检。请写一则通知，说明项目、时间安排与注意事项。'],
+    ['运动会', '校运动会即将开始。请写一则通知，说明项目、报名要求与加油口号。'],
+    ['毕业照', '毕业照拍摄安排已确定。请写一则通知，说明时间、地点、着装要求与集合地点。'],
+  ];
+  for (const [topic, prompt] of campusTopics) push('通知', `${prompt}（事务：${topic}）`);
+
+  /* 12) 求助 / 咨询 / 邀约类书信 */
+  const inquiryTopics = [
+    ['课程咨询', '你想了解一个英语培训班的课程设置。请写信咨询开班时间、班级人数与学费。'],
+    ['书籍咨询', '你想向书店询问一本教材是否有货。请写信说明书名、版本与购买方式。'],
+    ['住宿咨询', '你打算暑假在校外租房。请写信询问房租、水电与交通条件。'],
+    ['兼职咨询', '你想了解校内的兼职岗位。请写信询问工作内容、报酬与时间要求。'],
+    ['交换咨询', '你想了解交换项目的申请条件。请写信询问语言成绩、名额与费用。'],
+    ['讲座咨询', '你想询问讲座的入场方式。请写信说明你的身份与是否需要预留座位。'],
+    ['社团咨询', '你听说一个社团很有趣。请写信询问入社方式、活动安排与是否需要面试。'],
+    ['奖学金咨询', '你想了解奖学金的评定标准。请写信咨询成绩要求与申请材料。'],
+    ['教材咨询', '你想确认本学期是否更换教材。请写信向老师询问并说明你需要的信息。'],
+    ['实习咨询', '你想了解实习单位的工作时间。请写信询问打卡方式、休息日与工作内容。'],
+  ];
+  for (const [topic, prompt] of inquiryTopics) push('咨询信', `${prompt}（事项：${topic}）`);
+
+  /* 13) 叙事 + 观点结合（应用文式议论，介于作文与书信之间） */
+  const hybridTopics = [
+    ['志愿服务', '请写一段话：先描述你参加的一次志愿活动，再说明它带给你的两点收获。'],
+    ['运动健身', '请写一段话：先描述一次运动经历，再说明坚持运动对你的影响。'],
+    ['读书', '请写一段话：先描述一本影响你的书，再说明你从中学到的两点内容。'],
+    ['合作', '请写一段话：先描述一次小组合作，再说明合作中你学到的东西。'],
+    ['失败', '请写一段话：先描述一次失败的经历，再说明你从中总结的教训。'],
+    ['旅行见闻', '请写一段话：先描述旅途中的一件小事，再说明它给你的启示。'],
+    ['传统文化', '请写一段话：先描述一个你家乡的传统节日，再说明它今天的意义。'],
+    ['网络', '请写一段话：先描述网络给你带来的一个便利，再说明你如何看待它的缺点。'],
+    ['友谊', '请写一段话：先描述一段友谊的开始，再说明维持友谊的关键。'],
+    ['家乡变化', '请写一段话：先描述你家乡这些年的一处变化，再说明你的感受。'],
+  ];
+  for (const [topic, prompt] of hybridTopics) push('短文', `${prompt}（话题：${topic}）`);
+
+  /* 14) 情景区景应用文（购物 / 出行 / 医疗 / 用工等生活场景） */
+  const lifeTopics = [
+    ['购物', '你买到的商品与描述不符。请写一封退货信，说明订单信息、问题与你的诉求。'],
+    ['投诉', '你在餐厅用餐后发现账单多算了一笔。请写一封投诉信说明情况并要求核对。'],
+    ['看病', '你需要请医生帮忙开一份证明。请写一份申请，说明事由与就诊时间。'],
+    ['改期', '你预约了今天下午的面诊但需改期。请写一封信说明原因并申请另约时间。'],
+    ['租房', '你租的房屋有漏水问题。请写信给房东说明情况并提出维修要求。'],
+    ['航班', '你的航班被延误六小时。请写一封信说明情况并询问后续安排。'],
+    ['火车', '你错过了火车班次。请写信给铁路部门说明情况并询问改签方式。'],
+    ['快递', '你的包裹延误未到。请写信给快递公司说明情况并要求核实。'],
+    ['退款', '你申请退款后迟迟未收到。请写信说明情况并要求说明原因。'],
+    ['投诉', '你在餐厅等位超过一小时。请写一封投诉信说明经过并提出建议。'],
+    ['保险', '你想了解保险的理赔流程。请写信咨询所需材料与办理时限。'],
+    ['宽带', '你想申请安装宽带。请写一封信咨询费用、时长与办理条件。'],
+    ['停车', '你在商场找不到停车位。请写一张便条说明情况并询问收费处位置。'],
+    ['客服', '你对客服的处理不满意。请写信说明经过并请求上级处理。'],
+    ['预约', '你想预约一次参观。请写信说明人数、时间需求与联系方式。'],
+    ['报名', '你想报名参加一个免费讲座。请写一封报名信说明个人信息与意愿。'],
+    ['证明', '你需要请学校出具在读证明。请写一份申请说明用途与领取方式。'],
+    ['推荐', '你想请朋友推荐一个可靠的租房中介。请写信说明需求并请求建议。'],
+    ['遗失', '你在公交车上遗失了证件。请写一则启事说明遗失物品与补办方式。'],
+    ['询问', '你收到一封看不懂的通知。请写信向相关部门询问具体含义与办理方式。'],
+  ];
+  for (const [topic, prompt] of lifeTopics) push(topic === '遗失' || topic === '停车' ? '启事' : '应用文', `${prompt}（场景：${topic}）`);
+
+  /* 15) 通知：主办方 × 事项 的正交组合（15 条） */
+  const noticeSubjects = [
+    ['学校教务处', '期末考试安排'],
+    ['学生社团联合会', '社团年度考核'],
+    ['学校图书馆', '延长开放时间'],
+    ['后勤服务中心', '宿舍水电检修'],
+    ['校医院', '流感疫苗接种'],
+    ['国际交流处', '暑期出国交流项目说明会'],
+    ['就业指导中心', '秋季校园双选会'],
+    ['心理健康中心', '新生心理普查'],
+    ['体育部', '冬季长跑测试'],
+    ['党委学生工作部', '主题班会评比'],
+    ['科研处', '大创项目中期检查'],
+    ['财务处', '学费缴纳与批条流程'],
+    ['网络中心', '有线网停机维护'],
+    ['保卫处', '夜间门禁与访客登记说明'],
+    ['保卫处', '消防演练安排'],
+  ];
+  const noticeMails = [
+    '请以主管部门名义说明事项、范围、时间安排与联系方式，并提醒同学按要求执行。',
+    '请写一则通知，包含事项概述、具体安排、注意事项与咨询电话。',
+    '请以公告形式告知全体相关人员：事由、实施时间、涉及对象与所需准备。',
+  ];
+  noticeSubjects.forEach(([org, subject], i) => {
+    push('通知', `${org}拟就「${subject}」发布一则通知。${noticeMails[i % noticeMails.length]}`);
+  });
+
+  /* 16) 书信写作：写信人身份 × 诉求 的正交组合（20 条） */
+  const writers = ['一名高二学生', '一名大三学生', '一名新入职的职员', '一名留学生', '一名实习教师', '一名家长'];
+  const asks = [
+    ['咨询课程安排', '想了解下学期的课程时间与选课办法，并说明自己已修的学分。'],
+    ['申请延期提交', '因家中事务希望把作业延后两天，并承诺按时补交。'],
+    ['询问收费标准', '想确认报名活动是否收费，以及退费规则。'],
+    ['申请更换宿舍', '因作息差异希望调整宿舍楼层，并说明原因。'],
+    ['确认实习岗位', '想确认入职日期、报到地点与所需材料。'],
+    ['推荐一位学生', '想推荐一位同学参加项目，并说明他的优势。'],
+  ];
+  for (const w of writers) {
+    for (const [askTopic, askBody] of asks) {
+      push('书信', `${w}给学校（或单位）写一封信，${askBody}（诉求：${askTopic}）`, 80, 120);
+    }
+  }
+
+  /* 17) 口语/书面综合：人物描写 + 场景（20 条） */
+  const figures = ['一位热心的邻居', '一位严格的老师', '一位沉默的同桌', '一位爱笑的室友', '一位严谨的医生', '一位健谈的司机'];
+  const scenes = [
+    ['在雨天的公交车上', '你们因为一把伞而熟识，请描述这件事与你的感受。'],
+    ['在一次小组作业中', '你们意见不合又最终达成一致，请描述这个过程。'],
+    ['在医院的候诊室里', '你们因为一次帮忙而相识，请描述这件事。'],
+    ['在一次旅行的旅途中', '你们互相帮忙解决了困难，请描述这件事。'],
+    ['在一次考试之后', '你们一起复盘了错题，请描述这个过程。'],
+    ['在一次志愿活动中', '你们并肩完成了任务，请描述这件事。'],
+  ];
+  for (const fig of figures) {
+    for (const [sc, scBody] of scenes) {
+      push('短文', `以「${fig}」为对象：${scBody}`, 60, 100);
+    }
+  }
+
+  return out;
+})();
+

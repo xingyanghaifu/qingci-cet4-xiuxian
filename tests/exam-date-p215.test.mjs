@@ -55,15 +55,6 @@ test('P2-15：模板里只剩 1 个考试日期字面量，且它是有名字的
     '唯一的考试日期字面量应定义为 EXAM_DATE_FALLBACK');
 });
 
-test('P2-15：溯源类日期（注释 / 数据来源）不该被误删', () => {
-  // 反向保护：审计说「7 处硬编码」若照做全删，会把注释里的用户反馈日期
-  // 和「卷面结构取自…2026-09-24 抓取」的来源出处一起删掉。
-  assert.ok(/背景（\d{4}-\d{2}-\d{2} 用户反馈/.test(html),
-    '注释里的用户反馈日期被删了（它解释了 reduced-motion 例外为何存在）');
-  assert.ok(/卷面结构取自[^"]*\d{4}-\d{2}-\d{2}[^"]*抓取/.test(html),
-    '数据来源的抓取日期被删了（它是出处凭证）');
-});
-
 test('P2-15：examDays() 不再硬编码，改从服务层设置读取', () => {
   const fn = html.match(/function examDays\(\)\{[^}]*\}/);
   assert.ok(fn, 'examDays() 未找到');
@@ -119,28 +110,41 @@ test('P2-15：产物里考试日期恰好 2 处，且都指向同一个值', () 
   //   2. 模板的 EXAM_DATE_FALLBACK（服务层未就绪时的兜底）
   // 两者必须同值，否则「默认」会有两个说法。
   //
-  // 注意：产物里服务层是**压缩成一整行**的，按行排除溯源语境会误伤
-  // （那一行里可能恰好含「来源」等词），所以这里不按行过滤，
-  // 改为直接按已知的两个上下文定位。
-  const fb = dist.match(/var EXAM_DATE_FALLBACK\s*=\s*'(\d{4}-\d{2}-\d{2})'/);
+  // 产物已压缩（去注释 + 压空白 + 语法简化），所以：
+  //   · 引号可能变成双引号、空白消失 → 用宽松匹配
+  //   · 变量名未被压（minifyIdentifiers: false），`_=` 这类名字仍可依赖，
+  //     但**不要**依赖它 —— 改用更稳的语义锚点（retention 是 study-plan 的独有字段）
+  const fb = dist.match(/EXAM_DATE_FALLBACK\s*=\s*['"](\d{4}-\d{2}-\d{2})['"]/);
   assert.ok(fb, '产物缺 EXAM_DATE_FALLBACK');
-  const svc = dist.match(/"(\d{4}-\d{2}-\d{2})";\s*_=\s*\{\s*retention/);
-  assert.ok(svc, '产物缺服务层 DEFAULT_EXAM_DATE（形态变了？）');
-  assert.equal(fb[1], svc[1], `兜底(${fb[1]}) 与服务层默认(${svc[1]}) 不一致`);
+  // 服务层默认值：定位到 "retention" 附近的那个日期字面量（study-plan 的 DEFAULTS）
+  const svcCtx = dist.match(/['"](\d{4}-\d{2}-\d{2})['"]\s*[,;]?\s*[\w$]*\s*=\s*\{[^}]{0,80}retention/);
+  assert.ok(svcCtx, '产物缺服务层 DEFAULT_EXAM_DATE（形态变了？）');
+  assert.equal(fb[1], svcCtx[1], `兜底(${fb[1]}) 与服务层默认(${svcCtx[1]}) 不一致`);
 
-  // 除这两处外，产物里只应剩下**溯源类**日期（注释里的反馈日期、数据来源抓取日期），
-  // 它们不是考试日期，删掉反而丢失出处。这里把它们列成白名单，
-  // 将来新增任何别的日期都会让这条失败 —— 那正是我们要的提醒。
-  const PROVENANCE = new Set(['2026-10-06', '2026-09-24']);
+  // 产物里除考试日期外，还会剩下**数据来源的抓取日期**（2026-09-24）——
+  // 它在 HTML 文本里（`sourceNote` 的「卷面结构取自…抓取」），不在注释里，
+  // 所以构建剥离注释**不会**动它。这是对的：它是出处凭证。
+  // 注释里的那条用户反馈日期（2026-10-06）则随注释一起被剥离 —— 那也是对的，
+  // 它只是解释「这行为什么这么写」，运行时不需要。
+  const PROVENANCE_IN_HTML = new Set(['2026-09-24']);
   const all = [...dist.matchAll(DATE_RE)].map((m) => m[0]);
-  const unexpected = all.filter((d) => d !== fb[1] && !PROVENANCE.has(d));
+  const unexpected = all.filter((d) => d !== fb[1] && !PROVENANCE_IN_HTML.has(d));
   assert.deepEqual(unexpected, [],
-    `产物里出现了非预期日期（既不是考试日期默认值，也不是已知溯源日期）：${unexpected.join(', ')}`);
-  // 溯源日期必须仍在（防止有人「顺手全删」把出处删掉）
-  for (const d of PROVENANCE) {
-    assert.ok(all.includes(d), `溯源日期 ${d} 被删了（注释/出处不该删）`);
-  }
+    `产物里出现了非预期日期（考试日期应只有 ${fb[1]}）：${unexpected.join(', ')}`);
+  // 出处凭证必须留在产物里（它面向用户，不是给开发者看的注释）
+  assert.ok(dist.includes('2026-09-24'),
+    '数据来源的抓取日期丢了 —— 它在 HTML 里，不该被注释剥离影响');
 
-  assert.ok(dist.includes('function examDateStr()'), '产物缺 examDateStr()');
+  assert.ok(dist.includes('examDateStr'), '产物缺 examDateStr()');
   assert.ok(!/距离\s*20\d{2}-\d{2}-\d{2}\s*四级笔试/.test(dist), '产物反馈文案仍写死日期');
+});
+
+test('P2-15：溯源类日期仍保留在**源模板**里（构建剥离注释不该动源文件）', () => {
+  // 反向保护：注释里的用户反馈日期与数据来源抓取日期是「出处凭证」，
+  // 不该被删。它们只存在于源码注释中 —— 构建会剥离产物注释（体积优化），
+  // 但**源文件必须保留**，否则以后没人知道这些日期为什么在那里。
+  assert.ok(/背景（\d{4}-\d{2}-\d{2} 用户反馈/.test(html),
+    '源模板注释里的用户反馈日期被删了（它解释了 reduced-motion 例外为何存在）');
+  assert.ok(/卷面结构取自[^"]*\d{4}-\d{2}-\d{2}[^"]*抓取/.test(html),
+    '源模板里的数据来源抓取日期被删了（它是出处凭证）');
 });

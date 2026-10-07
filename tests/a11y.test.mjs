@@ -9,6 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { loadTs } from './helpers/load-ts.mjs';
+import { hasCode } from './helpers/minified.mjs';
 
 const a11y = await loadTs('src/services/a11y.ts');
 const shortcuts = await loadTs('src/services/shortcuts.ts');
@@ -191,6 +192,9 @@ test('shortcuts：帮助文案与解析实现同源（不回退成文档漂移�
 
 test('artifact：构建产物里的无障碍标记齐备', () => {
   const html = fs.readFileSync('dist/cet4-xiuxian.html', 'utf8');
+  // 注意：产物里的 JS 已被「去注释 + 压空白 + 语法简化」（见 scripts/build.mjs），
+  // 所以**代码片段**要用 hasCode（容忍空白/引号/!0 简写），
+  // 而 **HTML 标记与 CSS** 不受压缩影响，继续用字面匹配。
   const checks = {
     'lang 声明': /<html lang="zh-CN">/.test(html),
     'skip link 且目标存在': html.includes('class="skip-link"') && html.includes('id="main"'),
@@ -206,15 +210,15 @@ test('artifact：构建产物里的无障碍标记齐备', () => {
     '焦点可见': html.includes(':focus-visible{outline:3px solid'),
     '减少动效': html.includes('data-motion="reduced"') && html.includes('prefers-reduced-motion:reduce'),
     '屏幕阅读器隐藏文本类': html.includes('.sr-only{'),
-    '首屏前应用偏好（防闪烁）': html.includes("localStorage.getItem('qingci.a11y')"),
+    '首屏前应用偏好（防闪烁）': hasCode(html, "localStorage.getItem('qingci.a11y')"),
     '无障碍设置卡片': html.includes('id="a11yCard"') && html.includes('id="a11yHelp"') && html.includes('id="a11yShortcuts"'),
     'aria-pressed 状态按钮': html.includes('id="a11yContrast"') && html.includes('aria-pressed'),
-    'Esc 关闭弹窗': html.includes('function closeTopOverlay'),
-    '题干焦点管理': html.includes("promptEl.focus({ preventScroll: true })"),
-    '屏幕阅读器播报通道': html.includes('QingciAnnounce') && html.includes('srAnnouncer'),
-    '1–4 选择选项已接线': html.includes("action.type === 'answer'") && /btns\[action\.index\]/.test(html),
-    'Enter 推进/提交已接线': html.includes("action.type === 'submit'") && html.includes("visible('submitSpell')"),
-    '空格播放已接线': html.includes("action.type === 'play'") && html.includes('function visibleAudio'),
+    'Esc 关闭弹窗': hasCode(html, 'function closeTopOverlay'),
+    '题干焦点管理': hasCode(html, 'promptEl.focus({ preventScroll: true })'),
+    '屏幕阅读器播报通道': hasCode(html, 'QingciAnnounce') && hasCode(html, 'srAnnouncer'),
+    '1–4 选择选项已接线': hasCode(html, "action.type === 'answer'") && hasCode(html, 'btns[action.index]'),
+    'Enter 推进/提交已接线': hasCode(html, "action.type === 'submit'") && hasCode(html, "visible('submitSpell')"),
+    '空格播放已接线': hasCode(html, "action.type === 'play'") && hasCode(html, 'function visibleAudio'),
   };
   const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
   assert.deepEqual(failed, [], '构建产物缺少无障碍标记：' + failed.join('、'));

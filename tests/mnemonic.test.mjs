@@ -12,6 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { hasCode } from './helpers/minified.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const LEXES = [
@@ -195,9 +196,20 @@ test('B-7 UI：答错才显示记忆锚点，正确作答不显示', () => {
 
 test('B-8 向后兼容：旧词条没有 mnemonics 时界面不报错', () => {
   const html = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
-  // tier 为 none 时走 memoryAid 分支，两条路径都存在
-  assert.ok(html.includes("mn.tier !== 'none'"), '应判断 tier');
-  assert.ok(html.includes('else if (detail.memoryAid)'), '应有回落分支');
+  // tier 为 none 时走 memoryAid 分支，两条路径都存在。
+  //
+  // 注意：产物 JS 经过「压空白 + 语法简化」，esbuild 会把
+  //   `else if (detail.memoryAid) { ... }`
+  // 改写成短路表达式
+  //   `...:detail.memoryAid&&(aux+=...)`
+  // —— 这是**等价的控制流重写**，不是功能变化。
+  // 所以这里断言「两个分支的语义锚点都在」，而不是断言 `else if` 的字面形态。
+  assert.ok(hasCode(html, "mn.tier !== 'none'"), '应判断 tier');
+  // memoryAid 回落分支：只要「memoryAid 被当作条件使用」即可（&&/if 均可）
+  assert.ok(/detail\.memoryAid\s*(?:&&|\?|\))/.test(html),
+    'memoryAid 回落分支不存在（旧词条会没有助记可显示）');
+  // 且它确实会渲染出「助记」这一块
+  assert.ok(html.includes('助记'), '应渲染「助记」区块');
 });
 
 test('B-9 数据规模：锚点没有让单文件变大（分片数据按需加载）', () => {

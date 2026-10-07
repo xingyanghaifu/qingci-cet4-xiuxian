@@ -34,7 +34,8 @@
     "verify:examdate:online": "node scripts/verify-exam-date-online.mjs",
     "verify:lazyload:online": "node scripts/verify-lazyload-online.mjs",
     "verify": "npm run typecheck && npm run build && npm run verify:pwa && npm test && npm run test:docs && npm run healthcheck",
-    "verify:prod": "npm run typecheck && npm run verify:pwa && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
+    "verify:prod": "npm run typecheck && npm run verify:pwa && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict",
+    "verify:minified:runtime": "node scripts/verify-minified-runtime.mjs"
   },
   "keywords": [
     "CET-4",

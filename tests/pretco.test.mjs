@@ -23,6 +23,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { loadTs } from './helpers/load-ts.mjs';
 import { makeFakeIdb } from './helpers/fake-idb.mjs';
+import { hasCode } from './helpers/minified.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const LEX_DIR = join(ROOT, 'src', 'data', 'lexicons');
@@ -145,10 +146,11 @@ test('F6-9 模考模式：PRETCO 题型（语法15 + 短对话10 + 英译汉5 + 
   const sampleId = bankMf.papers['pt-01'].ids[0];
   assert.ok(g.questions.some((q) => q.id === sampleId), '模拟卷首题应能在语法分片里找到');
   // 运行时接线：EXAM_CONFIGS + examSelect + 题型标题 + 近似徽记
+  // 产物 JS 已压缩：代码片段用 hasCode（容忍空白/引号），HTML/CSS 仍用字面匹配
   const html = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
-  assert.ok(/pretco:\{id:'pretco',name:'PRETCO'/.test(html), 'EXAM_CONFIGS 应含 pretco');
+  assert.ok(hasCode(html, "pretco:{id:'pretco',name:'PRETCO'"), 'EXAM_CONFIGS 应含 pretco');
   assert.ok(html.includes('<option value="pretco">'), 'examSelect 应含 PRETCO 选项');
-  assert.ok(html.includes("talk: '听力短对话'"), 'EXAM_KIND_TITLE 应含听力短对话');
+  assert.ok(hasCode(html, "talk: '听力短对话'"), 'EXAM_KIND_TITLE 应含听力短对话');
   assert.ok(html.includes('lx-approx'), '词库卡应有「近似」徽记');
 });
 
@@ -212,7 +214,7 @@ test('F6-11 题库数据不内联主文件（硬约束 8/9）', () => {
   // 所以断言「拼接逻辑与词库 id 都在产物里」，而不是断言一条展开后的字面量 URL。
   assert.ok(html.includes('question-bank/manifest.json'),
     '产物应含按词库拼装题库清单 URL 的逻辑');
-  assert.ok(/pretco:\{id:'pretco'/.test(html), 'EXAM_CONFIGS 应含 pretco，运行时才会去取它的题库');
+  assert.ok(hasCode(html, "pretco:{id:'pretco'"), 'EXAM_CONFIGS 应含 pretco，运行时才会去取它的题库');
 });
 
 /* ---------------- F6-3 目录卫生 ---------------- */

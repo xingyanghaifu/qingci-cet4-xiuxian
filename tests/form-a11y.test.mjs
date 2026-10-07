@@ -46,8 +46,16 @@ function auditControls(src) {
 test('所有可见表单控件都有可访问名', () => {
   const { total, missing } = auditControls(html);
   assert.deepEqual(missing, [], `这些控件没有可访问名：${missing.join(', ')}`);
-  // 31 个静态控件，排除 type=hidden / 蜜罐 / display:none 后为 17
-  assert.equal(total, 17, `控件总数变化（期望 17），请核对是否新增/删除了控件`);
+  // —— 为什么是 29 而不是 17（2026-10-07 修正）——
+  // 原来这里是 17。当时 12 个控件的标记被写成了畸形形态：
+  //     <aria-label="…" input id="q" …>      ← 属性跑到标签名前面
+  // 本函数的扫描器用的是 /<(input|select|textarea)\b[^>]*>/，
+  // 而畸形标签的**第一个 token 是 aria-label**，所以 12 个控件**一个都没被扫到** ——
+  // 测试因此「绿着」放过了「控件根本不存在」这个更严重的问题。
+  //
+  // 修复标签顺序后，扫描器终于能看见它们：17 + 12 = 29。
+  // 数字变化本身就是修复的证据。标签结构另有 tests/markup-structure.test.mjs 专门守。
+  assert.equal(total, 29, `控件总数变化（期望 29），请核对是否新增/删除了控件`);
 });
 
 test('本轮补的 13 个控件都在（防止有人删了 aria-label 而测试还绿）', () => {

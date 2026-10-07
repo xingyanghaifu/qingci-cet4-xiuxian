@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { loadTs } from './helpers/load-ts.mjs';
 import { makeFakeIdb } from './helpers/fake-idb.mjs';
+import { hasCode } from './helpers/minified.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 const LEX_DIR = join(ROOT, 'src', 'data', 'lexicons');
@@ -230,10 +231,11 @@ test('E6-9 模考模式：考研题型（阅读20 + 七选五5 + 完形20 + 英�
   const sampleId = bankMf.papers['ky-01'].ids[0];
   assert.ok(r.questions.some((q) => q.id === sampleId), '模拟卷首题应能在阅读分片里找到');
   // 模考配置已登记（EXAM_CONFIGS + examSelect）
+  // 产物 JS 已压缩：代码片段用 hasCode（容忍空白/引号），HTML 选项仍用字面匹配
   const html = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
-  assert.ok(/kaoyan:\{id:'kaoyan',name:'考研英语'/.test(html), 'EXAM_CONFIGS 应含 kaoyan');
+  assert.ok(hasCode(html, "kaoyan:{id:'kaoyan',name:'考研英语'"), 'EXAM_CONFIGS 应含 kaoyan');
   assert.ok(html.includes('<option value="kaoyan">'), 'examSelect 应含考研选项');
-  assert.ok(html.includes("trans: '英译汉'"), 'EXAM_KIND_TITLE 应含英译汉');
+  assert.ok(hasCode(html, "trans: '英译汉'"), 'EXAM_KIND_TITLE 应含英译汉');
 });
 
 /* ---------------- E6-11 单文件不内联词库数据 ---------------- */

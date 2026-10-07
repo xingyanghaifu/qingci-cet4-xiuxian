@@ -280,37 +280,57 @@ test('产物自包含：哨兵标记与新视觉仍在 dist/index.html 里（可
     '产物缺纹理块哨兵');
 });
 
-test('单文件体积增量在 19 KB 预算内（本轮 SEO/路由/无障碍的真实起点）', () => {
+test('单文件体积在预算内（压缩后新基线 + 19 KB 余量）', () => {
   const bytes = statSync(join(ROOT, 'dist', 'index.html')).size;
-  // —— 这里记一个 2026-10-07 才查清的事实 ——
-  // 原预算的基线是 965 037 B（阶段 F / PRETCO 之后），上限 19 KB，
-  // 初衷是给「v1.9.1 视觉升级」一轮用的。实测发现：那轮连同此后的
-  // SEO/分享卡/深链路由三批改动，到本轮开工前的 HEAD 已把 19 KB 用到
-  // **18.64 KB**（984 120 B），只剩 369 B 余量 —— 预算其实早已见底，
-  // 只是没有任何一批改动单独把它顶破，所以一直没暴露。
+  // —— 体积预算的三次重定基（每次都写清为什么）——
+  //   · 原始基线 965 037 B（阶段 F / PRETCO 之后），上限 19 KB
+  //   · 2026-10-07 第一次重定基：实测开工前 HEAD 已把 19 KB 用到 18.64 KB
+  //     （984 120 B），只剩 369 B —— 预算早见底，只是没有单批改动顶破它。
+  //   · 2026-10-07 第二次重定基（本次）：在 build.mjs 里加了内联脚本压缩
+  //     （去注释 + 压空白 + 语法简化，不开 minifyIdentifiers），
+  //     产物从 998 731 B 降到 **911 318 B**，一次性释放约 87 KB。
   //
-  // 因此本轮起改用「本轮起点」为基线：984 120 B = HEAD(c885c18) 的实测产物，
-  // 不是估算。19 KB 上限保留，继续约束本轮余下的无障碍/对比度改动。
-  // 历史那一段 18.64 KB 已经上线、已验证，不在此重算也不追认。
-  const BASELINE = 984120;
+  // 新基线 = 压缩后的实测产物（911 318 B），19 KB 上限保留。
+  // 这样「压缩省下来的空间」才真正可用，而不是被旧基线吃掉。
+  // 历史那两段（965 KB → 984 KB）已经上线、已验证，不重算也不追认。
+  const BASELINE = 911318;
   const delta = (bytes - BASELINE) / 1024;
-  assert.ok(delta <= 19, `单文件较本轮起点增 ${delta.toFixed(1)} KB，超出 19 KB 预算（${bytes} B）`);
+  assert.ok(delta <= 19, `单文件较新基线增 ${delta.toFixed(1)} KB，超出 19 KB 预算（${bytes} B）`);
+  // 压缩收益不该被悄悄吃掉：产物必须明显小于压缩前水位
+  assert.ok(bytes < 950000, `产物 ${bytes} B 已接近压缩前水位（998 731 B）—— 压缩收益被新代码吃完了？`);
 });
 
-test('产物体积记账：注释占产物的比例不得继续上升', () => {
-  // 构建**不剥离注释**（scripts/build.mjs 只用 esbuild 打包服务层，不 minify HTML）。
-  // 实测 dist/index.html 里 <script> 内的 /* */ 注释约 28.7 KB —— 这些是
-  // 中文说明文字，本地维护很有价值，但每个访客都要下载。
+test('产物内联脚本已剥离注释（构建期压缩生效）', () => {
+  // 历史：本测试原来守的是「注释占比 ≤3.3%」，注释里写着
+  // 「构建不剥离注释…真正的减负手段是生产构建剥离注释，但那会改变产物形态」。
   //
-  // 本测试不替注释合理化，只把**占比**钉在当前水位之下，防止继续用注释顶预算。
-  // 真正的减负手段是生产构建剥离注释（可回收约 28.7 KB），但那会改变产物形态，
-  // 且有 11 个测试直接读取 dist/index.html 断言内容，属于独立一轮的工作。
-  const bytes = statSync(join(ROOT, 'dist', 'index.html')).size;
+  // 2026-10-07：预算只剩 4.73 KB，而要做「游戏性 + 修仙机制」改造，于是
+  // 真的在 scripts/build.mjs 里加了内联脚本压缩（去注释 + 压空白 + 语法简化，
+  // **不开 minifyIdentifiers** —— 这些脚本跨块共享全局名，改短名字会静默断开引用）。
+  // 实测省 85 KB。
+  //
+  // 所以这条守卫**反转**了：从「注释占比别涨」变成「注释必须已被剥离」。
   const dist = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
-  const scriptComments = (dist.match(/<script[^>]*>[\s\S]*?<\/script>/g) || [])
-    .flatMap((b) => b.match(/\/\*[\s\S]*?\*\//g) || [])
-    .reduce((a, c) => a + Buffer.byteLength(c), 0);
-  const ratio = (scriptComments / bytes) * 100;
-  // 当前约 2.9%；留 0.4 个百分点余量
-  assert.ok(ratio <= 3.3, `script 内注释占产物 ${ratio.toFixed(2)}%，超过 3.3% 水位（${scriptComments} B / ${bytes} B）`);
+  const scriptBodies = (dist.match(/<script[^>]*>[\s\S]*?<\/script>/g) || [])
+    .filter((b) => !/application\/json/.test(b));
+  const comments = scriptBodies.flatMap((b) => b.match(/\/\*[\s\S]*?\*\//g) || []);
+  const bytes = comments.reduce((a, c) => a + Buffer.byteLength(c), 0);
+  assert.equal(comments.length, 0,
+    `产物内联脚本里仍有 ${comments.length} 个块注释（${bytes} B）—— 构建压缩没生效？`);
+  // 源码必须保留注释（可读性不受影响，剥离只发生在产物）
+  const srcHtml = readFileSync(join(ROOT, 'src', 'index.template.html'), 'utf8');
+  assert.ok((srcHtml.match(/\/\*[\s\S]*?\*\//g) || []).length > 100,
+    '源模板的注释不该被删（构建只剥离产物，源文件要保持可读）');
+});
+
+test('产物内联脚本保留全局标识符（不开 minifyIdentifiers）', () => {
+  // 这是压缩方案的安全底线：模板里的脚本**跨块共享全局名**
+  // （顶层 function 被 HTML onclick 调用，`const $`/`state` 被后续块引用）。
+  // 一旦打开 minifyIdentifiers，这些名字会被改短，跨块引用静默断开 ——
+  // 表现为「页面能开但功能大面积失灵」，且本地测试全绿（因为测的是源文件）。
+  const dist = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
+  for (const name of ['function switchTab(', 'function ask(', 'const $=', 'function save(']) {
+    assert.ok(dist.includes(name),
+      `产物里找不到 "${name}" —— 全局标识符被压缩改名了（跨块引用会断）`);
+  }
 });

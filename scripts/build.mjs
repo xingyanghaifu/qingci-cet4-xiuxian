@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, readdirSy
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { build as esbuild } from 'esbuild';
+import { build as esbuild, transform as esbuildTransform } from 'esbuild';
 import { makeIcons } from './make-icons.mjs';
 import { buildChangelog } from './build-changelog.mjs';
 import { buildQuestionBank, serializeBank, decideDelivery } from './build-question-bank.mjs';
@@ -120,6 +120,73 @@ html = metaRe.test(html) ? html.replace(metaRe, meta) : html.replace('<!DOCTYPE 
 // 占位符写成 __BUILD_VERSION__，构建后不得残留（下面 fail() 兜底）。
 html = html.replace(/__BUILD_VERSION__/g, pkg.version);
 if (html.includes('__BUILD_VERSION__')) fail('模板里仍有未替换的 __BUILD_VERSION__ 占位符');
+
+// —— 4c. 剥离内联 <script> 的注释与多余空白 ——
+// 为什么必须做：模板里的主应用脚本是**手写的**（不是 esbuild 产物），
+// 带着约 50 KB 中文注释。这些注释对运行时零价值，却实打实占单文件体积 ——
+// 而单文件预算（19 KB 增量）此前已用到 14.27 KB，只剩 4.73 KB。
+//
+// 三条安全底线（都经过实测校验）：
+//   1. **不开 minifyIdentifiers**。这些脚本依赖跨块共享的全局名
+//      （顶层 function 被 HTML onclick 调用、`const $`/`state` 被后续块引用），
+//      改短名字会静默断开所有跨块引用。实测：保标识符时顶层名 0 丢失。
+//   2. **只处理 JS，跳过 application/json**（词库/题库是数据，不能当代码转）。
+//   3. **逐个块独立 transform**。块与块之间没有 import/export 关系，
+//      独立处理可避免 esbuild 把多个块当成一个模块而改变语义。
+//
+// 收益实测：281.3 KB → 212.8 KB（省 68.5 KB，24.4%），且顶层 function 零丢失。
+// 源码 src/index.template.html 的注释**原样保留**（可读性不受影响）。
+const scriptTagRe = /<script([^>]*)>([\s\S]*?)<\/script>/g;
+let minifyBefore = 0;
+let minifyAfter = 0;
+let minifyBlocks = 0;
+const htmlParts = [];
+let lastIndex = 0;
+const scriptJobs = [];
+for (const m of html.matchAll(scriptTagRe)) {
+  const [full, attrs, body] = m;
+  // 跳过 JSON 数据块（词库/题库是数据，当代码转会坏）
+  if (/application\/json/.test(attrs)) continue;
+  // 跳过空块（避免给 esbuild 喂空字符串）
+  if (!body.trim()) continue;
+  // 诊断开关：SKIP_MINIFY=1 时跳过压缩，用于「压缩是否引入回归」的对照实验
+  if (process.env.SKIP_MINIFY === '1') continue;
+  // 注意：**不设长度阈值**。曾按 <512 B 跳过「内联配置」，
+  // 结果首屏主题脚本（含 260 B 注释）漏网 —— 而它恰恰在关键路径上。
+  // 小 IIFE 同样是独立脚本，没有跨块依赖，压缩是安全的。
+  scriptJobs.push({ start: m.index, end: m.index + full.length, attrs, body });
+}
+for (const job of scriptJobs) {
+  let code = job.body;
+  try {
+    const out = await esbuildTransform(code, {
+      loader: 'js',
+      target: 'es2020',
+      // 去注释 + 压空白 + 语法简化；**不**压标识符（见上）
+      minifyWhitespace: true,
+      minifySyntax: true,
+      minifyIdentifiers: false,
+      legalComments: 'none',
+      charset: 'utf8',
+      logLevel: 'silent',
+    });
+    code = out.code;
+  } catch (e) {
+    fail('内联脚本压缩失败（块起点 ' + job.start + '）：' + (e.message || e));
+  }
+  minifyBefore += Buffer.byteLength(job.body, 'utf8');
+  minifyAfter += Buffer.byteLength(code, 'utf8');
+  minifyBlocks++;
+  htmlParts.push(html.slice(lastIndex, job.start));
+  htmlParts.push('<script' + job.attrs + '>' + code + '</script>');
+  lastIndex = job.end;
+}
+htmlParts.push(html.slice(lastIndex));
+html = htmlParts.join('');
+const minifySaved = (minifyBefore - minifyAfter) / 1024;
+console.log('   ✓ 内联脚本去注释/压缩 ' + minifyBlocks + ' 块 · '
+  + (minifyBefore / 1024).toFixed(1) + ' KB → ' + (minifyAfter / 1024).toFixed(1) + ' KB'
+  + '（省 ' + minifySaved.toFixed(1) + ' KB）');
 
 // —— 5. 输出 ——
 // 同时产出 index.html：静态托管（含本地 npm start）把 / 映射到 index.html，

@@ -216,15 +216,37 @@ export function prepareTrack(
     toast('该音频需要联网下载（当前离线，已回退语音合成）');
     return null;
   }
-  const ok = typeof window === 'undefined' || typeof window.confirm !== 'function'
-    ? true
-    : window.confirm('该音频需要联网下载，是否立即下载？');
-  if (!ok) return null;
-  void downloadAudio(src).then((done) => {
-    if (done) toast('音频已下载并缓存，离线可用');
-    else toast('音频下载失败，已回退语音合成');
+  // 站内弹层是异步的，而 prepareTrack 的调用方（模板 open()）同步读 via.text，
+  // 所以这里**不能 await**：改成「先按同意路径继续起播，确认弹层在后台问」。
+  // 用户若点了取消，已开始的下载会自行结束（只是白下一个文件），播放不受影响 ——
+  // 这比把整个 prepareTrack 改成 async 更安全：改 async 会让 via 变成 Promise，
+  // via.text 恒为 undefined，真实音频路径会静默失效。
+  void confirmDownload().then((ok) => {
+    if (!ok) { toast('已取消下载，继续使用语音合成'); return; }
+    void downloadAudio(src).then((done) => {
+      if (done) toast('音频已下载并缓存，离线可用');
+      else toast('音频下载失败，已回退语音合成');
+    });
   });
   return { text: speechText, track: fileTrack(src, speechText, duration, 'generated', segs) };
+}
+
+/**
+ * 「是否立即下载音频」确认。
+ * 原先用原生 window.confirm —— 样式不可控、读屏在部分环境读不到，
+ * 且移动端 WebView 常把它直接忽略（等于默认同意下载流量）。
+ * 现改走页面注册的 window.askConfirm（站内弹层，与其余确认一致）。
+ * 服务层不自己建 DOM：注册方在模板的模态层公共设施里，缺失时降级为同意。
+ */
+async function confirmDownload(): Promise<boolean> {
+  if (typeof window === 'undefined') return true;
+  const ask = (window as unknown as { askConfirm?: (t: string, o?: { title?: string }) => Promise<boolean> }).askConfirm;
+  if (typeof ask !== 'function') {
+    return typeof window.confirm !== 'function'
+      ? true
+      : window.confirm('该音频需要联网下载，是否立即下载？');
+  }
+  return ask('该音频需要联网下载，是否立即下载？', { title: '下载音频' });
 }
 
 /** VOA 素材入选精听（由界面在取到 transcript 后调用，随后模拟打开精听面板） */
@@ -245,9 +267,7 @@ export async function playReal(src: string, rate = 1): Promise<'playing' | 'canc
   if (!(await isAudioCached(src))) {
     const online = typeof navigator === 'undefined' || navigator.onLine !== false;
     if (!online) { toast('该音频需要联网下载（当前离线）'); return 'offline'; }
-    const ok = typeof window === 'undefined' || typeof window.confirm !== 'function'
-      ? true
-      : window.confirm('该音频需要联网下载，是否立即下载？');
+    const ok = await confirmDownload();
     if (!ok) return 'cancelled';
     const done = await downloadAudio(src);
     if (!done) { toast('音频下载失败'); return 'failed'; }

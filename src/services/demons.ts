@@ -12,6 +12,7 @@
  * 因此对账重建不会出现「同名漂移」。
  */
 import { storeOf, promisify, type MinimalFactory } from './idb';
+import { levelFromWrongs, wrongsForLevel } from './cultivation-curve';
 
 /* ───────────────── 数据模型（含 AI 生图预留） ───────────────── */
 
@@ -23,6 +24,12 @@ export interface Demon {
   questionId: string;
   /** 等级 1–5 */
   level: number;
+  /**
+   * 累计答错次数（第一期·心魔成长曲线）。
+   * 等级由它推导：Lv1–2 一错 / Lv3–4 两错 / Lv5 三错。
+   * 旧档案可能没有该字段 —— 读取时用等级反推兜底（见 upsertDemon）。
+   */
+  wrongCount?: number;
   createdAt: string;
   lastFoughtAt: string;
   /** 被击败次数（复习答对且降级时累加） */
@@ -228,6 +235,13 @@ export async function countRaidReady(factory?: MinimalFactory | null): Promise<n
  * 升降级：答错 delta=+1，复习答对 delta=-1。
  * 首次出现（无论 delta）都建档；level 1 时复习答对**不删除**（保留档案，仅 defeatedCount+1），
  * 便于心魔录长期展示「历史战绩」。
+ *
+ * 第一期·心魔成长曲线（`cultivation-curve.ts`）：
+ *   答错的**累计次数**决定等级，而不是「每错一次升一级」。
+ *   Lv1–2 一错升级、Lv3–4 两错、Lv5 三错 —— 越高级越顽固。
+ *   复习答对时仍按「降一级」处理，并把累计错次回退到该级的门槛
+ *   （否则会出现「降到 Lv2 但错次还停在 Lv5 的量」，下次一错又跳回 Lv5）。
+ *   境界封顶逻辑一字不动（越过封顶「凝而不化」）。
  */
 export async function upsertDemon(
   questionId: string,
@@ -245,14 +259,38 @@ export async function upsertDemon(
     const prevRow = await promisify<Demon | undefined>(store.get(id));
     const prev = normalize(prevRow);
     const step = delta > 0 ? 1 : delta < 0 ? -1 : 0;
-    const base = prev ? prev.level : DEMON_MIN_LEVEL;
-    // 境界封顶：越过上限时「凝而不化」——停在封顶级，不降级也不报错
-    const nextLevel = prev ? capLevelByRealm(base + step, realmIndex) : DEMON_MIN_LEVEL;
+
+    // 累计错次：旧档案没有该字段时，用现有等级反推一个合理初值
+    const prevWrongs = Number.isFinite(Number(prev?.wrongCount))
+      ? Math.max(0, Math.round(Number(prev!.wrongCount)))
+      : (prev ? wrongsForLevel(prev.level) : 0);
+
+    let nextLevel: number;
+    let nextWrongs: number;
+    if (!prev) {
+      // 首次建档：这次答错就是「第 1 次错」—— 心魔由错题催生，
+      // 所以 wrongCount 记 1，而 wrongsForLevel(1) 也正是 1，二者一致。
+      nextLevel = DEMON_MIN_LEVEL;
+      nextWrongs = step > 0 ? 1 : 0;
+    } else if (step > 0) {
+      nextWrongs = prevWrongs + 1;
+      // 由累计错次决定等级（曲线：Lv1-2 一错 / Lv3-4 两错 / Lv5 三错）
+      nextLevel = capLevelByRealm(levelFromWrongs(nextWrongs), realmIndex);
+    } else if (step < 0) {
+      nextLevel = capLevelByRealm(prev.level - 1, realmIndex);
+      // 回退到该等级的错次门槛，避免「降级后错次仍高位」导致下次一错跳级
+      nextWrongs = wrongsForLevel(nextLevel);
+    } else {
+      nextLevel = prev.level;
+      nextWrongs = prevWrongs;
+    }
+
     const iso = new Date(now).toISOString();
     const demon: Demon = {
       id,
       questionId: qid,
       level: nextLevel,
+      wrongCount: nextWrongs,
       createdAt: prev ? prev.createdAt : iso,
       lastFoughtAt: iso,
       defeatedCount: prev ? prev.defeatedCount + (step < 0 ? 1 : 0) : 0,

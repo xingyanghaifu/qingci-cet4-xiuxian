@@ -235,6 +235,11 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .mk-bar{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;font-size:13px}
 .mk-bar i{display:block;height:8px;border-radius:999px;background:var(--jade);opacity:.75}
 .mk-bar span{color:var(--muted)}
+/* 第一期·子层级：境界卡顶部的「练气三层」与 45 级台阶提示 */
+.realm-sub{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:2px 0 6px}
+.realm-sub-name{font-size:15px;letter-spacing:.06em;color:var(--gold)}
+/* 第一期·连对加速提示（作答反馈里的小标签） */
+.combo-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:12px;color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 42%,transparent);background:color-mix(in srgb,var(--gold) 10%,transparent)}
 /* ===== P1-D：听力精听覆盖层 ===== */
 .overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 .overlay-card{width:min(760px,100%);max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
@@ -1427,7 +1432,7 @@ function realm(){ let left=state.qi,i=0; for(;i<REALMS.length;i++){ if(left<REAL
 function selectedPaper(){ return PAPERS.find((p)=>p.id===state.selected)||PAPERS[0]; }
 function renderMissions(){ const d=day(); const missions=[{id:'q',title:'每日背词',desc:'完成 '+(state.dailyTarget||20)+' 个不重复词',now:state.dailyWords||0,target:state.dailyTarget||20,reward:30},{id:'right',title:'连中三元',desc:'今日答对 10 题',now:d.right,target:10,reward:45},{id:'streak',title:'不息心法',desc:'当前最长连对',now:state.best,target:10,reward:60}]; $("missionList").innerHTML=missions.map(m=>{const done=m.now>=m.target; return "<article class='mission "+(done?"done":"")+"'><b>"+(done?"✓ ":"")+m.title+" <span class='reward'>+"+m.reward+" 灵石</span></b><small>"+m.desc+" · "+Math.min(m.now,m.target)+" / "+m.target+(done?" · 已完成":"")+"</small><div class='mini-bar'><i style='width:"+Math.min(100,m.now/m.target*100)+"%'></i></div></article>";}).join(""); }
 function missionState(){ resetDaily(); const d=day(); state.claimed=state.claimed||{}; return [{id:'q',title:'每日背词',desc:'完成 '+(state.dailyTarget||20)+' 个词',now:state.dailyWords||0,target:state.dailyTarget||20,reward:30},{id:'right',title:'连中三元',desc:'今日答对 10 题',now:d.right,target:10,reward:45},{id:'streak',title:'不息心法',desc:'当前最长连对',now:state.best,target:10,reward:60}]; }
-function claimMission(m){ if(m.now<m.target||state.claimed[m.id]===dayKey()) return; state.claimed[m.id]=dayKey(); var ESm=window.QingciServices&&window.QingciServices.economy; var gain=(m.id==='q'&&ESm&&ESm.arrayActive())?m.reward*2:m.reward; if(ESm) ESm.earnSpirit(state,gain,'daily_words'); else state.spirit=(state.spirit||0)+gain; save(); renderTop(); if(window.__renderShopExtras) window.__renderShopExtras(); toast('领取成功 · 灵石 +'+gain+(gain>m.reward?'（聚灵阵双倍）':'')); }
+function claimMission(m){ if(m.now<m.target||state.claimed[m.id]===dayKey()) return; state.claimed[m.id]=dayKey(); var ESm=window.QingciServices&&window.QingciServices.economy; var base=(m.id==='q'&&ESm&&ESm.arrayActive())?m.reward*2:m.reward; /* 第一期：10% 概率灵石暴击（×2）。概率固定，与做题量无关 —— 不鼓励刷题 */ var crit=rollCritSafe(); var gain=spiritRewardSafe(base,crit); if(ESm) ESm.earnSpirit(state,gain,crit?'daily_words_crit':'daily_words'); else state.spirit=(state.spirit||0)+gain; save(); renderTop(); if(window.__renderShopExtras) window.__renderShopExtras(); toast((crit?critLabel()+' ':'')+'领取成功 · 灵石 +'+gain+(gain>base?'（'+(crit?'暴击':'聚灵阵')+'双倍）':'')); }
 function weakWords(){ return Object.keys(state.wrong).map(w=>byWord.get(w)).filter(Boolean).sort((a,b)=>(state.wrong[b.w]||0)-(state.wrong[a.w]||0)); }
 function renderAchievements(){ const items=[['first','初入词海','完成首题',state.seen>=1],['ten','十连问道','最长连对 10 题',state.best>=10],['hundred','百词斩','累计答对 100 题',state.right>=100],['paper','开卷有益','完成一场模拟卷',state.papers>=1],['demon','心魔尽斩','心魔本归零',state.seen>0&&Object.keys(state.wrong).length===0]]; $("achievementList").innerHTML=items.map(x=>"<div class='achievement "+(x[3]?"unlocked":"")+"><b>"+(x[3]?"✦":"○")+" "+x[1]+"</b><span>"+x[2]+"</span></div>").join(""); }
 function renderMissions(){ const missions=missionState(); $("missionList").innerHTML=missions.map(m=>{const done=m.now>=m.target; const claimed=state.claimed&&state.claimed[m.id]===dayKey(); return "<article class='mission "+(done?"done":"")+"'><b>"+(done?"✓ ":"")+m.title+" <span class='reward'>"+(claimed?"已领取":"+"+m.reward+" 灵石")+"</span></b><small>"+m.desc+" · "+Math.min(m.now,m.target)+" / "+m.target+(done&&!claimed?" · 点击领取":"")+"</small><div class='mini-bar'><i style='width:"+Math.min(100,m.now/m.target*100)+"%'></i></div></article>";}).join(""); $("missionList").querySelectorAll('.mission').forEach((el,i)=>el.onclick=()=>claimMission(missions[i])); renderAchievements(); }
@@ -1492,7 +1497,41 @@ function mnemonicHint(word){
   var body=m.device||m.root||m.tip||''; if(!body) return '';
   return '<div class="vd-aid" style="margin-top:6px"><b>记忆锚点</b> '+esc(body)+'</div>';
 }
-function settle(ok,explain){ const d=day(); state.seen++; if(current&&current.memKind){ const ms=memStats(); const rec=ms[current.memKind]||(ms[current.memKind]={r:0,n:0}); rec.n++; if(ok) rec.r++; } if(state.pool==='words'&&ok){ resetDaily(); if(current.word&&!state.dailySeen[current.word]){ state.dailySeen[current.word]=1; state.dailyWords++; } scheduleWord(current.word,'good'); } if(ok){ d.right++; state.right++; state.streak++; state.best=Math.max(state.best,state.streak); const gain=6+Math.min(10,state.streak); state.qi+=gain; if(current.word){ delete state.wrong[current.word]; state.known[current.word]=(state.known[current.word]||0)+1; state.recent=[current.word,...state.recent.filter(w=>w!==current.word)].slice(0,12);} $("feedback").innerHTML="<b>灵气 +"+gain+"</b><div>"+esc(explain||"")+"</div>"; } else { d.wrong++; state.streak=0; if(current.word) state.wrong[current.word]=(state.wrong[current.word]||0)+1; if(window.QingciRecordMistake) window.QingciRecordMistake(current, explain||'', window.__QINGCI_LAST_ANSWER__||'', paper?{paperId:(paper.meta&&paper.meta.id)||'',gate:paper.queue[paper.cursor].kind,index:paper.cursor}:null); $("feedback").innerHTML="<b>记入心魔</b><div>"+esc(explain||"")+"</div>"+mnemonicHint(current&&current.word); } if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+(ok?1:0); if(ok)paper.right=(paper.right||0)+1; if(window.QingciTrackAnswer) window.QingciTrackAnswer(current,ok,{paperId:(paper.meta&&paper.meta.id)||'',gate:item.gate,part:item.part||''}); paper.cursor++; $("paperProgress").textContent=(paper.exam?paper.exam.name:paper.meta.name)+' · '+paper.cursor+' / '+paper.queue.length+' · '+paper.source; if(paper.cursor>=paper.queue.length) return finishPaper(); saveActivePaper(); } $("next").classList.remove("hidden"); save(); renderTop(); if(!paper&&window.QingciTrackAnswer) window.QingciTrackAnswer(current,ok,{paperId:'',gate:'',part:current.part||''}); /* 阶段B：心魔升降级 + 奇遇掷骰（try/catch 静默，绝不连累答题，R18） */ if(window.__settleHook) try{ window.__settleHook(ok,current); }catch(e){ console.warn('[settle hook] non-fatal:',e); } }
+/* 第一期修行数值：统一从服务层取，服务层未就绪时用等价常量兜底。
+   兜底值与 cultivation-curve.ts 保持一致，保证「服务层没加载」也不会算错。 */
+function curveSvc(){ var S=window.QingciServices; return S&&S.curve?S.curve:null; }
+function qiGainFor(streak){
+  var c=curveSvc();
+  if(c&&c.qiForCorrect) return c.qiForCorrect(streak);
+  return Math.round(6*(streak>=5?1.5:streak>=3?1.2:1));
+}
+function comboLabelFor(streak){ var c=curveSvc(); return c&&c.comboLabel?c.comboLabel(streak):''; }
+/* 暴击：概率固定 10%，与做题量无关；随机源可注入（测试用） */
+function rollCritSafe(){ var c=curveSvc(); return c&&c.rollCrit?c.rollCrit():Math.random()<0.1; }
+function spiritRewardSafe(base,crit){ var c=curveSvc(); return c&&c.spiritReward?c.spiritReward(base,crit):(crit?base*2:base); }
+function critLabel(){ var c=curveSvc(); return c&&c.CRIT_LABEL?c.CRIT_LABEL:'⚡ 灵石暴击！'; }
+/* 子层级：把全局等级拆成 大境界 + 子层，用于展示 */
+function subLevelInfo(){
+  var c=curveSvc();
+  if(!c||!c.levelFromQi||!c.splitGlobalLevel) return null;
+  var lv=c.levelFromQi(state.qi||0);
+  var parts=c.splitGlobalLevel(lv);
+  return { global:lv, realmIndex:parts.realmIndex, subLevel:parts.subLevel, maxed:lv>=c.TOTAL_SUBLEVELS-1 };
+}
+/* 断签衰减：只在启动时跑一次，且**不碰境界** */
+function applyAbsenceDecay(){
+  var c=curveSvc();
+  if(!c||!c.applyDecay) return 0;
+  var today=dayKey();
+  var last=state.lastStudyDay||null;
+  if(!last){ state.lastStudyDay=today; return 0; }
+  if(last===today) return 0;
+  var gap=Math.floor((new Date(today+'T00:00:00')-new Date(last+'T00:00:00'))/86400000);
+  var r=c.applyDecay(state.qi||0,gap);
+  if(r.lost>0){ state.qi=r.qi; state.decayNote=c.decayMessage(r.lost,r.days); }
+  return r.lost;
+}
+function settle(ok,explain){ const d=day(); state.seen++; if(current&&current.memKind){ const ms=memStats(); const rec=ms[current.memKind]||(ms[current.memKind]={r:0,n:0}); rec.n++; if(ok) rec.r++; } if(state.pool==='words'&&ok){ resetDaily(); if(current.word&&!state.dailySeen[current.word]){ state.dailySeen[current.word]=1; state.dailyWords++; } scheduleWord(current.word,'good'); } if(ok){ d.right++; state.right++; state.streak++; state.best=Math.max(state.best,state.streak); /* 第一期：连对加速（3 连 ×1.2 / 5 连 ×1.5），倍率上限固定，不鼓励刷题 */ const gain=qiGainFor(state.streak); state.qi+=gain; state.lastStudyDay=dayKey(); if(current.word){ delete state.wrong[current.word]; state.known[current.word]=(state.known[current.word]||0)+1; state.recent=[current.word,...state.recent.filter(w=>w!==current.word)].slice(0,12);} const cl=comboLabelFor(state.streak); $("feedback").innerHTML="<b>灵气 +"+gain+"</b>"+(cl?" <span class=\"combo-tag\">"+esc(cl)+"</span>":"")+"<div>"+esc(explain||"")+"</div>"; } else { d.wrong++; state.streak=0; if(current.word) state.wrong[current.word]=(state.wrong[current.word]||0)+1; if(window.QingciRecordMistake) window.QingciRecordMistake(current, explain||'', window.__QINGCI_LAST_ANSWER__||'', paper?{paperId:(paper.meta&&paper.meta.id)||'',gate:paper.queue[paper.cursor].kind,index:paper.cursor}:null); $("feedback").innerHTML="<b>记入心魔</b><div>"+esc(explain||"")+"</div>"+mnemonicHint(current&&current.word); } if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+(ok?1:0); if(ok)paper.right=(paper.right||0)+1; if(window.QingciTrackAnswer) window.QingciTrackAnswer(current,ok,{paperId:(paper.meta&&paper.meta.id)||'',gate:item.gate,part:item.part||''}); paper.cursor++; $("paperProgress").textContent=(paper.exam?paper.exam.name:paper.meta.name)+' · '+paper.cursor+' / '+paper.queue.length+' · '+paper.source; if(paper.cursor>=paper.queue.length) return finishPaper(); saveActivePaper(); } $("next").classList.remove("hidden"); save(); renderTop(); if(!paper&&window.QingciTrackAnswer) window.QingciTrackAnswer(current,ok,{paperId:'',gate:'',part:current.part||''}); /* 阶段B：心魔升降级 + 奇遇掷骰（try/catch 静默，绝不连累答题，R18） */ if(window.__settleHook) try{ window.__settleHook(ok,current); }catch(e){ console.warn('[settle hook] non-fatal:',e); } }
 function choose(i){ if(!current||current.write||locked) return; locked=true; window.__QINGCI_LAST_ANSWER__=current.choices[i]; const ok=current.choices[i]===current.answer; if(current.kind==='assessment'){ if(ok)state.assessmentCorrect++; [...$("choices").children].forEach((b,idx)=>{b.disabled=true;if(current.choices[idx]===current.answer)b.classList.add('good');else if(idx===i)b.classList.add('bad');}); if(window.QingciAssessmentNext&&window.QingciAssessmentNext(current,ok)) return; if(state.assessmentIndex<10){ state.assessmentIndex++; save(); setTimeout(()=>{const q=assessmentQuestion();show({kind:'assessment',title:'词汇摸底 · 第 '+state.assessmentIndex+' / 10 题',prompt:q.item.w,sub:q.item.ipa,choices:q.opts.map(x=>x.short),answer:q.item.short,explain:q.item.w+' '+q.item.zh,word:q.item.w});},250); } else { const estimate=Math.round((state.assessmentCorrect/10)*WORDS.length); state.assessment=estimate; state.assessmentIndex=0; state.dailyTarget=Math.min(100,Math.max(10,Math.ceil(Math.max(0,WORDS.length-estimate)/examDays()))); save(); renderTop(); $("feedback").innerHTML='<b>摸底完成 · 约 '+estimate+' 词</b><div>距离 ' + examDateStr() + ' 四级笔试还有 '+examDays()+' 天，建议每日背 '+state.dailyTarget+' 词。</div>'; $("next").classList.remove('hidden'); } return; } const ok2=current.choices[i]===current.answer; [...$("choices").children].forEach((b,idx)=>{ b.disabled=true; if(current.choices[idx]===current.answer) b.classList.add("good"); else if(idx===i) b.classList.add("bad"); }); settle(ok,current.explain); }
 function submitWrite(){ if(!current||!current.write||locked) return; const text=$("essay").value.trim(); const n=wordsOf(text)||cjk(text); if(!n) return toast("先写一句"); locked=true; const inRange=n>=current.min&&n<=current.max; const hasSeed=current.seeds?current.seeds.filter(w=>new RegExp('\\b'+w.w+'\\b','i').test(text)).length:0; const quality=current.sample?'本题为翻译自评：请对照参考句检查语序、时态和拼写。':'本题为写作自评：系统只检查字数和题目词覆盖，不将它冒充人工评分。'; $("feedback").innerHTML="<b>提交完成 · "+(inRange?'字数合格':'字数未达标')+"</b><div>字数 "+n+"；题目词覆盖 "+hasSeed+"。"+quality+(current.sample?" 参考："+esc(current.sample):"")+"</div>"; if(window.QingciGradingEntry) window.QingciGradingEntry({type:current.sample?'translation':'writing',questionId:((paper&&paper.id)||'paper')+':'+((paper&&paper.cursor)!=null?paper.cursor:0)+':'+(current.title||''),userAnswer:text,prompt:current.prompt||''}); if(paper){ const item=paper.queue[paper.cursor]; paper.got[item.gate]=(paper.got[item.gate]||0)+ (inRange?1:0); paper.cursor++; saveActivePaper(); if(paper.cursor>=paper.queue.length) return finishPaper(); } save(); $("next").classList.remove('hidden'); }
 function countEssay(){ $("writeCount").textContent=(wordsOf($("essay").value)||cjk($("essay").value))+" 词"; }
@@ -1680,7 +1719,27 @@ $("againWord").onclick=()=>rateWord('again'); $("hardWord").onclick=()=>rateWord
   window.askConfirm("将清空本机的全部修行录：已斩获词汇、心魔词、复习队列、灵石与模考成绩。此操作不可撤销。", { title: "散功（清空本机数据）" })
     .then(function (ok) { if (!ok) { toast("已取消散功"); return; } localStorage.removeItem(KEY); location.reload(); });
 }; document.addEventListener("keydown",(e)=>{ if(e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!e.target.matches('button')){e.preventDefault(); playAudio();} });
-$("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrstuvwxyz".split("").map(c=>"<option>"+c+"</option>").join("");renderRoad(); renderTop(); renderShelf(); renderMap(); if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+paper.meta.name+'，是否继续？',{title:'继续上次模考'}).then(function(ok){ if(!ok){ paper=null; delete state.activePaper; save(); return; } switchTab('trial'); $("paperProgress").textContent=paper.meta.name+' · '+paper.cursor+' / '+paper.queue.length; ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); }); }
+$("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrstuvwxyz".split("").map(c=>"<option>"+c+"</option>").join("");renderRoad(); renderTop(); renderShelf(); renderMap();
+/* 第一期：启动时的两项修行结算
+   ① 断签衰减（先算）：宽限 3 天、单次最多扣 50%、**不碰境界**
+   ② 每日首登加成（后算）：每天第一次打开 +20 修为，当天只给一次
+   顺序很重要：先衰减再加成，避免「先加成再扣掉」看起来像白给。 */
+(function bootCultivation(){
+  try{
+    applyAbsenceDecay();
+    var c=curveSvc();
+    var today=dayKey();
+    if(state.lastLoginDay!==today){
+      state.lastLoginDay=today;
+      var bonus=c&&c.DAILY_FIRST_QI!=null?c.DAILY_FIRST_QI:20;
+      state.qi=(state.qi||0)+bonus;
+      state.dailyBonus=bonus;
+    }
+    if(state.decayNote){ toast(state.decayNote); state.decayNote=null; }
+    save();
+  }catch(e){ /* 修行结算异常绝不影响启动 */ }
+})();
+if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+paper.meta.name+'，是否继续？',{title:'继续上次模考'}).then(function(ok){ if(!ok){ paper=null; delete state.activePaper; save(); return; } switchTab('trial'); $("paperProgress").textContent=paper.meta.name+' · '+paper.cursor+' / '+paper.queue.length; ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); }); }
 
 </script>
 <script>
@@ -3431,10 +3490,30 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
 
   function renderRealm(result) {
     var status = result.status;
+    /* 第一期·子层级：境界卡顶部显示「练气三层」这类 45 级台阶，
+       并给出距下一子层的修为进度。这是新增维度，不改既有双条件进度条。 */
+    var sub = subLevelInfo();
+    var subLine = '';
+    if (sub) {
+      var C = curveSvc();
+      var realmName = status.realm.name;
+      var label = C && C.subLevelLabel ? C.subLevelLabel(realmName, sub.subLevel) : realmName;
+      var nx = C && C.qiToNextLevel ? C.qiToNextLevel(state.qi || 0) : null;
+      var globalNo = sub.global + 1;
+      subLine = '<div class="realm-sub"><b class="realm-sub-name">' + esc(label) + '</b>'
+        + '<span class="muted">第 ' + globalNo + ' / 45 层</span></div>';
+      if (nx && !nx.maxed) {
+        subLine += '<div class="mk-bar"><span>修为</span><i style="width:'
+          + Math.max(2, Math.round(nx.ratio * 100)) + '%"></i><span>'
+          + nx.have + ' / ' + nx.need + '</span></div>';
+      } else {
+        subLine += '<div class="muted" style="font-size:12px">已至化神九层 · 修为圆满</div>';
+      }
+    }
     byId('realmSummary').textContent = '当前 ' + status.realm.name + ' · ' + status.realm.subtitle;
     byId('realmAdvice').textContent = S.realm.describe(status);
-    byId('realmBars').innerHTML =
-      '<div class="mk-bar"><span>词汇量</span><i style="width:' + Math.max(2, Math.round(status.vocabProgress * 100)) + '%"></i><span>'
+    byId('realmBars').innerHTML = subLine
+      + '<div class="mk-bar"><span>词汇量</span><i style="width:' + Math.max(2, Math.round(status.vocabProgress * 100)) + '%"></i><span>'
       + Math.round(status.vocabProgress * 100) + '%</span></div>'
       + '<div class="mk-bar"><span>模考分</span><i style="width:' + Math.max(2, Math.round(status.scoreProgress * 100)) + '%"></i><span>'
       + Math.round(status.scoreProgress * 100) + '%</span></div>';
@@ -5241,15 +5320,31 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     if (plant) {
       var i = Number(plant.getAttribute('data-plant'));
       var order = Object.keys(F.crops);
-      var pick = window.prompt('第 ' + (i + 1) + ' 格种什么？\n1) 灵石草（7天→50灵石）\n2) 记忆花（14天→护道符）\n3) 悟道树（30天→参悟古籍）', '1');
+      /* 第一期·灵田稀有度：把「连续签到天数」传给服务层，
+         稀有作物（悟道树）需连续签到 30 天才解锁。
+         文案里也标出稀有度与解锁条件，用户不用猜。 */
+      var streakDays = Number(state.streak) || 0;
+      var cropLines = order.map(function (k, idx) {
+        var c = F.crops[k];
+        var rare = F.isRareCrop && F.isRareCrop(k);
+        var locked = F.cropUnlocked && !F.cropUnlocked(k, streakDays);
+        var tag = rare ? '【稀有】' : '';
+        var lock = locked ? ' · 需连续签到 ' + (c.minStreakDays || 0) + ' 天（当前 ' + streakDays + '）' : '';
+        var rewardText = c.reward && c.reward.type === 'spirit'
+          ? (c.reward.amount || 0) + ' 灵石'
+          : (c.reward && c.reward.itemId ? '道具' : '奖励');
+        return (idx + 1) + ') ' + tag + c.name + '（' + c.matureDays + '天→' + rewardText + '）' + lock;
+      }).join('\n');
+      var pick = window.prompt('第 ' + (i + 1) + ' 格种什么？\n' + cropLines, '1');
       var n = Number(pick) - 1;
       if (!pick || !F.crops[order[n]]) return;
       // v1.8.1 谕令四：把当前境界传给服务层，封印格在写入前即被拒
       var rIdx = CULT ? realmIndexNow() : undefined;
-      F.plant(i, order[n], undefined, Date.now(), rIdx).then(function (r) {
+      F.plant(i, order[n], undefined, Date.now(), rIdx, streakDays).then(function (r) {
         if (r.ok) { renderField(); toastMsg('已种下 ' + F.crops[order[n]].name); }
         else if (r.reason === 'occupied') toastMsg('这格已有作物');
         else if (r.reason === 'sealed') toastMsg('此格仍被境界封印，突破后自解');
+        else if (r.reason === 'locked') toastMsg((F.cropLockReason && F.cropLockReason(order[n], streakDays)) || '该种子尚未解锁');
       });
       return;
     }

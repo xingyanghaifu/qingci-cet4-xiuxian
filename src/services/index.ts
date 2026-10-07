@@ -55,6 +55,7 @@ import {
   loadField, plantSeed, waterField, harvest, applyWitherPenalty, isMature,
   effectiveMatureDays, streakState, fieldDayKey, CROPS as FIELD_CROPS, PLOT_COUNT,
   isPlotUnlocked as fieldPlotUnlocked, DEFAULT_PLOT_UNLOCK_BY_REALM,
+  cropUnlocked, isRareCrop, cropLockReason,
 } from './spirit-field';
 import {
   PLOT_TOTAL, PLOT_UNLOCK_BY_REALM, DEMON_LEVEL_CAP_BY_REALM, DEMON_LEVEL_ABSOLUTE_CAP,
@@ -63,6 +64,18 @@ import {
   harvestTitleOf, harvestDemonSoftening,
 } from './cultivation';
 export type { CultivationChain } from './cultivation';
+import {
+  SUBLEVELS_PER_REALM, TOTAL_SUBLEVELS, SUBLEVEL_NAMES,
+  globalLevel, splitGlobalLevel, subLevelLabel,
+  qiForSubLevel, totalQiForLevel, levelFromQi, qiToNextLevel,
+  SUBLEVEL_BASE_QI, SUBLEVEL_GROWTH,
+  BASE_QI_PER_CORRECT, COMBO_TIERS, comboMultiplier, comboLabel, qiForCorrect, DAILY_FIRST_QI,
+  DECAY_GRACE_DAYS, DECAY_RATE_PER_DAY, DECAY_MAX_RATIO, applyDecay, decayMessage,
+  CRIT_CHANCE, CRIT_MULTIPLIER, CRIT_LABEL, rollCrit, spiritReward,
+  wrongsToAdvance, wrongsForLevel, levelFromWrongs, isDemonOverflow,
+  LEVEL5_OVERFLOW_WRONGS, OVERFLOW_BONUS_SPIRIT, demonClearReward,
+  CROPS, isCropUnlocked, availableCrops,
+} from './cultivation-curve';
 export type { Lexicon, LexiconManifest } from './lexicon';
 import {
   loadCave, purchaseDecoration, hasDecoration, hasSpringWater, decorationDef,
@@ -268,6 +281,10 @@ const QingciServices = {
     PLOTS: PLOT_COUNT,
     isUnlocked: fieldPlotUnlocked,
     UNLOCK_BY_REALM: DEFAULT_PLOT_UNLOCK_BY_REALM,
+    // 第一期·灵田稀有度
+    cropUnlocked,
+    isRareCrop,
+    cropLockReason,
   },
   cave: {
     load: loadCave,
@@ -315,6 +332,28 @@ const QingciServices = {
     REALM_PRIVILEGE_LINE,
     REALM_TIERS,
     TERMINAL_DEMON_NOTE,
+  },
+  /**
+   * 修行数值曲线（第一期）：45 子层级 + 动态修为 + 暴击 + 心魔曲线 + 灵田稀有度。
+   * 纯函数与常量，不含存储；调用方负责把结果写回 state。
+   */
+  curve: {
+    // 子层级
+    SUBLEVELS_PER_REALM, TOTAL_SUBLEVELS, SUBLEVEL_NAMES,
+    globalLevel, splitGlobalLevel, subLevelLabel,
+    qiForSubLevel, totalQiForLevel, levelFromQi, qiToNextLevel,
+    SUBLEVEL_BASE_QI, SUBLEVEL_GROWTH,
+    // 修为公式
+    BASE_QI_PER_CORRECT, COMBO_TIERS, comboMultiplier, comboLabel, qiForCorrect, DAILY_FIRST_QI,
+    // 断签衰减
+    DECAY_GRACE_DAYS, DECAY_RATE_PER_DAY, DECAY_MAX_RATIO, applyDecay, decayMessage,
+    // 灵石暴击
+    CRIT_CHANCE, CRIT_MULTIPLIER, CRIT_LABEL, rollCrit, spiritReward,
+    // 心魔曲线
+    wrongsToAdvance, wrongsForLevel, levelFromWrongs, isDemonOverflow,
+    LEVEL5_OVERFLOW_WRONGS, OVERFLOW_BONUS_SPIRIT, demonClearReward,
+    // 灵田稀有度
+    CROPS, isCropUnlocked, availableCrops,
   },
   encounters: {
     POOL: ENCOUNTER_POOL,

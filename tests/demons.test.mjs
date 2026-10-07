@@ -29,31 +29,46 @@ test('等级与境界映射', () => {
   for (const lv of [1, 2, 3, 4, 5]) assert.ok(D.demonRealmOf(lv) >= 0 && D.demonRealmOf(lv) <= 4);
 });
 
-test('升降级：答错 +1、答对 -1、level 1 保留档案', async () => {
+test('升降级：按心魔成长曲线升级（Lv1-2 一错 / Lv3-4 两错 / Lv5 三错）、答对降级、level 1 保留档案', async () => {
   const idb = makeFakeIdb();
   let d = await D.upsertDemon('q_x', +1, idb);
   assert.strictEqual(d.level, 1, '首次建档 level 1');
+  assert.strictEqual(d.wrongCount, 1, '首次答错记为 1 次');
   d = await D.upsertDemon('q_x', +1, idb);
-  assert.strictEqual(d.level, 2);
+  assert.strictEqual(d.level, 2, 'Lv1→2 一错（累计 2 错）');
   d = await D.upsertDemon('q_x', +1, idb);
-  assert.strictEqual(d.level, 3);
+  assert.strictEqual(d.level, 3, 'Lv2→3 一错（累计 3 错）');
+  // 第一期曲线：Lv3→4 需要**两错**（累计 5 错）
+  d = await D.upsertDemon('q_x', +1, idb);
+  assert.strictEqual(d.level, 3, 'Lv3→4 第一错还不升（累计 4 错）');
+  d = await D.upsertDemon('q_x', +1, idb);
+  assert.strictEqual(d.level, 4, 'Lv3→4 第二错才升（累计 5 错）');
+  assert.strictEqual(d.wrongCount, 5, '累计错次应记录在案');
+
   d = await D.upsertDemon('q_x', -1, idb);
-  assert.strictEqual(d.level, 2, '复习答对降级');
+  assert.strictEqual(d.level, 3, '复习答对降级');
   assert.strictEqual(d.defeatedCount, 1, '击败计数累加');
+  // 关键：降级后错次回退到该级门槛，否则下次一错会跳回原级
+  assert.strictEqual(d.wrongCount, 3, '降到 Lv3 应回退到 Lv3 的错次门槛');
+
   // level 1 复习答对：不删除，仅 defeatedCount++
   d = await D.upsertDemon('q_y', -1, idb);
   assert.strictEqual(d.level, 1);
   const got = await D.getDemon('q_x', idb);
   assert.ok(got, '档案仍在');
-  // 封顶
-  for (let i = 0; i < 6; i++) await D.upsertDemon('q_z', +1, idb);
-  assert.strictEqual((await D.getDemon('q_z', idb)).level, 5, '封顶 5');
+
+  // 封顶：Lv5 需要累计 7 错
+  for (let i = 0; i < 10; i++) await D.upsertDemon('q_z', +1, idb);
+  const z = await D.getDemon('q_z', idb);
+  assert.strictEqual(z.level, 5, '封顶 5');
+  assert.ok(z.wrongCount >= 7, `Lv5 应累计至少 7 错，实际 ${z.wrongCount}`);
   assert.strictEqual(await D.countRaidReady(idb), 1, '劫级心魔计数');
 });
 
 test('列表：降序（等级高在前），可按等级过滤', async () => {
   const idb = makeFakeIdb();
-  for (let i = 0; i < 4; i++) await D.upsertDemon('q_a', +1, idb);
+  // 第一期曲线：到 Lv4 需累计 5 错（1 诞生 + 1 + 1 + 2）
+  for (let i = 0; i < 5; i++) await D.upsertDemon('q_a', +1, idb);
   await D.upsertDemon('q_b', +1, idb);
   const list = await D.listDemons({}, idb);
   assert.strictEqual(list.length, 2);

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 灵石经济测试（阶段 A2 · economy.ts + 模板挂点）
  *
  * 覆盖：spend/earn 判定与流水、余额不足不记账、balanceAfter 链式校验、
@@ -106,8 +106,11 @@ test('purchase：未知道具 ok:false 不扣钱', async () => {
 test('挂点1：claimMission 聚灵阵双倍（幂等保护原样）+ 流水', () => {
   assert.ok(html.includes("state.claimed[m.id]===dayKey()) return;"), 'claimed 幂等保护必须原样');
   assert.ok(html.includes("m.id==='q'&&ESm&&ESm.arrayActive()"), '仅每日背词任务 ×2');
-  assert.ok(html.includes("ESm.earnSpirit(state,gain,'daily_words')"), '奖励须走经济流水');
-  assert.ok(html.includes("（聚灵阵双倍）"), '双倍须可见提示');
+  // 第一期：奖励入账仍走经济流水，但 reason 区分是否暴击（便于流水回放分析）
+  assert.ok(/ESm\.earnSpirit\(state,gain,crit\?'daily_words_crit':'daily_words'\)/.test(html),
+    '奖励须走经济流水（暴击与非暴击分别记流水）');
+  // 双倍提示：文案由「聚灵阵 / 暴击」拼出，所以断言两段而不是整串字面量
+  assert.ok(html.includes("'（'+(crit?'暴击':'聚灵阵')+'双倍）'"), '双倍须可见提示（区分暴击与聚灵阵）');
 });
 
 test('挂点2：buyItem 迁移到 spend/earn（旧 3 道具行为不变）', () => {

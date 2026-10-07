@@ -38,16 +38,45 @@ export interface CropDef {
   name: string;
   matureDays: number;
   reward: { type: 'spirit' | 'item'; amount?: number; itemId?: string };
+  /** 第一期·稀有度（可缺省，缺省按 common 处理） */
+  rarity?: 'common' | 'rare';
+  /** 第一期·解锁所需连续签到天数（缺省 0 = 无门槛） */
+  minStreakDays?: number;
 }
 
 export const PLOT_COUNT = 9;
 
 /** 作物表（调参只改这张表） */
 export const CROPS: Record<CropType, CropDef> = {
-  qi_grass: { name: '灵石草', matureDays: 7, reward: { type: 'spirit', amount: 50 } },
-  memory_flower: { name: '记忆花', matureDays: 14, reward: { type: 'item', amount: 1, itemId: 'talisman' } },
-  enlighten_tree: { name: '悟道树', matureDays: 30, reward: { type: 'item', amount: 1, itemId: 'book' } },
+  qi_grass: { name: '灵石草', matureDays: 7, reward: { type: 'spirit', amount: 50 }, rarity: 'common', minStreakDays: 0 },
+  memory_flower: { name: '记忆花', matureDays: 14, reward: { type: 'item', amount: 1, itemId: 'talisman' }, rarity: 'common', minStreakDays: 0 },
+  enlighten_tree: { name: '悟道树', matureDays: 30, reward: { type: 'item', amount: 1, itemId: 'book' }, rarity: 'rare', minStreakDays: 30 },
 };
+
+/**
+ * 第一期·灵田稀有度：该作物在给定连续签到天数下是否可种。
+ * 无 minStreakDays 的作物永远可种（保持既有行为）。
+ */
+export function cropUnlocked(cropType: CropType, streakDays: number): boolean {
+  const def = CROPS[cropType];
+  if (!def) return false;
+  const need = Math.max(0, Math.round(Number(def.minStreakDays) || 0));
+  if (need <= 0) return true;
+  return Math.max(0, Math.floor(Number(streakDays) || 0)) >= need;
+}
+
+/** 该作物是否稀有 */
+export function isRareCrop(cropType: CropType): boolean {
+  return (CROPS[cropType] && CROPS[cropType].rarity) === 'rare';
+}
+
+/** 未解锁时的提示文案（空串表示已解锁） */
+export function cropLockReason(cropType: CropType, streakDays: number): string {
+  const def = CROPS[cropType];
+  if (!def) return '';
+  if (cropUnlocked(cropType, streakDays)) return '';
+  return `${def.name} · 需连续签到 ${def.minStreakDays} 天解锁`;
+}
 
 /** 本地日 key（与模板 dayKey / encounters 同一口径，R13） */
 export function fieldDayKey(now: number = Date.now()): string {
@@ -128,11 +157,15 @@ export async function plantSeed(
   factory?: MinimalFactory | null,
   now: number = Date.now(),
   realmIndex?: number,
+  streakDays?: number,
 ): Promise<{ ok: boolean; reason?: string }> {
   if (!Number.isInteger(plotIndex) || plotIndex < 0 || plotIndex >= PLOT_COUNT) return { ok: false, reason: 'bad-plot' };
   if (!CROPS[cropType]) return { ok: false, reason: 'bad-crop' };
   // v1.8.1 谕令四：封印格（境界未解锁）不可耕；realmIndex 缺省时不限格
   if (!isPlotUnlocked(plotIndex, realmIndex)) return { ok: false, reason: 'sealed' };
+  // 第一期·灵田稀有度：稀有种子需要连续签到解锁。
+  // streakDays 缺省（undefined）时不设门槛 —— 保持旧调用点行为不变。
+  if (streakDays !== undefined && !cropUnlocked(cropType, streakDays)) return { ok: false, reason: 'locked' };
   try {
     const store = await fieldStore('readwrite', factory);
     if (!store) return { ok: false, reason: 'unavailable' };

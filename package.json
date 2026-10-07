@@ -31,6 +31,7 @@
     "verify:pwa": "node scripts/verify-pwa.mjs",
     "verify:a11y:online": "node scripts/verify-a11y-online.mjs",
     "verify:contrast:online": "node scripts/verify-contrast-online.mjs",
+    "verify:examdate:online": "node scripts/verify-exam-date-online.mjs",
     "verify": "npm run typecheck && npm run build && npm run verify:pwa && npm test && npm run test:docs && npm run healthcheck",
     "verify:prod": "npm run typecheck && npm run verify:pwa && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict"
   },

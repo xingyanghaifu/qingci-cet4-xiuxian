@@ -44,10 +44,17 @@ function dayKey(d) {
   return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
 }
 
-/** 距考试天数，最少返回 1 */
+/**
+ * 距考试天数，最少返回 1
+ *
+ * P2-15：`examDate` 不再给硬编码默认值 —— 调用方必须显式传入
+ * （服务端 `worker/index.mjs` / `server.mjs` 从 EXAM_CONFIGS 取，
+ * 前端走 `src/services/study-plan.ts` 的 `DEFAULT_EXAM_DATE`）。
+ * 这里只在完全没传时用「今天」兜底，返回 1，避免悄悄用某个过期日期算出离谱天数。
+ */
 function examDays(examDate, now) {
-  const exam = new Date(examDate || '2026-12-12T09:00:00');
   const cur = now || new Date();
+  const exam = examDate ? new Date(examDate) : cur;
   return Math.max(1, Math.ceil((exam - cur) / 86400000));
 }
 

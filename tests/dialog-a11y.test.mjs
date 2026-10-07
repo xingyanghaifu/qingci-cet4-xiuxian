@@ -110,12 +110,22 @@ function loadInfra() {
   btnsB.push(closeB); closeB.parent = overlayB;
 
   const allDialogs = [nav, overlayA, overlayB];
+  // 被抽取的 IIFE 里现在还含 askConfirm（P1-8），它按 id 取元素，
+  // 所以假 DOM 得提供 getElementBy。这里给它一个空壳 —— 本文件只关心
+  // 焦点循环与滚动锁，不关心确认弹层的行为（那由 form-a11y.test.mjs 负责）。
+  const byId = {};
+  const askEl = makeEl('div', { id: 'askOverlay', className: 'overlay hidden', attrs: { role: 'dialog' } });
+  byId.askOverlay = askEl;
+  allDialogs.push(askEl);
+  for (const id of ['askOk', 'askCancel', 'askText', 'askTitle']) byId[id] = makeEl('button', { id });
+
   DOC.activeElement = null;
   const doc = {
     body,
     get activeElement() { return DOC.activeElement; },
     set activeElement(v) { DOC.activeElement = v; },
     documentElement: { clientWidth: 1000 },
+    getElementById(id) { return byId[id] || null; },
     querySelectorAll(sel) {
       if (sel !== '[role="dialog"]') return [];
       return allDialogs;
@@ -123,6 +133,11 @@ function loadInfra() {
     addEventListener(type, fn) { (this._h ||= {}); (this._h[type] ||= []).push(fn); },
     _h: {},
   };
+  // 元素自身的 addEventListener（askOk / askCancel 要用）
+  for (const el of Object.values(byId)) {
+    el.addEventListener = function (type, fn) { (this._eh ||= {}); (this._eh[type] ||= []).push(fn); };
+    el.textContent = '';
+  }
   const getComputedStyle = () => ({ position: 'static' });
   const MutationObserver = class { observe() {} };
   const win = { innerWidth: 1030 };
@@ -187,71 +202,68 @@ test('导航抽屉不被重复接管（它有自己的 Esc/Tab 处理）', () =>
 
 /* ---------------- P1-7 背景滚动锁 ---------------- */
 
-test('滚动锁写入 overflow:hidden 且补偿滚动条宽度', () => {
-  // 真跑一遍：用一个会立即回调的 MutationObserver 替身
+/** 造一个只够跑滚动锁的最小环境；MutationObserver 一有属性变化就立刻回调（等价真实异步通知） */
+function loadLockEnv(overlays, innerWidth) {
   const src = infraSrc();
-
   const body = makeEl('body');
-  const ov = makeEl('div', { id: 'ov', className: 'overlay hidden', attrs: { role: 'dialog' } });
-  ov.children = [makeEl('button')];
+  const byId = {};
+  for (const id of ['askOk', 'askCancel', 'askText', 'askTitle']) {
+    const el = makeEl('button', { id });
+    el.addEventListener = function () {};
+    el.textContent = '';
+    byId[id] = el;
+  }
   const doc = {
     body,
-    activeElement: null,
+    get activeElement() { return DOC.activeElement; },
+    set activeElement(v) { DOC.activeElement = v; },
     documentElement: { clientWidth: 1000 },
-    querySelectorAll: (s) => (s === '[role="dialog"]' ? [ov] : []),
-    addEventListener() {},
-  };
-  // 记录观察目标：属性变化时立刻回调，等价于真实的异步通知
-  let observerCb = null;
-  const MutationObserver = class {
-    constructor(cb) { observerCb = cb; }
-    observe() {}
-  };
-  new Function('document', 'window', 'getComputedStyle', 'MutationObserver', src)(
-    doc, { innerWidth: 1030 }, () => ({ position: 'static' }), MutationObserver);
-
-  assert.equal(body.style.overflow, undefined, '初始不应锁定');
-  ov.classList.remove('hidden');
-  observerCb();
-  assert.equal(body.style.overflow, 'hidden', '覆盖层打开未锁滚动');
-  assert.equal(body.style.paddingRight, '30px', '未补偿滚动条宽度（1030-1000=30）');
-
-  ov.classList.add('hidden');
-  observerCb();
-  assert.equal(body.style.overflow, '', '覆盖层关闭未解锁');
-  assert.equal(body.style.paddingRight, '', '关闭后未还原内边距');
-});
-
-test('浮层套浮层：内层关闭不解锁（外层仍可见）', () => {
-  const src = infraSrc();
-
-  const body = makeEl('body');
-  const outer = makeEl('div', { id: 'outer', className: 'overlay hidden', attrs: { role: 'dialog' } });
-  const inner = makeEl('div', { id: 'inner', className: 'overlay hidden', attrs: { role: 'dialog' } });
-  outer.children = [makeEl('button')];
-  inner.children = [makeEl('button')];
-  const doc = {
-    body, activeElement: null,
-    documentElement: { clientWidth: 1000 },
-    querySelectorAll: (s) => (s === '[role="dialog"]' ? [outer, inner] : []),
+    getElementById: (id) => byId[id] || null,
+    querySelectorAll: (s) => (s === '[role="dialog"]' ? overlays : []),
     addEventListener() {},
   };
   let cb = null;
   const MutationObserver = class { constructor(f) { cb = f; } observe() {} };
   new Function('document', 'window', 'getComputedStyle', 'MutationObserver', src)(
-    doc, { innerWidth: 1000 }, () => ({ position: 'static' }), MutationObserver);
+    doc, { innerWidth }, () => ({ position: 'static' }), MutationObserver);
+  return { body, notify: () => cb() };
+}
+
+test('滚动锁写入 overflow:hidden 且补偿滚动条宽度', () => {
+  const ov = makeEl('div', { id: 'ov', className: 'overlay hidden', attrs: { role: 'dialog' } });
+  ov.children = [makeEl('button')];
+  const { body, notify } = loadLockEnv([ov], 1030);   // 1030-1000 = 30px 滚动条
+
+  assert.equal(body.style.overflow, undefined, '初始不应锁定');
+  ov.classList.remove('hidden');
+  notify();
+  assert.equal(body.style.overflow, 'hidden', '覆盖层打开未锁滚动');
+  assert.equal(body.style.paddingRight, '30px', '未补偿滚动条宽度');
+
+  ov.classList.add('hidden');
+  notify();
+  assert.equal(body.style.overflow, '', '覆盖层关闭未解锁');
+  assert.equal(body.style.paddingRight, '', '关闭后未还原内边距');
+});
+
+test('浮层套浮层：内层关闭不解锁（外层仍可见）', () => {
+  const outer = makeEl('div', { id: 'outer', className: 'overlay hidden', attrs: { role: 'dialog' } });
+  const inner = makeEl('div', { id: 'inner', className: 'overlay hidden', attrs: { role: 'dialog' } });
+  outer.children = [makeEl('button')];
+  inner.children = [makeEl('button')];
+  const { body, notify } = loadLockEnv([outer, inner], 1000);   // 无滚动条
 
   outer.classList.remove('hidden');
   inner.classList.remove('hidden');
-  cb();
+  notify();
   assert.equal(body.style.overflow, 'hidden', '双层打开应锁定');
 
   inner.classList.add('hidden');          // 只关内层
-  cb();
+  notify();
   assert.equal(body.style.overflow, 'hidden', '内层关闭却解了锁 —— 外层还开着');
 
   outer.classList.add('hidden');          // 关外层
-  cb();
+  notify();
   assert.equal(body.style.overflow, '', '全部关闭后应解锁');
 });
 

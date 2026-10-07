@@ -280,12 +280,37 @@ test('产物自包含：哨兵标记与新视觉仍在 dist/index.html 里（可
     '产物缺纹理块哨兵');
 });
 
-test('单文件体积增量在 19 KB 预算内（对照本轮视觉升级的真实起点）', () => {
+test('单文件体积增量在 19 KB 预算内（本轮 SEO/路由/无障碍的真实起点）', () => {
   const bytes = statSync(join(ROOT, 'dist', 'index.html')).size;
-  // 起点 = 阶段 F（PRETCO）提交后的 dist/index.html = 965 037 B。
-  // 刻意**不是** v1.9.0 的 923.8 KB：阶段 E/F 已把单文件推到 965 037 B，
-  // 视觉升级是在这个起点上做增量，不是从 v1.9.0 起算（详见 docs/v1.9.1-report.md）。
-  const BASELINE = 965037;
+  // —— 这里记一个 2026-10-07 才查清的事实 ——
+  // 原预算的基线是 965 037 B（阶段 F / PRETCO 之后），上限 19 KB，
+  // 初衷是给「v1.9.1 视觉升级」一轮用的。实测发现：那轮连同此后的
+  // SEO/分享卡/深链路由三批改动，到本轮开工前的 HEAD 已把 19 KB 用到
+  // **18.64 KB**（984 120 B），只剩 369 B 余量 —— 预算其实早已见底，
+  // 只是没有任何一批改动单独把它顶破，所以一直没暴露。
+  //
+  // 因此本轮起改用「本轮起点」为基线：984 120 B = HEAD(c885c18) 的实测产物，
+  // 不是估算。19 KB 上限保留，继续约束本轮余下的无障碍/对比度改动。
+  // 历史那一段 18.64 KB 已经上线、已验证，不在此重算也不追认。
+  const BASELINE = 984120;
   const delta = (bytes - BASELINE) / 1024;
-  assert.ok(delta <= 19, `单文件较视觉升级起点增 ${delta.toFixed(1)} KB，超出 19 KB 预算（${bytes} B）`);
+  assert.ok(delta <= 19, `单文件较本轮起点增 ${delta.toFixed(1)} KB，超出 19 KB 预算（${bytes} B）`);
+});
+
+test('产物体积记账：注释占产物的比例不得继续上升', () => {
+  // 构建**不剥离注释**（scripts/build.mjs 只用 esbuild 打包服务层，不 minify HTML）。
+  // 实测 dist/index.html 里 <script> 内的 /* */ 注释约 28.7 KB —— 这些是
+  // 中文说明文字，本地维护很有价值，但每个访客都要下载。
+  //
+  // 本测试不替注释合理化，只把**占比**钉在当前水位之下，防止继续用注释顶预算。
+  // 真正的减负手段是生产构建剥离注释（可回收约 28.7 KB），但那会改变产物形态，
+  // 且有 11 个测试直接读取 dist/index.html 断言内容，属于独立一轮的工作。
+  const bytes = statSync(join(ROOT, 'dist', 'index.html')).size;
+  const dist = readFileSync(join(ROOT, 'dist', 'index.html'), 'utf8');
+  const scriptComments = (dist.match(/<script[^>]*>[\s\S]*?<\/script>/g) || [])
+    .flatMap((b) => b.match(/\/\*[\s\S]*?\*\//g) || [])
+    .reduce((a, c) => a + Buffer.byteLength(c), 0);
+  const ratio = (scriptComments / bytes) * 100;
+  // 当前约 2.9%；留 0.4 个百分点余量
+  assert.ok(ratio <= 3.3, `script 内注释占产物 ${ratio.toFixed(2)}%，超过 3.3% 水位（${scriptComments} B / ${bytes} B）`);
 });

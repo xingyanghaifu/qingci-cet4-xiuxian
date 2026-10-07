@@ -4109,22 +4109,66 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   var byId = function (id) { return document.getElementById(id); };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
-  /* 预热题库音频清单：清单缺失（未执行 build:audio 或 file://）时隐藏真实音频按钮 */
-  S.audioSources.loadTts().then(function (m) {
-    var b = byId('realAudioBtn');
-    if (b && (!m || !m.count)) b.classList.add('hidden');
-    else if (b) b.classList.remove('hidden');
-  });
+  /* 预热题库音频清单：清单缺失（未执行 build:audio 或 file://）时隐藏真实音频按钮。
+     P2-11：这里原来在**启动时**就 fetch 清单 —— 实测 audio/tts/manifest.json
+     是 256 KB（gzip）/ 908 ms，是首屏最大的单个请求，而绝大多数用户
+     整个会话都不会点「真实音频」。改成按需加载：
+       · 首屏不再请求该清单
+       · 用户首次打开听力题（#audioDock 由 hidden 变可见）时才加载一次
+       · 已加载过就不再重复（loadTts 内部有 promise 缓存）
+     按钮默认仍是 hidden（HTML 里已写死），加载完才决定是否显示 —— 行为不变。 */
+  var ttsWarmed = false;
+  function warmTtsManifest() {
+    if (ttsWarmed) return;
+    ttsWarmed = true;
+    // 注意必须调 warmTts() 而不是 loadTts()：pickTtsSrc() 查的是模块内 ttsSync，
+    // 而 ttsSync 只由 warmTts() 赋值。此前只调 loadTts()，于是
+    // 「真实音频」按钮即使显示出来，点它也永远提示「当前题暂无生成音频」——
+    // 因为 pickTtsSrc() 拿到的一直是 null（ttsSync 从未被赋值）。
+    // warmTts() 内部就是 await loadTts()，所以一次调用同时完成两件事。
+    S.audioSources.warmTts().then(function () {
+      return S.audioSources.loadTts();
+    }).then(function (m) {
+      var b = byId('realAudioBtn');
+      if (b && (!m || !m.count)) b.classList.add('hidden');
+      else if (b) b.classList.remove('hidden');
+    }).catch(function () { /* 清单不可用：保持隐藏 */ });
+  }
 
-  /* audioDock：真实音频播放 */
+  /* 监听 audioDock 的显示：首次出现听力题时才拉清单 */
+  (function () {
+    var dock = byId('audioDock');
+    if (!dock) return;
+    var wasHidden = dock.classList.contains('hidden');
+    if (!wasHidden) { warmTtsManifest(); return; }
+    if (typeof MutationObserver === 'function') {
+      var mo = new MutationObserver(function () {
+        if (!dock.classList.contains('hidden')) { warmTtsManifest(); mo.disconnect(); }
+      });
+      mo.observe(dock, { attributes: true, attributeFilter: ['class'] });
+    } else {
+      // 无 MutationObserver（极老浏览器）：退回「点播放听力时预热」
+      var playBtn = byId('audioPlay');
+      if (playBtn) playBtn.addEventListener('click', warmTtsManifest, { once: true });
+    }
+  })();
+
+  /* audioDock：真实音频播放。
+     改为 async：清单现在是按需加载的，用户可能在清单就绪前就点了按钮。
+     先 await warmTtsManifest() 再取 src，避免「明明有音频却提示暂无」。 */
   var realBtn = byId('realAudioBtn');
   if (realBtn) realBtn.addEventListener('click', function () {
     var q = (typeof current === 'undefined') ? null : current;
     if (!q || !q.id) { if (window.toast) toast('当前题目没有可用音频'); return; }
-    var src = S.audioSources.pickTtsSrc(q.id);
-    if (!src) { if (window.toast) toast('当前题暂无生成音频，请先运行 npm run build:audio'); return; }
     var rate = Number((byId('audioRate') || {}).value) || 1;
-    S.audioSources.playReal(src, rate);
+    Promise.resolve()
+      .then(function () { warmTtsManifest(); return S.audioSources.warmTts(); })
+      .then(function () {
+        var src = S.audioSources.pickTtsSrc(q.id);
+        if (!src) { if (window.toast) toast('当前题暂无生成音频，请先运行 npm run build:audio'); return; }
+        S.audioSources.playReal(src, rate);
+      })
+      .catch(function () { if (window.toast) toast('音频清单加载失败'); });
   });
 
   /* VOA 素材区（精听面板） */

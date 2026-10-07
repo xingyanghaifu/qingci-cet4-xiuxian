@@ -204,3 +204,207 @@ test('role="dialog" 增至 12（新增 #askOverlay），其余语义未动', () 
   }
   assert.equal((html.match(/role="tab"/g) || []).length, 9, 'role="tab" 必须仍 9 个');
 });
+
+/* ---------------- P1-9: <h1> 可访问名仅当前模块 ---------------- */
+
+test('<h1 id="mainTitle"> 仅有一个 aria-hidden="false"（当前模块）', () => {
+  // 模板里必须只有 1 个 aria-hidden="false"（默认 paper），其余 8 个为 true
+  const h1Start = html.indexOf('<h1 id="mainTitle"');
+  assert.ok(h1Start >= 0, '找不到 <h1 id="mainTitle">');
+  const h1End = html.indexOf('</h1>', h1Start);
+  const h1 = html.slice(h1Start, h1End + 5);
+  const falseCount = (h1.match(/aria-hidden="false"/g) || []).length;
+  const trueCount = (h1.match(/aria-hidden="true"/g) || []).length;
+  assert.equal(falseCount, 1, '应有且仅有 1 个 aria-hidden="false"，实际 ' + falseCount);
+  assert.equal(trueCount, 8, '应有 8 个 aria-hidden="true"，实际 ' + trueCount);
+});
+
+/* 运行时口径：把真实 switchTab 抠出来，配假 DOM 跑一遍。
+   静态正则证明不了映射对不对 —— trial 面板要按 words/single 分叉，
+   写错一个分支就会把 9 个 span 全设成 aria-hidden="true"，
+   此时 <h1> 在无障碍树里彻底没有名字（比修复前更糟）。 */
+const MT_MODULES = ['paper', 'words', 'single', 'speak', 'book', 'codex', 'map', 'duel', 'field'];
+
+function bootH1(paperVal = null) {
+  const spans = MT_MODULES.map((m) => ({
+    dataset: { m },
+    attrs: {},
+    setAttribute(k, v) { this.attrs[k] = String(v); },
+  }));
+  const tabs = [
+    { dataset: { tab: 'paper' } },
+    { dataset: { tab: 'trial', mode: 'words' } },
+    { dataset: { tab: 'trial' } },
+    { dataset: { tab: 'speak' } }, { dataset: { tab: 'book' } }, { dataset: { tab: 'codex' } },
+    { dataset: { tab: 'map' } }, { dataset: { tab: 'duel' } }, { dataset: { tab: 'field' } },
+  ].map((b) => {
+    b.on = false;
+    b.classList = { toggle(c, v) { if (c === 'on') b.on = !!v; } };
+    b.setAttribute = () => {};
+    return b;
+  });
+
+  const panels = {};
+  const document = {
+    querySelectorAll(sel) {
+      if (sel === '.tabs button') return tabs;
+      if (sel === '#mainTitle .mt') return spans;
+      return [];
+    },
+  };
+  const noop = () => {};
+  // 记录面板 .hidden 状态，供 CSS :has() 规则求值用
+  const $ = (elId) => ({
+    classList: { toggle(c, v) { if (c === 'hidden' && elId.startsWith('panel-')) panels[elId.slice(6)] = !!v; } },
+    textContent: '',
+  });
+
+  const start = html.indexOf('function switchTab(name,srcBtn){');
+  const endMark = 'syncRoute(name); }';
+  const end = html.indexOf(endMark, start) + endMark.length;
+  assert.ok(start >= 0 && end > endMark.length, '未定位到 switchTab 源码');
+  const src = html.slice(start, end);
+
+  const state = { pool: 'words' };
+  const switchTab = new Function(
+    'document', '$', 'state', 'paper', 'syncRoute',
+    'renderBook', 'renderCodex', 'renderMap', 'renderShop', 'renderSpeak',
+    'renderShelf', 'renderDuel', 'window',
+    src + '\nreturn switchTab;',
+  )(document, $, state, paperVal, noop, noop, noop, noop, noop, noop, noop, noop, {});
+
+  return {
+    switchTab, state, tabs, panels,
+    /** 无障碍树里 <h1> 的实际可访问名 = 未被 aria-hidden 的 span 文本拼接 */
+    accessibleName() {
+      return spans.filter((s) => s.attrs['aria-hidden'] !== 'true')
+        .map((s) => s.dataset.m).join(' ');
+    },
+    exposed() { return spans.filter((s) => s.attrs['aria-hidden'] === 'false').map((s) => s.dataset.m); },
+  };
+}
+
+/** 直接从模板里真实的 :has() 规则解析出「当前哪个 .mt 可见」——
+    与 switchTab 的 aria-hidden 是两条互不依赖的路径，必须给出同一答案。 */
+function cssVisibleModule(panels, tabs) {
+  const rules = [...html.matchAll(
+    /\.app:has\(#panel-([a-z]+):not\(\.hidden\)\)([^{]*)\{display:inline\}/g)];
+  const shown = [];
+  for (const [, panelId, cond] of rules) {
+    if (panels[panelId] !== false) continue;              // 该面板不可见
+    const m = cond.match(/\.mt\[data-m="([a-z]+)"\]/);
+    if (!m) continue;
+    if (cond.includes('[data-mode="words"]')) {
+      if (tabs.some((t) => t.dataset.tab === 'trial' && t.on && t.dataset.mode === 'words')) shown.push(m[1]);
+    } else if (cond.includes(':not([data-mode])')) {
+      if (tabs.some((t) => t.dataset.tab === 'trial' && t.on && !t.dataset.mode)) shown.push(m[1]);
+    } else if (cond.includes(':has(.tabs')) {
+      // 依赖按钮 .on 的规则上面已单独处理，这里跳过
+    } else {
+      shown.push(m[1]);
+    }
+  }
+  return shown;
+}
+
+test('交叉验证：CSS :has() 判定的可见标题 == switchTab 暴露给读屏的标题', () => {
+  // 两条独立路径必须收敛到同一个模块：
+  //   · CSS  :has(#panel-X:not(.hidden)) .mt[data-m=Y]{display:inline}
+  //   · JS   switchTab 设 aria-hidden="false"
+  // 只测其中一条都可能漏掉「看得见却读不到」或反之。
+  const app = bootH1();
+  const cases = [['paper'], ['speak'], ['book'], ['codex'], ['map'], ['duel'], ['field']];
+  for (const [m] of cases) {
+    app.switchTab(m);
+    const css = cssVisibleModule(app.panels, app.tabs);
+    assert.deepEqual(css, app.exposed(),
+      `切到 ${m}：CSS 判定可见 ${css}，读屏暴露 ${app.exposed()} —— 两条路径脱钩`);
+  }
+
+  app.state.pool = 'words';
+  app.switchTab('trial');
+  assert.deepEqual(cssVisibleModule(app.panels, app.tabs), app.exposed(),
+    'trial(words)：CSS 与读屏脱钩');
+
+  app.state.pool = 'wrong';
+  app.switchTab('trial');
+  assert.deepEqual(cssVisibleModule(app.panels, app.tabs), app.exposed(),
+    'trial(single)：CSS 与读屏脱钩');
+});
+
+test('运行时：切每个模块后 <h1> 只暴露 1 个模块名（修复前是 9 个连读）', () => {
+  const app = bootH1();
+  for (const m of ['paper', 'speak', 'book', 'codex', 'map', 'duel', 'field']) {
+    app.switchTab(m);
+    assert.deepEqual(app.exposed(), [m], `切到 ${m} 后可访问名应为 ${m}，实际 ${app.exposed().join('+')}`);
+  }
+});
+
+test('运行时：trial 面板按 words / single 分叉，不会两边都不亮', () => {
+  const app = bootH1();
+  app.state.pool = 'words';
+  app.switchTab('trial');
+  assert.deepEqual(app.exposed(), ['words'], 'words 池下应暴露「背单词」');
+
+  app.state.pool = 'wrong';           // 非 words 池 → 单题
+  app.switchTab('trial');
+  assert.deepEqual(app.exposed(), ['single'], '非 words 池下应暴露「单题」');
+});
+
+test('运行时：显式传 srcBtn 时以按钮为准（与 .on 消歧同源）', () => {
+  const app = bootH1();
+  app.state.pool = 'words';
+  app.switchTab('trial', { dataset: { tab: 'trial' } });          // 单题按钮
+  assert.deepEqual(app.exposed(), ['single'], '点单题按钮应暴露「单题」');
+  app.switchTab('trial', { dataset: { tab: 'trial', mode: 'words' } });
+  assert.deepEqual(app.exposed(), ['words'], '点背单词按钮应暴露「背单词」');
+});
+
+test('运行时：任何一次切换都恰好留 1 个模块可读（绝不出现 0 个或 9 个）', () => {
+  const app = bootH1();
+  for (const m of [...MT_MODULES.slice(0, 1), 'speak', 'book', 'codex', 'map', 'duel', 'field', 'trial']) {
+    app.switchTab(m);
+    assert.equal(app.exposed().length, 1, `切到 ${m} 后可读模块数应为 1，实际 ${app.exposed().length}`);
+    assert.equal(app.accessibleName().split(' ').length, 1,
+      `切到 ${m} 后 <h1> 可访问名成了「${app.accessibleName()}」`);
+  }
+});
+
+test('运行时：模考进行中（paper 非空）时 trial 归到「单题」', () => {
+  // switchTab 里 trial 的消歧条件是 `state.pool==="words" && !paper`：
+  // 模考期间即使 pool 是 words，按钮也不亮 —— 标题必须跟着按钮走，
+  // 否则会出现「按钮显示单题、标题却读背单词」的不一致。
+  const app = bootH1({ queue: [], cursor: 0 });
+  app.state.pool = 'words';
+  app.switchTab('trial');
+  assert.deepEqual(app.exposed(), ['single'], '模考进行中应暴露「单题」');
+  assert.deepEqual(cssVisibleModule(app.panels, app.tabs), ['single'],
+    '模考进行中 CSS 也应是「单题」');
+});
+
+test('降级 CSS 与可访问名同源：都由 aria-hidden="false" 驱动可见性', () => {
+  // 旧降级是 9 个标题全显 + · 分隔：屏幕上看得见 9 个，
+  // 若只给 8 个加 aria-hidden 就成了「看得见却读不到」（ARIA 大忌）。
+  // 现在两者是同一个属性，本测试锁死 CSS 侧不放行别的写法。
+  const i = html.indexOf('@supports not selector(:has(*))');
+  assert.ok(i > 0, '找不到 @supports not selector(:has(*)) 降级块');
+  const close = html.indexOf('.mh-actions', i);
+  const block = html.slice(i, html.indexOf('}', close) + 1).replace(/\s/g, '');
+  assert.ok(block.includes('.mt[aria-hidden="false"]{display:inline}'),
+    '降级块应由 .mt[aria-hidden="false"] 驱动可见性，实际：' + block);
+  assert.ok(!/\.mt\{display:inline\}/.test(block),
+    '降级块仍在无条件显示全部 .mt（9 个标题会连读）');
+  assert.ok(!/\.mt\+\.mt:before/.test(block),
+    '降级块仍在用 · 连接 9 个标题（读屏会连读成一句）');
+});
+
+test('产物中 <h1> 同样仅 1 个 aria-hidden="false"', () => {
+  const h1Start = dist.indexOf('<h1 id="mainTitle"');
+  assert.ok(h1Start >= 0, '产物里找不到 <h1 id="mainTitle">');
+  const h1End = dist.indexOf('</h1>', h1Start);
+  const h1 = dist.slice(h1Start, h1End + 5);
+  const falseCount = (h1.match(/aria-hidden="false"/g) || []).length;
+  const trueCount = (h1.match(/aria-hidden="true"/g) || []).length;
+  assert.equal(falseCount, 1, '产物应有且仅有 1 个 aria-hidden="false"，实际 ' + falseCount);
+  assert.equal(trueCount, 8, '产物应有 8 个 aria-hidden="true"，实际 ' + trueCount);
+});

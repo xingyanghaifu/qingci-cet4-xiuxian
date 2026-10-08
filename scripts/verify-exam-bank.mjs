@@ -72,6 +72,27 @@ const LEX = {
     parts: ['读', '写', '译'],
   },
   /**
+   * GRE（v1.10 第一批）。
+   * 卷面 1156 题 = 填空 620 + 阅读 105 篇×5 = 525 + 写作 11。
+   * GRE 无听力，故 kinds 里没有 talk。
+   */
+  gre: {
+    tag: 'gre',
+    kinds: ['bankfill', 'reading', 'writing'],
+    // 填空（句子等价 / Text Completion）是**词库型**题：从 10 个词里选，不是四选一
+    choiceCount: (k) => (k === 'bankfill' ? 10 : 4),
+    passageKinds: [],
+    groups: [
+      { name: '阅读', kind: 'reading', per: 5, need: 12 },
+    ],
+    paper: {
+      size: 1156, kinds: 3,
+      structure: { bankfill: 620, reading: 525, writing: 11 },
+    },
+    writeKinds: ['writing'],
+    parts: ['填', '读', '写'],
+  },
+  /**
    * PRETCO（v1.9.1 阶段 F · 近似方案）：词库数据复用 CET-4，只考特色题型 ——
    * 语法结构（单选）、听力短对话（带 TTS 的对话理解）、英译汉（write）、应用文（write）。
    * 四类全是 direct 题（不成组），故 groups 为空。

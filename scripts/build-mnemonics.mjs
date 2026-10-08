@@ -77,7 +77,27 @@ const LEXICONS = [
     shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'kaoyan', 'vocab-detail'),
     corpusDir: path.join(CACHE_DIR, 'kaoyan', 'corpus'),
   },
+  {
+    // v1.10 第一批：GRE（语料与 build-lexicon 的 gre 缓存同源）
+    id: 'gre',
+    shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'gre', 'vocab-detail'),
+    corpusDir: path.join(CACHE_DIR, 'gre', 'corpus'),
+  },
 ];
+
+/**
+ * 显式指定 --lexicon 时，若该词库不在上面的清单里，**直接失败**。
+ *
+ * 为什么加这条：这份清单与 build-lexicon.mjs 的 LEXICONS 是两处独立登记，
+ * 之前漏登记过一次（GRE 分片建好了、助记却没生成，且全程无报错）。
+ * 与其静默跳过，不如让漏登记在命令行立刻暴露。
+ */
+if (ONLY && !LEXICONS.some((l) => l.id === ONLY)) {
+  console.error(`❌ --lexicon ${ONLY} 未登记在本脚本的 LEXICONS 清单里。`);
+  console.error(`   已登记：${LEXICONS.map((l) => l.id).join(', ')}`);
+  console.error('   请在 build-mnemonics.mjs 的 LEXICONS 数组里补上（shardDir + corpusDir）。');
+  process.exit(1);
+}
 
 /* ---------------- 内容红线过滤器 ----------------
  * 只拦「有害内容本身」，不拦「词义里正常提到某事物」。

@@ -134,6 +134,20 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/kaoyan/',
   },
   {
+    // v1.10 第一批：GRE（ECDICT tag:gre，实测 7504 词，达预期 100%）。
+    // 与考研同一套机制（tagFilter + 重叠标记），进度 / 错题 / 复习队列独立。
+    id: 'gre',
+    name: 'GRE 美国研究生入学考试',
+    shortName: 'GRE',
+    wordCount: 7504,
+    description: 'GRE 核心词汇 7504 词（ECDICT tag:gre）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
+    dataPath: 'lexicons/gre/vocab-detail/',
+    wordListPath: 'lexicons/gre/',
+  },
+  {
     id: 'ielts',
     name: '雅思词汇',
     shortName: 'IELTS',

@@ -62,6 +62,18 @@
       "wordListPath": "lexicons/kaoyan/"
     },
     {
+      "id": "gre",
+      "name": "GRE 美国研究生入学考试",
+      "shortName": "GRE",
+      "wordCount": 7504,
+      "description": "GRE 核心词汇 7504 词（ECDICT tag:gre）；与四级重叠词标 inCET4，进度、错题与复习队列独立。",
+      "sourceUrl": "https://github.com/skywind3000/ECDICT",
+      "sourceLicense": "MIT",
+      "enabled": true,
+      "dataPath": "lexicons/gre/vocab-detail/",
+      "wordListPath": "lexicons/gre/"
+    },
+    {
       "id": "pretco",
       "name": "PRETCO 高等学校英语应用能力考试（近似）",
       "shortName": "PRETCO",

@@ -34,6 +34,7 @@ import {
   KAOYAN_CLOZE_SKELETONS, KAOYAN_READING_SKELETONS, KAOYAN_GAPPED_SKELETONS,
   KAOYAN_WRITING,
   PRETCO_DIALOGUE_SKELETONS, PRETCO_DIALOGUE_DECOYS, PRETCO_WRITING,
+  GRE_WRITING,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -132,6 +133,36 @@ const LEXICONS = {
     detailQs: 3,
     clozeBlanks: 20,
     content: 'kaoyan',
+  },
+  /**
+   * GRE（v1.10 第一批）。
+   *
+   * GRE 的题型与四六级差异很大，映射到本引擎的可用题型：
+   *   · 填空（句子等价 / Text Completion）→ 复用 `bankfill`（选词填空）
+   *   · 阅读理解                        → `reading`
+   *   · 分析性写作（Issue / Argument）   → `writing`（用 GRE_WRITING 素材）
+   * 不生成听力（GRE 无听力）。
+   */
+  gre: {
+    id: 'gre', exam: 'gre', label: 'GRE', prefix: 'gr',
+    wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'gre', 'wordlist.json'),
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'gre', 'question-bank'),
+    detailDir: path.join(ROOT, 'src', 'data', 'lexicons', 'gre', 'vocab-detail'),
+    paperNames: ['GRE 模拟卷一', 'GRE 模拟卷二', 'GRE 模拟卷三'],
+    paperKeys: ['gr-01', 'gr-02', 'gr-03'],
+    plan: [
+      { kind: 'bankfill', type: 'direct', count: 620 },
+      { kind: 'reading', type: 'group', per: 5, groups: 105 },
+      { kind: 'writing', type: 'direct', count: 11 },
+    ],
+    // 组卷消耗是「每套卷」的量，direct 类按 count×3 套切片、group 类按 groups×3 套取整组。
+    // 因此 targets 必须 ≥ 3 倍 count，否则第 2/3 套必然凑不满（实测踩过：
+    // bankfill 只产 1877，plan 却要 1400/套 → 第二套 477/1400 直接失败）。
+    // 这里按「3 套 × (620 + 105×5 + 11) = 3 × 1156 = 3468 题」配置，
+    // targets 留出余量：bankfill 1900、reading 320 篇（1600 题）、writing 35。
+    targets: { bankfill: 1900, reading: 320, writing: 35 },
+    detailQs: 3,
+    content: 'gre',
   },
   /**
    * PRETCO 近似（v1.9.1 阶段 F）：词库数据复用 CET-4（词源从模板内联读，
@@ -1162,16 +1193,26 @@ function main() {
   const quiet = argv.includes('--quiet');
 
   const { map: wl } = loadWordlist(L.wordlist);
+  /**
+   * 词池过滤：优先取「在词表里的词」，但**过滤后不足 4 个就回退到完整素材池**。
+   *
+   * 为什么需要这个回退：GRE 词表是**高难词**（abandon / abstruse / …），
+   * 而骨架素材用的是基础词（big / small / happy）—— 按 GRE 词表过滤后
+   * adjs 只剩 3 个，直接把构建拦死。这与 colors / places 当初的情形完全同源。
+   *
+   * 取舍：骨架句里的基础词不是「学习目标词」，它们只是**语法骨架的填充物**；
+   * 用完整池不会让用户误以为要背 big/small。反过来若强行只用 GRE 词，
+   * 骨架句会变得佶屈聱牙，反而不像正常英语。
+   */
+  const poolOrAll = (src) => (poolIn(src, wl).length >= 4 ? poolIn(src, wl) : src.slice());
   const pool = {
-    nouns: poolIn(NOUNS, wl),
-    adjs: poolIn(ADJ_QUALITY, wl),
-    // 颜色池只有 10 个素材词，按词表过滤后可能不足 4（考研实测 3 个），
-    // 会被下方「池子 ≥4」的护栏拦死。与 places 同款回退：过滤结果够用才过滤。
-    colors: poolIn(ADJ_COLOR, wl).length >= 4 ? poolIn(ADJ_COLOR, wl) : ADJ_COLOR,
-    advs: poolIn(ADVS, wl),
-    verbs: poolIn(VERBS_BASE, wl),
+    nouns: poolOrAll(NOUNS),
+    adjs: poolOrAll(ADJ_QUALITY),
+    colors: poolOrAll(ADJ_COLOR),
+    advs: poolOrAll(ADVS),
+    verbs: poolOrAll(VERBS_BASE),
     names: NAMES.slice(),
-    places: poolIn(PLACES, wl).length >= 5 ? PLACES.filter((p) => wl.has(p)) : PLACES,
+    places: poolOrAll(PLACES),
     times: TIMES.slice(),
     nums: NUMS.slice(),
     // 语义子池**不过滤词表**：SLOTS 里有 ran/won 这类课标词的变形，
@@ -1247,7 +1288,8 @@ function main() {
       case 'writing':
         byKind.writing = buildWriting(
           isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING
-            : L.content === 'pretco' ? PRETCO_WRITING : WRITING_TASKS, 'writing', L.id);
+            : L.content === 'pretco' ? PRETCO_WRITING
+              : L.content === 'gre' ? GRE_WRITING : WRITING_TASKS, 'writing', L.id);
         break;
       case 'continuation':
         byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);

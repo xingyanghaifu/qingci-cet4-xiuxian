@@ -37,7 +37,8 @@
     "verify:prod": "npm run typecheck && npm run verify:pwa && npm test && npm run test:docs && node scripts/prod-probe.mjs --strict",
     "verify:minified:runtime": "node scripts/verify-minified-runtime.mjs",
     "verify:cultivation": "node scripts/verify-cultivation-phase1.mjs",
-    "verify:cultivation2": "node scripts/verify-cultivation-phase2.mjs"
+    "verify:cultivation2": "node scripts/verify-cultivation-phase2.mjs",
+    "verify:gre": "node scripts/verify-gre-online.mjs"
   },
   "keywords": [
     "CET-4",

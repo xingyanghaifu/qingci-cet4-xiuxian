@@ -158,6 +158,28 @@ const LEXICONS = {
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
   /**
+   * GRE（v1.10 第一批）。
+   *
+   * 数据源：ECDICT `tag=gre`，实测 **7504 词**（本地 62.9 MB 全量扫描 + 正确 CSV 解析核实，
+   * 达预期 7504 的 100%，≥80% 停下条件未触发）。
+   *
+   * 与考研同一套机制（tagFilter + inCET4 重叠标记），不取拓展词 —— GRE 词表本身已完整。
+   */
+  gre: {
+    id: 'gre',
+    name: 'GRE 美国研究生入学考试',
+    shortName: 'GRE',
+    description: 'GRE 核心词汇 7504 词（ECDICT tag:gre）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/gre/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'gre', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'gre'),
+    tagFilter: 'gre',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
+  },
+  /**
    * PRETCO 近似（v1.9.1 阶段 F）。
    *
    * 探活确认公开领域无 PRETCO 词表（docs/probe-pretco.md：五路径全零命中），
@@ -917,8 +939,22 @@ async function loadTagWordlist(key, L) {
 /* ---------------- 清单 ---------------- */
 
 function writeManifest(built) {
-  // 顺序即选择器卡片顺序（C1 规格：初中 → 高中 → CET-4 → CET-6 → 灰显词库）
-  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'pretco'];
+  // 顺序即选择器卡片顺序（C1 规格：初中 → 高中 → CET-4 → CET-6 → 考研 → GRE → PRETCO → 灰显）
+  //
+  // 这里**曾经是硬编码数组且没有任何校验**，踩过一次真实的静默丢失：
+  // `--lexicon gre` 正常产出了 7504 词分片，但清单里没有 gre（数组里没写），
+  // UI 因此永远看不到这个词库，全程无报错。
+  //
+  // 现在加一条断言：LEXICONS 里登记的词库必须都在 order 里，
+  // 否则直接构建失败 —— 让「漏登记」在构建期就暴露，而不是等用户发现。
+  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'gre', 'pretco'];
+  const missingFromOrder = Object.keys(LEXICONS).filter((id) => !order.includes(id));
+  if (missingFromOrder.length) {
+    throw new Error(
+      `LEXICONS 里有未登记进 writeManifest order 的词库：${missingFromOrder.join(', ')}。`
+      + `请在 order 数组里补上，否则它们不会出现在清单里（静默丢失）。`,
+    );
+  }
   const lexicons = order.map((id) => {
     const L = LEXICONS[id];
     const b = built.find((x) => x.key === id);

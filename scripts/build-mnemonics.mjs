@@ -89,6 +89,12 @@ const LEXICONS = [
     shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'vocab-detail'),
     corpusDir: path.join(CACHE_DIR, 'ielts', 'corpus'),
   },
+  {
+    // v1.10 第三批：TOEFL
+    id: 'toefl',
+    shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'toefl', 'vocab-detail'),
+    corpusDir: path.join(CACHE_DIR, 'toefl', 'corpus'),
+  },
 ];
 
 /**

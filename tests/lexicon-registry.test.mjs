@@ -96,7 +96,86 @@ test('登记一致性：build-mnemonics 有「--lexicon 未登记即失败」护
     'build-mnemonics 缺少未登记护栏 —— 会默默不生成助记');
 });
 
-/* ---------------- IELTS ---------------- */
+test('登记一致性：manifest 里不得有重复 id（占位词库上线后忘了从 PLACEHOLDERS 移除）', () => {
+  // 实测踩过：ielts / toefl 上线后，writeManifest 的 PLACEHOLDERS 里仍留着
+  // 同名占位条目 → 清单里出现**两条同 id 记录**，后一条 enabled:false
+  // 把前一条盖掉 → 刚上线的词库在选择器里又变灰。
+  // 现在 build-lexicon 里加了「order 与 PLACEHOLDERS 不得重叠」的断言，这里从产物侧再验一次。
+  const ids = manifest.lexicons.map((l) => l.id);
+  const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+  assert.deepEqual(dup, [], `manifest 里有重复词库 id：${[...new Set(dup)].join(', ')}`);
+
+  const src = read('scripts/build-lexicon.mjs');
+  assert.ok(/同时出现在 order（已上线）与 PLACEHOLDERS（未上线）里/.test(src),
+    'build-lexicon 缺少「order 与 PLACEHOLDERS 不得重叠」的断言');
+});
+
+test('登记一致性：v1.10 起所有词库均已上线（无 enabled:false）', () => {
+  const disabled = manifest.lexicons.filter((l) => !l.enabled).map((l) => l.id);
+  assert.deepEqual(disabled, [],
+    `v1.10 三批（gre/ielts/toefl）完成后不应再有未上线词库，实际：${disabled.join(', ')}`);
+  const live = manifest.lexicons.filter((l) => l.enabled);
+  assert.equal(live.length, 9, `应有 9 个已上线词库，实际 ${live.length}`);
+});
+
+test('登记一致性：产物清单也无重复、无未上线', () => {
+  const dist = readJson('dist/lexicons/manifest.json');
+  const ids = dist.lexicons.map((l) => l.id);
+  const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+  assert.deepEqual(dup, [], `产物 manifest 有重复 id：${[...new Set(dup)].join(', ')}`);
+  assert.deepEqual(dist.lexicons.filter((l) => !l.enabled).map((l) => l.id), [],
+    '产物里仍有未上线词库');
+});
+
+/* ---------------- TOEFL ---------------- */
+
+test('TOEFL：词数 6974、分片合规、覆盖率达标', () => {
+  const wl = readJson('src/data/lexicons/toefl/wordlist.json');
+  assert.equal(wl.length, 6974, `TOEFL 词表应为 6974，实际 ${wl.length}`);
+  const mf = readJson('src/data/lexicons/toefl/vocab-detail/manifest.json');
+  assert.equal(mf.count, 6974);
+});
+
+test('TOEFL：题库 3 套 × 1156 题，含填空/阅读/写作', () => {
+  const mf = readJson('src/data/lexicons/toefl/question-bank/manifest.json');
+  assert.deepEqual(Object.keys(mf.kinds).sort(), ['bankfill', 'reading', 'writing']);
+  assert.deepEqual(Object.keys(mf.papers).sort(), ['tf-01', 'tf-02', 'tf-03']);
+  for (const [k, p] of Object.entries(mf.papers)) {
+    assert.equal(p.ids.length, 1156, `${k} 应为 1156 题`);
+  }
+});
+
+test('TOEFL：产物含词库与题库', () => {
+  for (const p of ['lexicons/toefl/vocab-detail/manifest.json',
+    'lexicons/toefl/question-bank/manifest.json',
+    'lexicons/toefl/wordlist.json']) {
+    assert.ok(existsSync(join(ROOT, 'dist', p)), `产物缺 ${p}`);
+  }
+});
+
+/* ---------------- 三个新词库的横向一致性 ---------------- */
+
+test('新词库（gre/ielts/toefl）：三者的题库规模与结构一致', () => {
+  // 三个词库用同一套 plan，结构应完全一致 —— 若某个跑偏说明构建参数不同步
+  const expected = { bankfill: 620, reading: 525, writing: 11 };
+  for (const id of ['gre', 'ielts', 'toefl']) {
+    const mf = readJson(`src/data/lexicons/${id}/question-bank/manifest.json`);
+    const key = Object.keys(mf.papers)[0];
+    assert.deepEqual(mf.papers[key].structure, expected, `${id} 模拟卷结构与预期不符`);
+    assert.equal(mf.papers[key].ids.length, 1156, `${id} 模拟卷题量应为 1156`);
+  }
+});
+
+test('新词库：主文件里三个词库入口都在（选择器 + 备考下拉）', () => {
+  const html = read('dist/index.html');
+  for (const id of ['gre', 'ielts', 'toefl']) {
+    assert.ok(html.includes(`'${id}'`) || html.includes(`"${id}"`), `主文件缺 ${id} 接线`);
+  }
+  // 三个都要在 examSelect 里
+  for (const id of ['gre', 'ielts', 'toefl']) {
+    assert.ok(html.includes(`<option value="${id}">`), `备考下拉缺 ${id}`);
+  }
+});
 
 test('IELTS：词数 5040、分片合规、覆盖率达标', () => {
   const dir = join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'vocab-detail');

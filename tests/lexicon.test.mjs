@@ -267,25 +267,34 @@ test('A-10 现有 CET-4 用户：升级后进度不变（老记录无 lx 归属 
 });
 
 test('A-11 未上线词库：灰显 + aria-disabled，且拒绝切换', () => {
+  // 未上线词库用**合成条目**做样本：不再依赖真实占位词库。
+  // 历史上样本一路换过 kaoyan → ielts → toefl；v1.10 起 TOEFL 也上线了，
+  // 再没有「未上线词库」可用，所以改为构造 enabled:false 的条目 ——
+  // 这条不变式（未上线不得切换）与「当前有哪些词库」彻底解耦。
+  const disabledSample = {
+    id: 'not-yet-live', name: '未上线样本', shortName: 'N/A', wordCount: 0,
+    description: '', sourceUrl: '', sourceLicense: '', enabled: false,
+    dataPath: 'lexicons/not-yet-live/vocab-detail/',
+  };
+  const withSample = [...FALLBACK_MANIFEST.lexicons, disabledSample];
+
   const storage = fakeStorage();
   withStorage(storage, () => {
-    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 toefl
-    for (const id of ['toefl']) {
-      assert.equal(switchLexicon(id), false, `${id} 未上线，不应允许切换`);
-      assert.equal(storage.getItem(LEXICON_CURRENT_KEY), null, '失败的切换不应写入 localStorage');
-      assert.equal(currentLexiconId(), 'cet4', '应保持默认词库');
-    }
+    assert.equal(switchLexicon('not-yet-live', withSample), false, '未上线词库不应允许切换');
+    assert.equal(storage.getItem(LEXICON_CURRENT_KEY), null, '失败的切换不应写入 localStorage');
+    assert.equal(currentLexiconId(), 'cet4', '应保持默认词库');
     // 非法 id 同样回落默认
     assert.equal(switchLexicon('不存在的词库'), false);
     assert.equal(currentLexiconId(), 'cet4');
     // 清单里根本没有的 id
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'cet4');
   });
+
+  // v1.10 起所有真实词库都已上线 —— 这条断言把「已无未上线词库」这个事实钉住，
+  // 将来若新增占位词库，会在这里提醒同步更新上面的合成样本说明。
   const disabled = FALLBACK_MANIFEST.lexicons.filter((l) => !l.enabled).map((l) => l.id);
-  // v1.9.1 起 kaoyan / pretco、v1.10 起 gre / ielts 均已上线；仍灰显的只有 toefl
-  for (const id of ['toefl']) {
-    assert.ok(disabled.includes(id), `${id} 应在兜底清单中标记为未上线`);
-  }
+  assert.deepEqual(disabled, [],
+    `v1.10 起兜底清单里应无未上线词库，实际还有：${disabled.join(', ')}`);
   // PRETCO 占位卡已撤：探活无官方词表，改走「复用 CET-4 词库 + 特色题库」的近似卡
   for (const gone of ['pretco-a', 'pretco-b']) {
     assert.ok(!disabled.includes(gone) && !FALLBACK_MANIFEST.lexicons.some((l) => l.id === gone),
@@ -393,9 +402,9 @@ test('A 辅助：currentLexicon 返回完整档案，未知词库回落 CET-4', 
     assert.equal(lx.dataPath, 'lexicons/cet6/vocab-detail/');
   });
   // 未上线词库被存进 localStorage 时读作 CET-4。
-  // 样本历史：v1.9.1 前用 kaoyan → 后改 ielts → v1.10 起 ielts 也上线了，
-  // 现用 toefl（目前唯一未上线的词库）。
-  const storage2 = fakeStorage({ 'lexicon.current': 'toefl' });
+  // 样本历史：kaoyan → ielts → toefl，三者都已上线；现用一个**清单里不存在**的 id
+  // （等价于「未上线」：currentLexicon 只在已启用清单里找）。
+  const storage2 = fakeStorage({ 'lexicon.current': 'not-yet-live' });
   withStorage(storage2, () => {
     assert.equal(currentLexicon().id, 'cet4', '未上线词库读作 CET-4');
   });

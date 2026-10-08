@@ -200,6 +200,26 @@ const LEXICONS = {
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
   /**
+   * TOEFL（v1.10 第三批）。
+   *
+   * 数据源：ECDICT `tag=toefl`，实测 **6974 词**（达预期 100%）。
+   * 与 GRE / IELTS 同一套机制（tagFilter + inCET4 重叠标记）。
+   */
+  toefl: {
+    id: 'toefl',
+    name: '托福（TOEFL）',
+    shortName: 'TOEFL',
+    description: '托福核心词汇 6974 词（ECDICT tag:toefl）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/toefl/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'toefl', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'toefl'),
+    tagFilter: 'toefl',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
+  },
+  /**
    * PRETCO 近似（v1.9.1 阶段 F）。
    *
    * 探活确认公开领域无 PRETCO 词表（docs/probe-pretco.md：五路径全零命中），
@@ -967,7 +987,7 @@ function writeManifest(built) {
   //
   // 现在加一条断言：LEXICONS 里登记的词库必须都在 order 里，
   // 否则直接构建失败 —— 让「漏登记」在构建期就暴露，而不是等用户发现。
-  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'gre', 'ielts', 'pretco'];
+  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'gre', 'ielts', 'toefl', 'pretco'];
   const missingFromOrder = Object.keys(LEXICONS).filter((id) => !order.includes(id));
   if (missingFromOrder.length) {
     throw new Error(
@@ -999,14 +1019,26 @@ function writeManifest(built) {
       ...(L.approximation ? { approximation: true } : {}),
     };
   });
-  /* 未上线词库：声明但关闭，选择器里灰显（kaoyan 已于 v1.9.1 上线，移出此列）。
-     PRETCO-A/B 占位已撤 —— 阶段 F 改用单张 pretco 近似卡（复用 CET-4 词库数据，
-     不重复生成分片），探活结论见 docs/probe-pretco.md。 */
+  /* 未上线词库：声明但关闭，选择器里灰显。
+     历史：kaoyan（v1.9.1 阶段 E）→ pretco（阶段 F）→ gre/ielts/toefl（v1.10）
+     陆续上线，逐个从本列移出。v1.10 第三批后**本列已空**。
+
+     这里保留空数组而不是删掉，是因为「占位词库」这个机制本身仍有用
+     （将来要预告某个尚未构建的词库时，往这里加一条即可）。
+     关键修正：push 前**跳过已登记在 order 里的 id** —— 否则同一个词库
+     会既以「已上线」形态出现在 order 里、又以「未上线占位」形态出现在
+     这里，清单里出现**两条同 id 记录**（实测踩过：ielts/toefl 各重复一次，
+     第二条 enabled:false 会把前一条盖掉，UI 里刚上线的词库又变灰）。 */
   const PLACEHOLDERS = [
-    { id: 'ielts', name: '雅思词汇', shortName: 'IELTS', desc: '规划中：尚未构建词表。' },
-    { id: 'toefl', name: '托福词汇', shortName: 'TOEFL', desc: '规划中：尚未构建词表。' },
+    // v1.10 起所有词库均已上线，本列暂空。
   ];
   for (const p of PLACEHOLDERS) {
+    if (order.includes(p.id)) {
+      throw new Error(
+        `词库 ${p.id} 同时出现在 order（已上线）与 PLACEHOLDERS（未上线）里。`
+        + `请从 PLACEHOLDERS 移除 —— 否则清单里会出现两条同 id 记录，后者把前者盖成未上线。`,
+      );
+    }
     lexicons.push({
       id: p.id,
       name: p.name,

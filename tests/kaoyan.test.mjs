@@ -176,9 +176,19 @@ test('E6-7 词库切换：kaoyan 可切换、默认仍 CET-4、未上线仍拒�
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'cet4', '未切换时默认 CET-4');
     assert.equal(switchLexicon('kaoyan', FALLBACK_MANIFEST.lexicons), true, 'kaoyan 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'kaoyan');
-    for (const id of ['toefl']) {
-      assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
-    }
+    // 未上线词库被拒绝切换：用**合成条目**做样本，不依赖真实占位词库。
+
+    // （历史上样本一路换过 kaoyan → ielts → toefl；TOEFL 上线后再无未上线词库，
+
+    //   所以改为构造 enabled:false 的条目 —— 这条不变式与「当前有哪些词库」解耦。）
+
+    const disabledSample = { id: 'not-yet-live', name: '未上线样本', shortName: 'N/A', wordCount: 0,
+
+      description: '', sourceUrl: '', sourceLicense: '', enabled: false, dataPath: 'lexicons/not-yet-live/vocab-detail/' };
+
+    assert.equal(switchLexicon('not-yet-live', [...FALLBACK_MANIFEST.lexicons, disabledSample]), false,
+
+      '未上线词库应拒绝切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'kaoyan', '失败的切换不应改写当前词库');
   } finally {
     Object.defineProperty(globalThis, 'localStorage', { value: prev, configurable: true, writable: true });

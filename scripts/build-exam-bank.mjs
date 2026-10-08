@@ -36,6 +36,7 @@ import {
   PRETCO_DIALOGUE_SKELETONS, PRETCO_DIALOGUE_DECOYS, PRETCO_WRITING,
   GRE_WRITING,
   IELTS_WRITING,
+  TOEFL_WRITING,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -189,6 +190,26 @@ const LEXICONS = {
     targets: { bankfill: 1900, reading: 320, writing: 35 },
     detailQs: 3,
     content: 'ielts',
+  },
+  /**
+   * TOEFL（v1.10 第三批）。
+   * 题型映射同 IELTS：填空 → bankfill、阅读 → reading、写作 → writing（TOEFL_WRITING）。
+   */
+  toefl: {
+    id: 'toefl', exam: 'toefl', label: 'TOEFL', prefix: 'tf',
+    wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'toefl', 'wordlist.json'),
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'toefl', 'question-bank'),
+    detailDir: path.join(ROOT, 'src', 'data', 'lexicons', 'toefl', 'vocab-detail'),
+    paperNames: ['TOEFL 模拟卷一', 'TOEFL 模拟卷二', 'TOEFL 模拟卷三'],
+    paperKeys: ['tf-01', 'tf-02', 'tf-03'],
+    plan: [
+      { kind: 'bankfill', type: 'direct', count: 620 },
+      { kind: 'reading', type: 'group', per: 5, groups: 105 },
+      { kind: 'writing', type: 'direct', count: 11 },
+    ],
+    targets: { bankfill: 1900, reading: 320, writing: 35 },
+    detailQs: 3,
+    content: 'toefl',
   },
   /**
    * PRETCO 近似（v1.9.1 阶段 F）：词库数据复用 CET-4（词源从模板内联读，
@@ -1316,7 +1337,8 @@ function main() {
           isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING
             : L.content === 'pretco' ? PRETCO_WRITING
               : L.content === 'gre' ? GRE_WRITING
-                : L.content === 'ielts' ? IELTS_WRITING : WRITING_TASKS, 'writing', L.id);
+                : L.content === 'ielts' ? IELTS_WRITING
+                  : L.content === 'toefl' ? TOEFL_WRITING : WRITING_TASKS, 'writing', L.id);
         break;
       case 'continuation':
         byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);

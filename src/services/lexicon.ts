@@ -161,15 +161,17 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/ielts/',
   },
   {
+    // v1.10 第三批：TOEFL（ECDICT tag:toefl，实测 6974 词）。
     id: 'toefl',
-    name: '托福词汇',
+    name: '托福（TOEFL）',
     shortName: 'TOEFL',
-    wordCount: 0,
-    description: '规划中：尚未构建词表。',
-    sourceUrl: '',
-    sourceLicense: '',
-    enabled: false,
+    wordCount: 6974,
+    description: '托福核心词汇 6974 词（ECDICT tag:toefl）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
     dataPath: 'lexicons/toefl/vocab-detail/',
+    wordListPath: 'lexicons/toefl/',
   },
   {
     // v1.9.1 阶段 F：PRETCO 近似卡（探活结论见 docs/probe-pretco.md）。

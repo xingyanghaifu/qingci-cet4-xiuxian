@@ -44,14 +44,12 @@ test('A-1 词库清单含 junior：启用、路径正确、默认仍是 CET-4', 
   assert.equal(junior.shortName, '初中');
   assert.equal(junior.dataPath, 'lexicons/junior/vocab-detail/');
   assert.equal(junior.wordListPath, 'lexicons/junior/', '词源路径供运行时换词表用');
-  // 未上线词库仍然禁用（灰显 + aria-disabled，切换被拒）
-  // 注：kaoyan（阶段 E）、pretco（阶段 F）、gre / ielts（v1.10）均已上线，
-  //     从本列表移出（见 tests/kaoyan.test.mjs、tests/gre-lexicon.test.mjs 等）。
-  //     目前仅剩 toefl 未上线。
-  for (const id of ['toefl']) {
-    const l = manifest.lexicons.find((x) => x.id === id);
-    assert.equal(l && l.enabled, false, `${id} 仍应为未上线`);
-  }
+  // v1.10 起**所有**词库都已上线：kaoyan（阶段 E）、pretco（阶段 F）、
+  // gre / ielts / toefl（v1.10 三批）。因此不再有「未上线占位词库」——
+  // 断言改为「清单里没有未启用项」，比逐个点名词库更能反映真实不变式。
+  const disabled = manifest.lexicons.filter((l) => !l.enabled).map((l) => l.id);
+  assert.deepEqual(disabled, [],
+    `v1.10 起所有词库均已上线，不应再有未启用项，实际：${disabled.join(', ')}`);
   // PRETCO 近似卡上线后，两张「数据源不可用」占位卡应已撤（探活结论见 docs/probe-pretco.md）
   for (const gone of ['pretco-a', 'pretco-b']) {
     assert.equal(manifest.lexicons.some((x) => x.id === gone), false,
@@ -214,10 +212,19 @@ test('A-5 词库切换：junior 可切换、默认仍 CET-4、未上线仍拒绝
       '未切换时默认 CET-4');
     assert.equal(switchLexicon('junior', FALLBACK_MANIFEST.lexicons), true, 'junior 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'junior');
-    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 toefl
-    for (const id of ['toefl']) {
-      assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
-    }
+    // 未上线词库被拒绝切换：用**合成条目**做样本，不依赖真实占位词库。
+
+    // （历史上样本一路换过 kaoyan → ielts → toefl；TOEFL 上线后再无未上线词库，
+
+    //   所以改为构造 enabled:false 的条目 —— 这条不变式与「当前有哪些词库」解耦。）
+
+    const disabledSample = { id: 'not-yet-live', name: '未上线样本', shortName: 'N/A', wordCount: 0,
+
+      description: '', sourceUrl: '', sourceLicense: '', enabled: false, dataPath: 'lexicons/not-yet-live/vocab-detail/' };
+
+    assert.equal(switchLexicon('not-yet-live', [...FALLBACK_MANIFEST.lexicons, disabledSample]), false,
+
+      '未上线词库应拒绝切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'junior',
       '失败的切换不应改写当前词库');
   } finally {

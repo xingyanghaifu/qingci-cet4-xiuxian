@@ -113,6 +113,24 @@ const LEX = {
     parts: ['填', '读', '写'],
   },
   /**
+   * TOEFL（v1.10 第三批）。卷面同 IELTS：填空 620 + 阅读 525 + 写作 11。
+   */
+  toefl: {
+    tag: 'toefl',
+    kinds: ['bankfill', 'reading', 'writing'],
+    choiceCount: (k) => (k === 'bankfill' ? 10 : 4),
+    passageKinds: [],
+    groups: [
+      { name: '阅读', kind: 'reading', per: 5, need: 12 },
+    ],
+    paper: {
+      size: 1156, kinds: 3,
+      structure: { bankfill: 620, reading: 525, writing: 11 },
+    },
+    writeKinds: ['writing'],
+    parts: ['填', '读', '写'],
+  },
+  /**
    * PRETCO（v1.9.1 阶段 F · 近似方案）：词库数据复用 CET-4，只考特色题型 ——
    * 语法结构（单选）、听力短对话（带 TTS 的对话理解）、英译汉（write）、应用文（write）。
    * 四类全是 direct 题（不成组），故 groups 为空。

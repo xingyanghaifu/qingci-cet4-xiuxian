@@ -120,6 +120,8 @@ import {
 import {
   computeRoot, gradeOf, labelOf, samplesToReveal, elementBreakdown, rootAdvice,
   ELEMENTS, GRADE_LABEL, MIN_SAMPLES, HEAVEN_PURITY, DUAL_PURITY, TRIPLE_PURITY,
+  rootGoal, elementToken, elementChar, primaryKindOf,
+  TARGET_STEP, TARGET_CAP,
 } from './spiritual-root';
 import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
@@ -347,12 +349,18 @@ const QingciServices = {
     samplesToReveal,
     breakdown: elementBreakdown,
     advice: rootAdvice,
+    goal: rootGoal,
+    token: elementToken,
+    char: elementChar,
+    primaryKind: primaryKindOf,
     ELEMENTS,
     GRADES: GRADE_LABEL,
     MIN_SAMPLES,
     HEAVEN_PURITY,
     DUAL_PURITY,
     TRIPLE_PURITY,
+    TARGET_STEP,
+    TARGET_CAP,
   },
   /**
    * 灵石流水账本（阶段 A2 补全）：把 append-only 的 qiLog 变成用户看得懂的账。

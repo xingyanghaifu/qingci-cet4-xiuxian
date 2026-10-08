@@ -42,6 +42,7 @@
     "check:lexicons": "node scripts/check-lexicon-registry.mjs",
     "verify:lexicon": "node scripts/verify-lexicon-online.mjs",
     "verify:final": "node scripts/verify-final-online.mjs",
+    "verify:gameplay": "node scripts/verify-gameplay-integration.mjs",
     "check:usage": "node scripts/check-service-usage.mjs",
     "check:usage:strict": "node scripts/check-service-usage.mjs --strict"
   },

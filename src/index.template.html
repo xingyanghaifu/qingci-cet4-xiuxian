@@ -1090,6 +1090,14 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .root-elem.e-earth{color:var(--color-earth)}
 .root-elem:not(.revealed){color:var(--text-secondary)}
 #rootGrade{color:var(--gold);font-weight:700}
+/* v1.10 第四期 · 灵根修习目标。
+   排版实测（侧栏列宽仅约 232px）：若「文字 + 按钮」同排，文字会折成 2 行
+   且把按钮挤到下一行 —— 所以这里**刻意改成两行**：
+   第一行是目标文案（可折行），第二行是「去练」按钮（独立一行、右对齐）。
+   这比强行同排更稳：任何列宽下都不会出现「按钮飘到奇怪位置」。 */
+.root-goal{margin:8px 0 0;font-size:.84em;line-height:1.5}
+.root-goal .rg-txt{display:block;min-width:0}
+.root-goal .rg-go{margin-top:5px;white-space:nowrap;padding:3px 12px;font-size:.95em}
 /* 只抬静态内容层（.app 是 static，需要 relative+z-index 才能压住 ::before 宣纸层）。
    ⚠️ 不要把 .toast / .overlay 写进来：它们是 position:fixed 的浮层，这里再写
    position:relative 会以 (0,2,0) 的特异度覆盖掉 .overlay 的 (0,1,0) fixed，
@@ -1337,7 +1345,7 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
       <p class="section-label">今日功课 · DAILY QUESTS</p><span class="cloud-rule" aria-hidden="true"></span>
       <div class="mission-list" id="missionList"></div>
       <div class="study-summary" id="studySummary" aria-live="polite"></div>
-      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div><!-- v1.10 第三期：灵根（五行倾向，由真实正确率推导） --><div class="root-card" id="rootCard"><div class="row" style="justify-content:space-between"><b>灵根</b><span class="muted" id="rootGrade">—</span></div><p class="muted" id="rootLead">灵根由各题型的**实际正确率**推导，不是随机抽的。</p><div class="root-elems" id="rootElems"></div><p class="muted" id="rootAdvice"></p></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
+      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div><!-- v1.10 第三期：灵根（五行倾向，由真实正确率推导） --><div class="root-card" id="rootCard"><div class="row" style="justify-content:space-between"><b>灵根</b><span class="muted" id="rootGrade">—</span></div><p class="muted" id="rootLead">灵根由各题型的**实际正确率**推导，不是随机抽的。</p><div class="root-elems" id="rootElems"></div><p class="muted" id="rootAdvice"></p><p class="root-goal" id="rootGoal" role="status" aria-live="polite"></p></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
       <footer class="side-foot"><button type="button" class="btn" id="sideSettings">⚙ 设置</button><button type="button" class="btn" id="sideTheme">主题 · 跟随系统</button><button type="button" class="btn" id="sideAudioSrc">🔊 音频来源</button></footer>
     </aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
@@ -1758,7 +1766,31 @@ function renderRoot(ms){
   }
   var adv=$("rootAdvice");
   if(adv){ var a=R.advice?R.advice(ms||memStats()):''; adv.textContent=a||''; adv.classList.toggle('hidden',!a); }
+  /* v1.10 第四期：把「最弱系」转成可执行目标 + 一键去练。
+     此前只说「优先练这一系」，用户仍不知练到什么程度、从哪进。 */
+  var goalEl=$("rootGoal");
+  if(goalEl){
+    var g=R.goal?R.goal(ms||memStats()):null;
+    if(!g){ goalEl.textContent=''; goalEl.classList.add('hidden'); }
+    else{
+      var tok=R.token?R.token(g.element):'--gold';
+      goalEl.innerHTML='<span class="rg-txt">'+esc(g.label)+'</span>'
+        + (g.kind?'<button type="button" class="btn rg-go" id="rootGo">去练 '+esc(g.char)+'系</button>':'');
+      goalEl.classList.remove('hidden');
+      goalEl.style.color='var('+tok+')';
+      var go=$("rootGo");
+      if(go&&g.kind) go.onclick=function(){
+        // 入口题型 → 锁定该题型并进单题练习（复用既有 state.memKind / memRotate 机制）
+        var idx=MEMORY_KINDS.indexOf(g.kind);
+        if(idx>=0){ state.memKind=idx; state.memRotate=false; state.pool='words'; save(); }
+        switchTab('trial'); ask();
+        if(window.toast) toast('已切到「'+(labelMapOf()[g.kind]||g.kind)+'」专练');
+      };
+    }
+  }
 }
+/* 题型 → 中文名（与学情看板同一份映射，避免两处不一致） */
+function labelMapOf(){ return {zh2en:'中译英',en2zh:'英译中',similar:'形近辨析',listen:'听音辨词',spell:'拼写默写',pos:'词性判断'}; }
 function nextMemory(){ if(state.pool==='words'&&state.memRotate!==false) state.memKind=((state.memKind||0)+1)%MEMORY_KINDS.length; save(); ask(); }
 function submitSpell(){ if(!current||current.kind!=='spell'||locked) return; const raw=$("spellInput").value.trim(); if(!raw) return toast("先写出拼写"); locked=true; const ans=current.answer; const norm=(s)=>s.toLowerCase().replace(/[^a-z]/g,''); const ok=norm(raw)===norm(ans); const near=!ok&&norm(raw).length>1&&(Math.abs(norm(raw).length-norm(ans).length)<=1)&&(norm(raw)[0]===norm(ans)[0]); $("spellInput").disabled=true; $("spellInput").style.borderColor=ok?'var(--ok)':'var(--bad)'; $("feedback").innerHTML='<b>'+(ok?'拼写正确':'拼写有误')+'</b><div>正确拼写：<b>'+esc(ans)+'</b> '+esc(current.explain)+'</div>'+(near?'<div class="muted">很接近了，注意中间字母。</div>':''); settle(ok,current.explain); }
 let audioState={text:"",paused:false,rate:.9,progress:0,timer:0};

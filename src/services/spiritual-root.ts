@@ -255,3 +255,150 @@ export function rootAdvice(memStats: MemStats | null | undefined): string {
   const pct = Math.round(weakest.accuracy * 100);
   return `最弱是${weakest.name}（${weakest.blurb}）正确率 ${pct}%，可优先练这一系补足短板。`;
 }
+
+/* ───────────────── 灵根修习目标（第四期 · 让建议可执行） ─────────────────
+ *
+ * 动机：上一期的建议只说「优先练这一系」——**没有说练到什么程度、怎么开始**。
+ * 用户看到「水灵根 25%」之后仍然不知道下一步做什么。
+ *
+ * 本模块把「最弱系」转成一个**具体、可达、可验证**的修习目标：
+ *   · 目标值 = 该系正确率向上一档推进（有上限，不做无意义的「练到 100%」）
+ *   · 给**明确的入口题型**（点一下就进对应练习）
+ *   · 给出**还需要答对几题**（用当前样本量估算，样本不足时如实说「样本不足」）
+ *
+ * 三条红线（与前几期一致）：
+ *   1. **不制造焦虑**：目标是「提升建议」不是「考核」；达不到没有惩罚；
+ *      样本不足时明确说「先多练几题」而不是硬给一个数字。
+ *   2. **不鼓励刷题**：目标按**正确率**推进，不是按题量；答得越多分母越大，
+ *      靠刷量无法达标 —— 只有真正答对才推进。
+ *   3. **不侵入学习**：纯只读推导，不改 SRS / 不写存档 / 不影响出题。
+ */
+
+/** 目标正确率的推进步长（每档 +15 个百分点） */
+export const TARGET_STEP = 0.15;
+/** 目标正确率上限：不要求「练到 100%」，那是无意义的目标 */
+export const TARGET_CAP = 0.9;
+/** 计算「还需答对几题」时假定的最少追加题量（避免分母为 0） */
+export const TARGET_SAMPLE_HINT = 10;
+
+export interface RootGoal {
+  /** 目标系 */
+  element: ElementId;
+  char: string;
+  name: string;
+  /** 入口题型（模板据此直接跳转到对应练习） */
+  kind: string;
+  /** 当前正确率 */
+  accuracy: number;
+  /** 目标正确率 */
+  target: number;
+  /** 当前样本量 */
+  total: number;
+  /** 是否样本不足（< MIN_SAMPLES）—— 不足时不给数字目标 */
+  insufficient: boolean;
+  /**
+   * 在「再答 N 题」的前提下，还需答对几题才能达到 target。
+   * 样本不足时为 null（不硬给数字）。
+   */
+  needCorrect: number | null;
+  /** 建议追加的题量（样本不足时用于「先练几题」） */
+  needTotal: number;
+  /** 可读文案 */
+  label: string;
+}
+
+/**
+ * 由 memStats 推导「最该补的那一系」的修习目标。
+ *
+ * 选择逻辑：
+ *   · 有已显系 → 取正确率**最低**的已显系（与 rootAdvice 口径一致）
+ *   · 全部未显 → 取样本量最接近门槛的系（先把它练显）
+ *   · 完全没数据 → 返回 null（不硬造目标）
+ */
+export function rootGoal(memStats: MemStats | null | undefined): RootGoal | null {
+  const r = computeRoot(memStats);
+  const ELEM = ELEMENTS;
+
+  // 全部未显：挑「最接近门槛」的系，让用户先把灵根练显
+  if (r.revealed.length === 0) {
+    const best = r.elements.reduce((m, e) => (e.total > m.total ? e : m), r.elements[0]);
+    if (!best || best.total === 0) return null;
+    const def = ELEM.find((x) => x.id === best.id);
+    const need = Math.max(0, MIN_SAMPLES - best.total);
+    return {
+      element: best.id,
+      char: best.char,
+      name: best.name,
+      kind: def && def.kinds[0] ? def.kinds[0] : '',
+      accuracy: best.accuracy,
+      target: 0,
+      total: best.total,
+      insufficient: true,
+      needCorrect: null,
+      needTotal: need,
+      label: `先把${best.name}练到 ${MIN_SAMPLES} 题以显现灵根（还差 ${need} 题）。`,
+    };
+  }
+
+  // 只有一系已显：没有「相对最弱」，改为「继续提升这一系」
+  const weakest = r.revealed.length >= 2
+    ? r.revealed[r.revealed.length - 1]
+    : r.revealed[0];
+  if (!weakest) return null;
+  const def = ELEM.find((x) => x.id === weakest.id);
+  const cur = weakest.accuracy;
+  // 目标：向上一档推进，但不超过上限；已超上限则不再设目标
+  const target = Math.min(TARGET_CAP, Math.round((cur + TARGET_STEP) * 100) / 100);
+  if (cur >= TARGET_CAP) {
+    return {
+      element: weakest.id, char: weakest.char, name: weakest.name,
+      kind: def && def.kinds[0] ? def.kinds[0] : '',
+      accuracy: cur, target: cur, total: weakest.total,
+      insufficient: false, needCorrect: 0, needTotal: 0,
+      label: `${weakest.name}已达 ${Math.round(cur * 100)}%，无需再补（保持复习即可）。`,
+    };
+  }
+  // 在「再答 needTotal 题」的前提下，还需答对几题
+  const needTotal = TARGET_SAMPLE_HINT;
+  const targetCorrect = Math.ceil((weakest.correct + needTotal) * target) - weakest.correct;
+  const needCorrect = Math.max(1, Math.min(needTotal, targetCorrect));
+  const pct = (v: number) => Math.round(v * 100);
+  return {
+    element: weakest.id,
+    char: weakest.char,
+    name: weakest.name,
+    kind: def && def.kinds[0] ? def.kinds[0] : '',
+    accuracy: cur,
+    target,
+    total: weakest.total,
+    insufficient: false,
+    needCorrect,
+    needTotal,
+    // 文案刻意压成**一句**：`当前 25% → 目标 40%（再练 10 题、答对 1 题）`
+    // 初版写成两个分句（「…：再练 10 题、答对其中 1 题即可。」），
+    // 窄屏折行后被读成两句话，且把「去练」按钮挤到下一行（截图实测）。
+    label: `${weakest.name} ${pct(cur)}% → 目标 ${pct(target)}%`
+      + `（再练 ${needTotal} 题、答对 ${needCorrect} 题）`,
+  };
+}
+
+/** 灵根 → 主题色 token（模板上色用；未知 id 返回中性色） */
+export function elementToken(id: string | null | undefined): string {
+  const def = ELEMENTS.find((e) => e.id === id);
+  return def ? def.token : '--text-secondary';
+}
+
+/** 灵根 → 单字（未知 id 返回空串） */
+export function elementChar(id: string | null | undefined): string {
+  const def = ELEMENTS.find((e) => e.id === id);
+  return def ? def.char : '';
+}
+
+/**
+ * 某系的首选题型（模板据此跳转到对应练习）。
+ * 未知 id 返回空串 —— 调用方据此决定是否显示「去练」按钮。
+ */
+export function primaryKindOf(id: string | null | undefined): string {
+  const def = ELEMENTS.find((e) => e.id === id);
+  return def && def.kinds[0] ? def.kinds[0] : '';
+}

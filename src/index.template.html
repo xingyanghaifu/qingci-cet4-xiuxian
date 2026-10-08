@@ -1056,6 +1056,20 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-fire) 45%,transparent),
     inset 0 0 0 3px color-mix(in srgb,var(--color-fire) 12%,transparent)}
 .cave-deco-line{margin:6px 0 2px;color:var(--gold);font-size:.82em}
+
+/* v1.10 灵石流水账本：只读展示 qiLog（此前从未展示）。
+   收支用既有 token 区分（jade=入账 / muted=支出），不标红警告、不做评判。 */
+.ledger-list{margin:8px 0 4px;max-height:260px;overflow-y:auto}
+.ledger-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:.86em}
+.ledger-row:last-child{border-bottom:0}
+.ledger-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ledger-when{color:var(--muted);font-size:.92em;margin-left:6px}
+.ledger-amt{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:700}
+.ledger-amt.in{color:var(--jade)}
+.ledger-amt.out{color:var(--text-secondary)}
+.ledger-empty{color:var(--muted);font-size:.86em;padding:6px 0}
+.ledger-sum{display:flex;gap:12px;flex-wrap:wrap;font-size:.84em;color:var(--muted);margin-top:4px}
 /* 只抬静态内容层（.app 是 static，需要 relative+z-index 才能压住 ::before 宣纸层）。
    ⚠️ 不要把 .toast / .overlay 写进来：它们是 position:fixed 的浮层，这里再写
    position:relative 会以 (0,2,0) 的特异度覆盖掉 .overlay 的 (0,1,0) fixed，
@@ -1261,7 +1275,8 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 <!-- v1.8.2:LEXICON_UI:END -->
 <!-- v1.9.1 阶段 B3 · 词汇量摸底独立入口（从每日修炼设置迁入洞府页，10 题流程改由 #assessOverlay 承载） -->
 <div class="assessment-card" id="assessmentCard"><b id="assessmentTitle">先做一次词汇摸底</b><p id="assessmentText">用 10 题估算当前词汇量，再自动生成每日背词目标。</p><div class="tools"><button class="btn solid" id="startAssessment">开始摸底</button><button class="btn" id="startAdaptiveAssess" type="button">自适应摸底（30–50 题）</button></div></div>
-<div class="tools"><button class="btn" id="audioSrcBtn">🔊 音频来源声明</button></div><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button><button class="shop-item" data-buy="array" data-cost="100"><b>聚灵阵 · 100</b><small>24 小时内背词收益 ×2</small></button><button class="shop-item" data-buy="talisman" data-cost="150"><b>护道符 · 150</b><small>抵挡一次渡劫失败的修为扣除</small></button><button class="shop-item" data-buy="pill" data-cost="80"><b>记忆丹 · 80</b><small>指定词 7 天不进复习队列</small></button><button class="shop-item" data-buy="book" data-cost="50"><b>参悟古籍 · 50</b><small>解锁指定词深度解析</small></button></div></div><div class="scroll" id="mapTable"></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号" aria-label="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool" aria-label="题型池"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px" aria-label="道场昵称"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px" aria-label="道场邀请码"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div>
+<div class="tools"><button class="btn" id="audioSrcBtn">🔊 音频来源声明</button></div><div class="shop-card"><div class="row" style="justify-content:space-between"><b>灵石商店</b><span class="muted">当前灵石 <strong id="shopSpirit">0</strong></span></div><div class="shop-grid"><button class="shop-item" data-item="review"><b>复习令 · 30</b><small>立即生成一组 5 个到期/心魔词</small></button><button class="shop-item" data-item="listen"><b>听风符 · 40</b><small>下一次听力练习自动朗读两遍</small></button><button class="shop-item" data-item="break"><b>破障丹 · 60</b><small>清除一个最高频心魔词，但仍需重新答对</small></button><button class="shop-item" data-buy="array" data-cost="100"><b>聚灵阵 · 100</b><small>24 小时内背词收益 ×2</small></button><button class="shop-item" data-buy="talisman" data-cost="150"><b>护道符 · 150</b><small>抵挡一次渡劫失败的修为扣除</small></button><button class="shop-item" data-buy="pill" data-cost="80"><b>记忆丹 · 80</b><small>指定词 7 天不进复习队列</small></button><button class="shop-item" data-buy="book" data-cost="50"><b>参悟古籍 · 50</b><small>解锁指定词深度解析</small></button></div></div><div class="scroll" id="mapTable"></div><!-- v1.10 补：灵石流水账本（qiLog 一直是 append-only + balanceAfter 链式设计，
+     测试有 6 处断言在测它，但此前从未展示 —— 玩家看不到灵石怎么来的、怎么没的） --><div class="shop-card" id="ledgerCard"><div class="row" style="justify-content:space-between"><b>灵石流水</b><span class="muted" id="ledgerSummary">—</span></div><p class="muted" id="ledgerLead">近期每一笔灵石的来去都会记在这里（只读，不影响修行）。</p><div id="ledgerList" class="ledger-list" role="list"></div><div class="tools"><button class="btn" id="ledgerRefresh">刷新流水</button><span class="muted" id="ledgerHint"></span></div></div><div class="shop-card" id="reportCard"><div class="row" style="justify-content:space-between"><b>模考报告与薄弱点</b><span class="muted" id="reportSummary">加载中…</span></div><div id="reportBody"><p class="muted">完成一次模考或做几组练习后，这里会显示各题型得分率、正确率趋势、耗时分布与薄弱知识点。</p></div><div class="tools"><button class="btn solid" id="reportRecommend">按薄弱点推荐练习</button><button class="btn" id="reportRefresh">刷新报告</button><span class="muted" id="reportHint"></span></div></div><div class="tools"><input id="dao" maxlength="12" placeholder="道号" aria-label="道号"><button class="btn solid" id="saveDao">刻印</button><select id="pool" aria-label="题型池"><option value="mix">随机题型</option><option value="words">只练词</option><option value="wrong">心魔</option><option value="listen">听力</option><option value="read">阅读</option><option value="write">写作</option><option value="trans">翻译</option></select><button class="btn" id="exportBtn">导出</button><button class="btn" id="importBtn">导入</button><button class="btn" id="resetBtn">散功</button><button class="btn" id="feedbackBtn">反馈</button><button class="btn" id="changelogBtn">更新日志</button><input id="file" class="hidden" type="file" accept="application/json"></div><div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div><div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div><div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div><div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px" aria-label="道场昵称"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px" aria-label="道场邀请码"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div><div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div><div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div><div class="shop-card" id="gradeHistoryCard"><b>批改报告（历史）</b><p class="muted">历史批改报告将随错题本一并提供：每条作文 / 翻译记录含批改状态、总分与四维得分、错误批注。当前题目提交后可在题目下方查看批改卡片；未批改时显示占位卡片，不生成任何虚拟评分。</p></div>
 
 <details class="cave-block" id="caveDetails"><summary>洞府装饰（<span id="caveSummary">0 / 5</span>）</summary><div class="cave-body"><!-- v1.10 补：已购视觉装饰摘要（此前买了装饰界面零变化，也无任何展示） --><p class="cave-deco-line hidden" id="caveDecoLine" role="status" aria-live="polite"></p><div class="deco-grid" id="decoGrid"></div></div></details>
 <details class="cave-block" id="peerDetails" open><summary>道友互动 · 论剑 / 传功 / 联手斩魔（<span id="peerSummary">本机模式</span>）</summary><div class="cave-body">
@@ -5095,6 +5110,57 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   }
   window.__renderShopExtras = renderExtras;
 
+  /* ---------- 灵石流水账本（v1.10 补） ----------
+     qiLog 一直是 append-only + balanceAfter 链式设计，economy 模块注释写着
+     「listRecentTransactions 可回放校验」，tests/economy.test.mjs 有 6 处断言在测它 ——
+     但**模板从未展示**（全模板 grep 0 次）。玩家看不到灵石怎么来的、怎么没的。
+     这是本项目「实现了、测了、导出了，但没有消费点」的第六次出现。
+
+     本段只做**只读展示**：不改流水、不改余额、不做评判（支出不标红警告）。 */
+  var LEDGER_LIMIT = 12;
+  function renderLedger() {
+    var box = byId('ledgerList');
+    if (!box) return;
+    var L = S.ledger;
+    if (!L || !ES.listRecentTransactions) {
+      box.innerHTML = '<p class="ledger-empty">账本组件未就绪。</p>';
+      return;
+    }
+    ES.listRecentTransactions(LEDGER_LIMIT).then(function (txs) {
+      var list = Array.isArray(txs) ? txs : [];
+      if (L.isEmpty && L.isEmpty(list)) {
+        box.innerHTML = '<p class="ledger-empty">还没有灵石流水 —— 背词、做任务、斗法都会记在这里。</p>';
+      } else {
+        box.innerHTML = list.map(function (tx) {
+          var amt = Number(tx.amount) || 0;
+          var dir = L.direction ? L.direction(amt) : (amt > 0 ? 'in' : 'out');
+          var sign = amt > 0 ? '+' : '';
+          var when = L.time ? L.time(tx.timestamp) : '';
+          var label = L.label ? L.label(tx.reason) : String(tx.reason || '');
+          var bal = Number(tx.balanceAfter);
+          var sub = Number.isFinite(bal) ? ' · 余额 ' + bal : '';
+          return '<div class="ledger-row" role="listitem">'
+            + '<span class="ledger-txt">' + esc(label)
+            + (when ? '<span class="ledger-when">' + esc(when) + '</span>' : '') + '</span>'
+            + '<span class="ledger-amt ' + esc(dir) + '">' + sign + amt + ' 灵石'
+            + '<span class="muted">' + esc(sub) + '</span></span></div>';
+        }).join('');
+      }
+      var sum = byId('ledgerSummary');
+      if (sum && L.summarize) {
+        var s = L.summarize(list);
+        sum.textContent = '近 ' + s.count + ' 笔 · 入 ' + s.income + ' / 出 ' + s.spent + ' · 净 ' + (s.net > 0 ? '+' : '') + s.net;
+      }
+      var hint = byId('ledgerHint');
+      if (hint) hint.textContent = '';
+    }).catch(function () {
+      box.innerHTML = '<p class="ledger-empty">流水读取失败（离线或未启用本地数据库）。</p>';
+    });
+  }
+  window.__ledgerRefresh = renderLedger;
+  var ledgerBtn = byId('ledgerRefresh');
+  if (ledgerBtn) ledgerBtn.addEventListener('click', renderLedger);
+
   /* ---------- 购买执行（扣灵石 + 写库存 + 全局刷新） ---------- */
   /* v1.10 补：藏经阁建成后「参悟古籍」-20%。
      走 economy.purchase 的 priceOverride 加性参数（不传则行为完全不变）。
@@ -5137,6 +5203,8 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
       }
       if (window.renderTop) renderTop();
       if (window.renderShop) renderShop(); else renderExtras();
+      /* v1.10：灵石变动后刷新账本（否则买了东西账本不更新） */
+      if (window.__ledgerRefresh) { try { window.__ledgerRefresh(); } catch (e) { /* 忽略 */ } }
       // 境界卡道具胶囊联动（渡劫脚本监听）
       try { window.dispatchEvent(new CustomEvent('qingci:inventory-changed')); } catch (e) { /* 忽略 */ }
     });
@@ -5214,6 +5282,8 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
 
   /* 首次渲染（renderShop 可能尚未被调用） */
   renderExtras();
+  /* v1.10：首次渲染流水账本 */
+  renderLedger();
 })();
 </script>
 <script>

@@ -114,6 +114,10 @@ import {
   VISUAL_DECO_TOTAL, DECO_CLASS, DECO_SLOT,
 } from './cave-visual';
 import {
+  reasonLabel, txDirection, describeTransaction, txTimeLabel, summarizeTransactions,
+  isEmptyLedger, REASON_LABEL, ITEM_LABEL, CROP_LABEL,
+} from './ledger';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -327,6 +331,21 @@ const QingciServices = {
     def: decorationDef,
     decorations: DECORATIONS,
     SPRING_WATER: SPRING_WATER_ID,
+  },
+  /**
+   * 灵石流水账本（阶段 A2 补全）：把 append-only 的 qiLog 变成用户看得懂的账。
+   * 纯函数（reason 翻译 / 汇总 / 时间格式），展示由模板负责。
+   */
+  ledger: {
+    label: reasonLabel,
+    describe: describeTransaction,
+    time: txTimeLabel,
+    direction: txDirection,
+    summarize: summarizeTransactions,
+    isEmpty: isEmptyLedger,
+    REASONS: REASON_LABEL,
+    ITEMS: ITEM_LABEL,
+    CROPS: CROP_LABEL,
   },
   /**
    * 洞府装饰视觉应用（阶段 C 补全）：把 4 个纯视觉装饰真的画到界面上。

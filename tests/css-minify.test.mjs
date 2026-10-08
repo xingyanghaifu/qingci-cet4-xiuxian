@@ -21,7 +21,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -73,11 +73,18 @@ test('CSS 压缩：关键规则原样保留（抽查各主题/无障碍契约）
   }
 });
 
-test('CSS 压缩：体积收益没被吃掉（产物 < 920 KB）', () => {
-  const bytes = statSync(join(ROOT, 'dist', 'index.html')).size;
-  // 压缩前 925 618 B；留出余量，一旦有人回退 CSS 压缩就会顶破这条
-  assert.ok(bytes < 920000,
-    `产物 ${bytes} B —— CSS 压缩收益疑似被回退（压缩后应为 ~904 KB）`);
+test('CSS 压缩：产物 <style> 明显小于源码（收益没被回退）', () => {
+  // ⚠️ 这里**不能**用「产物总字节 < 某个绝对值」来判断压缩是否生效 ——
+  // 那会把两件事混为一谈：① 压缩被回退  ② 正常新增了功能。
+  // （本测试初版用 `< 920 KB`，结果本轮新增账本功能后误报失败。）
+  // 正确做法：**直接量压缩率** —— 产物 CSS 必须显著小于源码 CSS。
+  const srcCssBytes = Buffer.byteLength(srcCss, 'utf8');
+  const distCssBytes = Buffer.byteLength(distCss, 'utf8');
+  assert.ok(srcCssBytes > 1000, `源码 CSS 过小（${srcCssBytes} B），检查提取是否失效`);
+  const ratio = distCssBytes / srcCssBytes;
+  assert.ok(ratio < 0.92,
+    `产物 CSS 为源码的 ${(ratio * 100).toFixed(1)}% —— CSS 压缩疑似被回退（实测约 78%）`);
+  // 体积预算由 visual-v191.test.mjs 的「基线 + 19 KB」统一守，此处不重复。
 });
 
 test('CSS 压缩：SKIP_MINIFY=1 可跳过（对照实验开关仍在）', () => {

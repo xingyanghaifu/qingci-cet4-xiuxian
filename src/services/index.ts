@@ -110,6 +110,10 @@ import {
   SECT_BUFF_KEY, DETAIL_DISCOUNT, MONTHLY_TALISMAN,
 } from './sect-buffs';
 import {
+  caveVisualClasses, caveVisualBySlot, caveDecorSummary, visualDecorCount,
+  VISUAL_DECO_TOTAL, DECO_CLASS, DECO_SLOT,
+} from './cave-visual';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -323,6 +327,19 @@ const QingciServices = {
     def: decorationDef,
     decorations: DECORATIONS,
     SPRING_WATER: SPRING_WATER_ID,
+  },
+  /**
+   * 洞府装饰视觉应用（阶段 C 补全）：把 4 个纯视觉装饰真的画到界面上。
+   * 纯函数（只做 ID → class 映射），视觉规则在模板 CSS 里，全部走既有 token。
+   */
+  caveVisual: {
+    classes: caveVisualClasses,
+    bySlot: caveVisualBySlot,
+    summary: caveDecorSummary,
+    count: visualDecorCount,
+    TOTAL: VISUAL_DECO_TOTAL,
+    CLASS: DECO_CLASS,
+    SLOT: DECO_SLOT,
   },
   demons: {
     nameFrom: demonNameFrom,

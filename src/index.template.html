@@ -1022,7 +1022,13 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23p)'/%3E%3C/svg%3E");
   background-size:180px 180px;
 }
-.cloud-weave>.app,.cloud-weave>.nav-menu,.cloud-weave>.toast,.cloud-weave>.overlay{position:relative;z-index:1}
+/* 只抬静态内容层（.app 是 static，需要 relative+z-index 才能压住 ::before 宣纸层）。
+   ⚠️ 不要把 .toast / .overlay 写进来：它们是 position:fixed 的浮层，这里再写
+   position:relative 会以 (0,2,0) 的特异度覆盖掉 .overlay 的 (0,1,0) fixed，
+   浮层就掉回文档流、渲染到视口之外 —— 表现为「点词库卡片没反应 / 弹层不出现」。
+   它们本身已是定位元素（overlay z-index:60，toast 靠树序在 ::before 之后），
+   无需也不该在这里改 position。 */
+.cloud-weave>.app{position:relative;z-index:1}
 /* 古籍框线：双线 + 四角「耳」。只给细读容器（模考报告），不给每张浮层卡。 */
 .shop-card#reportCard{
   position:relative;

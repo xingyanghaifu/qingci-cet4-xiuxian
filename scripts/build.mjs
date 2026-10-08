@@ -37,6 +37,65 @@ function fail(msg) {
   process.exit(1);
 }
 
+/**
+ * 压缩一段 CSS：去注释 + 收缩结构性空白。
+ *
+ * **引号感知**：单/双引号内的内容（含 `url("data:image/svg+xml,…")` 这类
+ * data URI）原样保留，绝不改其内部空白 —— 否则宣纸纹理的 SVG 会被破坏。
+ *
+ * 收缩规则（只动「规则之间」与「声明之间」的空白）：
+ *   · 去掉 `{ } ; : , >` 周围的空白
+ *   · 折叠连续空白为一个空格
+ *   · 去掉最后一条声明末尾的分号
+ * 保持选择器文本与规则顺序**完全不变**，使按源码形态断言的多条守卫继续通过。
+ */
+function minifyCss(css) {
+  const out = [];
+  let i = 0;
+  const n = css.length;
+  while (i < n) {
+    const ch = css[i];
+    // 1) 块注释：整体丢弃
+    if (ch === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2);
+      i = end === -1 ? n : end + 2;
+      continue;
+    }
+    // 2) 字符串 / url(...) 内的内容原样拷贝（含引号本身）
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      out.push(ch);
+      i++;
+      while (i < n) {
+        const c = css[i];
+        out.push(c);
+        i++;
+        if (c === '\\') { if (i < n) { out.push(css[i]); i++; } continue; }
+        if (c === quote) break;
+      }
+      continue;
+    }
+    // 3) 结构性空白收缩
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r' || ch === '\f') {
+      // 向前看：下一个非空白字符
+      let j = i;
+      while (j < n && /\s/.test(css[j])) j++;
+      const next = css[j];
+      const prev = out.length ? out[out.length - 1] : '';
+      // 这些位置周围的空白无意义，直接丢弃
+      const dropBefore = '{};:,>'.includes(next) || '{};:,>'.includes(prev);
+      if (!dropBefore) out.push(' ');
+      i = j;
+      continue;
+    }
+    // 4) 去掉 `{` 前多余空格已在上面处理；这里处理 `}` 后紧跟声明的情况
+    out.push(ch);
+    i++;
+  }
+  // 收尾：去掉最后一条声明末尾分号、以及紧邻 `}` 前的分号
+  return out.join('').replace(/;+\}/g, '}').trim();
+}
+
 console.log('🔨 构建 青词天路 v' + pkg.version);
 console.log('   源文件: src/index.template.html + src/entry/services.ts');
 
@@ -187,6 +246,51 @@ const minifySaved = (minifyBefore - minifyAfter) / 1024;
 console.log('   ✓ 内联脚本去注释/压缩 ' + minifyBlocks + ' 块 · '
   + (minifyBefore / 1024).toFixed(1) + ' KB → ' + (minifyAfter / 1024).toFixed(1) + ' KB'
   + '（省 ' + minifySaved.toFixed(1) + ' KB）');
+
+// —— 4d. 压缩内联 <style>（去注释 + 压空白）——
+//
+// 为什么必须做：4c 只压了 <script>，<style> 段一直原样进产物 ——
+// 其中约 18 KB 是中文注释（设计说明），运行时零价值，却实打实占预算。
+// 实测产物 925 618 B 时，预算（19 KB）只剩 5.04 KB，任何新玩法都塞不进；
+// 压完 CSS 可回收约 21 KB，把可用预算提到约 26 KB。
+//
+// 三条安全底线（与 4c 同一套思路，但 CSS 有自己的坑）：
+//   1. **必须先去注释再压空白**。若先压空白，`/* … */` 里的换行被折叠后
+//      仍被当作注释整体删除 —— 结果一样，但注释里的 `}` 会让后续
+//      规则切分错位（实测：不先剥注释会出现样式整段丢失）。
+//   2. **不能碰字符串字面量里的内容**。本项目 CSS 里有 `url("data:image/svg+xml,…")`
+//      （宣纸纹理 feTurbulence）。粗暴压空白会破坏 data URI 内的语义空白。
+//      故只做「注释剥离 + 结构性空白收缩」，且跳过引号内与括号内的空白。
+//   3. **不用 esbuild 转 CSS**：它会把 `@supports`/`@media` 重新排版，
+//      而多条守卫测试按**源码书写形态**断言（如
+//      `@media (prefers-reduced-motion:reduce){…}`、`html:root[data-contrast="high"]{`），
+//      一旦重排就会大面积假失败。手写收缩保持选择器与规则原样，只动空白。
+//
+// 源码 src/index.template.html 的注释**原样保留**（可读性不受影响）。
+const styleTagRe = /<style([^>]*)>([\s\S]*?)<\/style>/g;
+let cssBefore = 0;
+let cssAfter = 0;
+let cssBlocks = 0;
+const cssParts = [];
+let cssLast = 0;
+for (const m of html.matchAll(styleTagRe)) {
+  const [full, attrs, body] = m;
+  if (process.env.SKIP_MINIFY === '1') continue;
+  cssBefore += Buffer.byteLength(body, 'utf8');
+  const min = minifyCss(body);
+  cssAfter += Buffer.byteLength(min, 'utf8');
+  cssBlocks++;
+  cssParts.push(html.slice(cssLast, m.index));
+  cssParts.push('<style' + attrs + '>' + min + '</style>');
+  cssLast = m.index + full.length;
+}
+if (cssBlocks) {
+  cssParts.push(html.slice(cssLast));
+  html = cssParts.join('');
+  console.log('   ✓ 内联样式去注释/压缩 ' + cssBlocks + ' 块 · '
+    + (cssBefore / 1024).toFixed(1) + ' KB → ' + (cssAfter / 1024).toFixed(1) + ' KB'
+    + '（省 ' + ((cssBefore - cssAfter) / 1024).toFixed(1) + ' KB）');
+}
 
 // —— 5. 输出 ——
 // 同时产出 index.html：静态托管（含本地 npm start）把 / 映射到 index.html，

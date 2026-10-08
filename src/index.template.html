@@ -5053,12 +5053,15 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     Array.prototype.forEach.call(document.querySelectorAll('[data-buy]'), function (btn) {
       var item = catalogOf(btn.getAttribute('data-buy'));
       if (!item) return;
-      var poor = spirit < item.price;
+      /* v1.10：参悟古籍按藏经阁折扣价判定「买得起」——
+         否则建成藏经阁后按钮仍按原价灰显，折扣形同虚设。 */
+      var eff = item.id === 'book' ? bookPriceWithSect(item.price) : item.price;
+      var poor = spirit < eff;
       btn.disabled = poor;
       var need = btn.querySelector('.shop-need');
       if (poor) {
         if (!need) { need = document.createElement('em'); need.className = 'shop-need'; btn.appendChild(need); }
-        need.textContent = '还需 ' + (item.price - spirit) + ' 灵石';
+        need.textContent = '还需 ' + (eff - spirit) + ' 灵石';
       } else if (need) {
         need.remove();
       }
@@ -5070,9 +5073,9 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
 
   /* ---------- 购买执行（扣灵石 + 写库存 + 全局刷新） ---------- */
   /* v1.10 补：藏经阁建成后「参悟古籍」-20%。
-     做法是把折扣价临时写入目录项再购买，买完还原 —— 因为 economy.purchase 只认
-     目录价（ITEM_CATALOG 是唯一事实源），不想为折扣改动服务层签名与既有测试。
-     未建成（bonus=0）时价格不变，既有行为一字不改。 */
+     走 economy.purchase 的 priceOverride 加性参数（不传则行为完全不变）。
+     为什么不临时改 ITEM_CATALOG：那是模块级共享常量，改写会在渲染/并发购买时被
+     别的调用点读到，属静默串味。 */
   function bookPriceWithSect(basePrice) {
     try {
       var SB = S.sectBuffs;
@@ -5086,18 +5089,16 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     return basePrice;
   }
   function doPurchase(item, targetId) {
-    var realPrice = item.price;
-    var payPrice = item.id === 'book' ? bookPriceWithSect(realPrice) : realPrice;
-    var restore = null;
-    if (payPrice !== realPrice) {
-      item.price = payPrice;                       // 临时改价（购买内部按 item.price 扣费）
-      restore = function () { item.price = realPrice; };
+    var opts = { targetId: targetId };
+    var payPrice = item.price;
+    if (item.id === 'book') {
+      payPrice = bookPriceWithSect(item.price);
+      if (payPrice !== item.price) opts.priceOverride = payPrice;
     }
-    ES.purchase(state, item.id, { targetId: targetId }).then(function (res) {
-      if (restore) restore();
+    ES.purchase(state, item.id, opts).then(function (res) {
       if (res.ok) {
         if (window.toast) {
-          var saved = realPrice - payPrice;
+          var saved = item.price - payPrice;
           toast(item.name + '生效' + (targetId ? ' · ' + targetId : '')
             + (saved > 0 ? '（藏经阁优惠 -' + saved + ' 灵石）' : ''));
         }
@@ -5114,7 +5115,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
       if (window.renderShop) renderShop(); else renderExtras();
       // 境界卡道具胶囊联动（渡劫脚本监听）
       try { window.dispatchEvent(new CustomEvent('qingci:inventory-changed')); } catch (e) { /* 忽略 */ }
-    }).catch(function () { if (restore) restore(); });
+    });
   }
 
   /* ---------- 选词器（记忆丹 / 参悟古籍） ---------- */

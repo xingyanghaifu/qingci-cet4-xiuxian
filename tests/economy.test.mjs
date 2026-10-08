@@ -101,6 +101,56 @@ test('purchase：未知道具 ok:false 不扣钱', async () => {
   assert.strictEqual((await eco.listRecentTransactions(10, idb)).length, 0);
 });
 
+/* ─── v1.10：priceOverride（道场藏经阁折扣用；加性参数，不传则行为不变）─── */
+
+test('purchase：不传 priceOverride 时按目录价（既有行为一字不变）', async () => {
+  const idb = makeFakeIdb();
+  const state = { spirit: 500 };
+  const res = await eco.purchase(state, 'book', { targetId: 'abandon' }, idb);
+  assert.strictEqual(res.ok, true);
+  assert.strictEqual(state.spirit, 450, 'book 目录价 50');
+  await tick();
+  const txs = await eco.listRecentTransactions(10, idb);
+  assert.ok(txs.some((t) => t.amount === -50), '流水应为 -50');
+});
+
+test('purchase：priceOverride 生效（参悟古籍 50 → 40）', async () => {
+  const idb = makeFakeIdb();
+  const state = { spirit: 500 };
+  const res = await eco.purchase(state, 'book', { targetId: 'ability', priceOverride: 40 }, idb);
+  assert.strictEqual(res.ok, true);
+  assert.strictEqual(state.spirit, 460, '应按覆盖价 40 扣费');
+  await tick();
+  const txs = await eco.listRecentTransactions(10, idb);
+  assert.ok(txs.some((t) => t.amount === -40), '流水应为 -40');
+});
+
+test('purchase：priceOverride 只接受「有限正数且不高于目录价」', async () => {
+  const idb = makeFakeIdb();
+  // 高于目录价 → 回落目录价（防被用来加价）
+  const s1 = { spirit: 500 };
+  await eco.purchase(s1, 'book', { targetId: 'w1', priceOverride: 999 }, idb);
+  assert.strictEqual(s1.spirit, 450, '高于目录价应回落目录价');
+  // 非法值 → 回落目录价
+  for (const bad of [0, -5, NaN, Infinity, undefined]) {
+    const s = { spirit: 500 };
+    await eco.purchase(s, 'book', { targetId: 'w' + String(bad), priceOverride: bad }, idb);
+    assert.strictEqual(s.spirit, 450, `非法覆盖价 ${String(bad)} 应回落目录价`);
+  }
+});
+
+test('purchase：库存写失败时按**实付价**退款（不产生净额偏差）', async () => {
+  // 用一个会让 inventory 写入失败的假 idb：读得到、put 抛错
+  const idb = makeFakeIdb();
+  const broken = {
+    transaction: () => { throw new Error('boom'); },
+  };
+  const state = { spirit: 500 };
+  const res = await eco.purchase(state, 'book', { targetId: 'w2', priceOverride: 40 }, broken);
+  assert.strictEqual(res.ok, false, '写库失败应返回失败');
+  assert.strictEqual(state.spirit, 500, '应退回实付价 40，余额回到 500（若退目录价 50 会变成 510）');
+});
+
 /* ─────────────── 模板挂点静态接线（验收 7/8/10/11/12 对应） ─────────────── */
 
 test('挂点1：claimMission 聚灵阵双倍（幂等保护原样）+ 流水', () => {

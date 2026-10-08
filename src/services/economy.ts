@@ -228,16 +228,26 @@ async function inventoryStore(mode: 'readonly' | 'readwrite', factory?: MinimalF
 /**
  * 购买：目录价扣灵石（流水）→ 写库存。
  * 库存写失败时回滚退款（补偿式，保证不出现“扣了钱没货”）。
+ *
+ * `options.priceOverride`（可选，v1.10 新增）：用指定价替代目录价。
+ * 供**道场藏经阁折扣**使用 —— 加性可选参数，不传时行为与既有完全一致。
+ * 为什么不做成「改 ITEM_CATALOG」：那是模块级共享常量，
+ * 临时改写会在并发购买 / 渲染时被别的调用点读到，属静默串味。
  */
 export async function purchase(
   state: SpiritHost,
   itemId: string,
-  options: { targetId?: string; now?: number } = {},
+  options: { targetId?: string; now?: number; priceOverride?: number } = {},
   factory?: MinimalFactory | null,
 ): Promise<PurchaseResult> {
   const item = ITEM_CATALOG.find((it) => it.id === itemId);
   if (!item) return { ok: false, reason: 'unknown-item' };
   const now = options.now ?? Date.now();
+  // 覆盖价只接受「有限正数且不高于目录价」——防止被用来加价或传 NaN
+  const override = Number(options.priceOverride);
+  const price = Number.isFinite(override) && override > 0 && override <= item.price
+    ? Math.round(override)
+    : item.price;
   const target = item.needsTarget ? String(options.targetId || '').trim().toLowerCase() : '';
   if (item.needsTarget && !target) return { ok: false, reason: 'invalid-word' };
 
@@ -256,7 +266,7 @@ export async function purchase(
     }
   }
 
-  const paid = spendSpirit(state, item.price, `purchase_${itemId}`, factory);
+  const paid = spendSpirit(state, price, `purchase_${itemId}`, factory);
   if (!paid.ok) return { ok: false, reason: 'no-funds', balanceAfter: paid.balanceAfter };
 
   try {
@@ -287,8 +297,8 @@ export async function purchase(
     }
     return { ok: true, reason: 'written', balanceAfter: paid.balanceAfter };
   } catch (e) {
-    // 库存写失败 → 退款回滚
-    const back = earnSpirit(state, item.price, `refund_${itemId}`, factory);
+    // 库存写失败 → 退款回滚（退**实付价**，与扣费一致；否则会产生净额偏差）
+    const back = earnSpirit(state, price, `refund_${itemId}`, factory);
     return { ok: false, reason: 'unknown-item', balanceAfter: back.balanceAfter };
   }
 }

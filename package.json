@@ -40,7 +40,8 @@
     "verify:cultivation2": "node scripts/verify-cultivation-phase2.mjs",
     "verify:listening": "node scripts/verify-listening-online.mjs",
     "check:lexicons": "node scripts/check-lexicon-registry.mjs",
-    "verify:lexicon": "node scripts/verify-lexicon-online.mjs"
+    "verify:lexicon": "node scripts/verify-lexicon-online.mjs",
+    "verify:final": "node scripts/verify-final-online.mjs"
   },
   "keywords": [
     "CET-4",

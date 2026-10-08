@@ -35,6 +35,7 @@ import {
   KAOYAN_WRITING,
   PRETCO_DIALOGUE_SKELETONS, PRETCO_DIALOGUE_DECOYS, PRETCO_WRITING,
   GRE_WRITING,
+  IELTS_WRITING,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -163,6 +164,31 @@ const LEXICONS = {
     targets: { bankfill: 1900, reading: 320, writing: 35 },
     detailQs: 3,
     content: 'gre',
+  },
+  /**
+   * IELTS（v1.10 第二批）。
+   *
+   * IELTS 题型映射到本引擎：
+   *   · 填空（Reading/Listening 填空）→ `bankfill`
+   *   · 阅读理解                      → `reading`
+   *   · 写作（Task 1 图表 / Task 2 议论）→ `writing`（用 IELTS_WRITING 素材）
+   * 与 GRE 同一套 plan（本引擎无听力题型骨架，故不生成听力）。
+   */
+  ielts: {
+    id: 'ielts', exam: 'ielts', label: 'IELTS', prefix: 'il',
+    wordlist: path.join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'wordlist.json'),
+    outDir: path.join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'question-bank'),
+    detailDir: path.join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'vocab-detail'),
+    paperNames: ['IELTS 模拟卷一', 'IELTS 模拟卷二', 'IELTS 模拟卷三'],
+    paperKeys: ['il-01', 'il-02', 'il-03'],
+    plan: [
+      { kind: 'bankfill', type: 'direct', count: 620 },
+      { kind: 'reading', type: 'group', per: 5, groups: 105 },
+      { kind: 'writing', type: 'direct', count: 11 },
+    ],
+    targets: { bankfill: 1900, reading: 320, writing: 35 },
+    detailQs: 3,
+    content: 'ielts',
   },
   /**
    * PRETCO 近似（v1.9.1 阶段 F）：词库数据复用 CET-4（词源从模板内联读，
@@ -1289,7 +1315,8 @@ function main() {
         byKind.writing = buildWriting(
           isKao ? KAOYAN_WRITING : isSen ? SENIOR_WRITING
             : L.content === 'pretco' ? PRETCO_WRITING
-              : L.content === 'gre' ? GRE_WRITING : WRITING_TASKS, 'writing', L.id);
+              : L.content === 'gre' ? GRE_WRITING
+                : L.content === 'ielts' ? IELTS_WRITING : WRITING_TASKS, 'writing', L.id);
         break;
       case 'continuation':
         byKind.continuation = buildWriting(SENIOR_CONTINUATION, 'continuation', L.id);

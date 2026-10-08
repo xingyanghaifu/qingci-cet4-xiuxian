@@ -180,6 +180,26 @@ const LEXICONS = {
     sourceUrl: `https://github.com/${ECDICT_REPO}`,
   },
   /**
+   * IELTS（v1.10 第二批）。
+   *
+   * 数据源：ECDICT `tag=ielts`，实测 **5040 词**（达预期 100%）。
+   * 与 GRE 同一套机制（tagFilter + inCET4 重叠标记）。
+   */
+  ielts: {
+    id: 'ielts',
+    name: '雅思（IELTS）',
+    shortName: 'IELTS',
+    description: '雅思核心词汇 5040 词（ECDICT tag:ielts）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    reuseExistingDetail: false,
+    dataPath: 'lexicons/ielts/vocab-detail/',
+    detailDir: path.join(LEX_DIR, 'ielts', 'vocab-detail'),
+    wordDir: path.join(LEX_DIR, 'ielts'),
+    tagFilter: 'ielts',
+    markOverlap: 'inCET4',
+    overlapWith: ['cet4'],
+    sourceUrl: `https://github.com/${ECDICT_REPO}`,
+  },
+  /**
    * PRETCO 近似（v1.9.1 阶段 F）。
    *
    * 探活确认公开领域无 PRETCO 词表（docs/probe-pretco.md：五路径全零命中），
@@ -947,7 +967,7 @@ function writeManifest(built) {
   //
   // 现在加一条断言：LEXICONS 里登记的词库必须都在 order 里，
   // 否则直接构建失败 —— 让「漏登记」在构建期就暴露，而不是等用户发现。
-  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'gre', 'pretco'];
+  const order = ['junior', 'senior', 'cet4', 'cet6', 'kaoyan', 'gre', 'ielts', 'pretco'];
   const missingFromOrder = Object.keys(LEXICONS).filter((id) => !order.includes(id));
   if (missingFromOrder.length) {
     throw new Error(

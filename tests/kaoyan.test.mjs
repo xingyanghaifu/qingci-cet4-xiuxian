@@ -176,7 +176,7 @@ test('E6-7 词库切换：kaoyan 可切换、默认仍 CET-4、未上线仍拒�
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'cet4', '未切换时默认 CET-4');
     assert.equal(switchLexicon('kaoyan', FALLBACK_MANIFEST.lexicons), true, 'kaoyan 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'kaoyan');
-    for (const id of ['ielts', 'toefl']) {
+    for (const id of ['toefl']) {
       assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
     }
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'kaoyan', '失败的切换不应改写当前词库');

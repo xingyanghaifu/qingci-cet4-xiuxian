@@ -148,15 +148,17 @@ export const FALLBACK_LEXICONS: readonly Lexicon[] = [
     wordListPath: 'lexicons/gre/',
   },
   {
+    // v1.10 第二批：IELTS（ECDICT tag:ielts，实测 5040 词）。
     id: 'ielts',
-    name: '雅思词汇',
+    name: '雅思（IELTS）',
     shortName: 'IELTS',
-    wordCount: 0,
-    description: '规划中：尚未构建词表。',
-    sourceUrl: '',
-    sourceLicense: '',
-    enabled: false,
+    wordCount: 5040,
+    description: '雅思核心词汇 5040 词（ECDICT tag:ielts）；与四级重叠词标 inCET4，进度、错题与复习队列独立。',
+    sourceUrl: 'https://github.com/skywind3000/ECDICT',
+    sourceLicense: 'MIT',
+    enabled: true,
     dataPath: 'lexicons/ielts/vocab-detail/',
+    wordListPath: 'lexicons/ielts/',
   },
   {
     id: 'toefl',

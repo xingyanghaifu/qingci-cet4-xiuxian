@@ -172,7 +172,7 @@ test('F6-7 词库切换：pretco 可切换、默认仍 CET-4、未上线仍拒�
       '未切换时默认 CET-4');
     assert.equal(switchLexicon('pretco', FALLBACK_MANIFEST.lexicons), true, 'pretco 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'pretco');
-    for (const id of ['ielts', 'toefl']) {
+    for (const id of ['toefl']) {
       assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
     }
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'pretco',

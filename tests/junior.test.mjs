@@ -45,9 +45,10 @@ test('A-1 词库清单含 junior：启用、路径正确、默认仍是 CET-4', 
   assert.equal(junior.dataPath, 'lexicons/junior/vocab-detail/');
   assert.equal(junior.wordListPath, 'lexicons/junior/', '词源路径供运行时换词表用');
   // 未上线词库仍然禁用（灰显 + aria-disabled，切换被拒）
-  // 注：kaoyan（阶段 E）与 pretco（阶段 F）已于 v1.9.1 上线，从本列表移出
-  //     （见 tests/kaoyan.test.mjs 与 tests/pretco.test.mjs）
-  for (const id of ['ielts', 'toefl']) {
+  // 注：kaoyan（阶段 E）、pretco（阶段 F）、gre / ielts（v1.10）均已上线，
+  //     从本列表移出（见 tests/kaoyan.test.mjs、tests/gre-lexicon.test.mjs 等）。
+  //     目前仅剩 toefl 未上线。
+  for (const id of ['toefl']) {
     const l = manifest.lexicons.find((x) => x.id === id);
     assert.equal(l && l.enabled, false, `${id} 仍应为未上线`);
   }
@@ -213,8 +214,8 @@ test('A-5 词库切换：junior 可切换、默认仍 CET-4、未上线仍拒绝
       '未切换时默认 CET-4');
     assert.equal(switchLexicon('junior', FALLBACK_MANIFEST.lexicons), true, 'junior 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'junior');
-    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 ielts/toefl
-    for (const id of ['ielts', 'toefl']) {
+    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 toefl
+    for (const id of ['toefl']) {
       assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
     }
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'junior',

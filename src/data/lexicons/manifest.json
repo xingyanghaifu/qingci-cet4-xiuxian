@@ -74,6 +74,18 @@
       "wordListPath": "lexicons/gre/"
     },
     {
+      "id": "ielts",
+      "name": "雅思（IELTS）",
+      "shortName": "IELTS",
+      "wordCount": 5040,
+      "description": "雅思核心词汇 5040 词（ECDICT tag:ielts）；与四级重叠词标 inCET4，进度、错题与复习队列独立。",
+      "sourceUrl": "https://github.com/skywind3000/ECDICT",
+      "sourceLicense": "MIT",
+      "enabled": true,
+      "dataPath": "lexicons/ielts/vocab-detail/",
+      "wordListPath": "lexicons/ielts/"
+    },
+    {
       "id": "pretco",
       "name": "PRETCO 高等学校英语应用能力考试（近似）",
       "shortName": "PRETCO",

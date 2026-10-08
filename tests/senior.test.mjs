@@ -216,8 +216,8 @@ test('B-5 词库切换：senior 可切换、默认仍 CET-4、未上线仍拒绝
       '未切换时默认 CET-4');
     assert.equal(switchLexicon('senior', FALLBACK_MANIFEST.lexicons), true, 'senior 应可切换');
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'senior');
-    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 ielts/toefl
-    for (const id of ['ielts', 'toefl']) {
+    // 未上线样本：v1.9.1 起 kaoyan 已上线，改用仍灰显的 toefl
+    for (const id of ['toefl']) {
       assert.equal(switchLexicon(id, FALLBACK_MANIFEST.lexicons), false, `${id} 未上线应拒绝`);
     }
     assert.equal(currentLexiconId(FALLBACK_MANIFEST.lexicons.filter((l) => l.enabled)), 'senior',

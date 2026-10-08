@@ -83,6 +83,12 @@ const LEXICONS = [
     shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'gre', 'vocab-detail'),
     corpusDir: path.join(CACHE_DIR, 'gre', 'corpus'),
   },
+  {
+    // v1.10 第二批：IELTS
+    id: 'ielts',
+    shardDir: path.join(ROOT, 'src', 'data', 'lexicons', 'ielts', 'vocab-detail'),
+    corpusDir: path.join(CACHE_DIR, 'ielts', 'corpus'),
+  },
 ];
 
 /**

@@ -105,6 +105,11 @@ import {
   facilityPercent, FACILITY_DEFS, SECT_DONATE_PRESETS,
 } from './sect-facilities';
 import {
+  monthKeyOf, discountedBookPrice, shouldGrantMonthlyTalisman, monthlyTalismanAmount,
+  applyArenaBonus, buffSummary, loadSectBuffs, saveSectBuffs, claimMonthlyTalisman,
+  SECT_BUFF_KEY, DETAIL_DISCOUNT, MONTHLY_TALISMAN,
+} from './sect-buffs';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -272,6 +277,24 @@ const QingciServices = {
     percent: facilityPercent,
     FACILITIES: FACILITY_DEFS,
     PRESETS: SECT_DONATE_PRESETS,
+  },
+  /**
+   * 道场设施增益结算（阶段 D 补全）：把 3 个设施承诺的 buff 落成真实机制。
+   * 纯函数 + 独立记账键（qingci.sectBuffs），不动学习存档。
+   */
+  sectBuffs: {
+    monthKey: monthKeyOf,
+    discountedBookPrice,
+    shouldGrantMonthlyTalisman,
+    monthlyTalismanAmount,
+    applyArenaBonus,
+    summary: buffSummary,
+    load: loadSectBuffs,
+    save: saveSectBuffs,
+    claimMonthlyTalisman,
+    KEY: SECT_BUFF_KEY,
+    DETAIL_DISCOUNT,
+    MONTHLY_TALISMAN,
   },
   field: {
     load: loadField,

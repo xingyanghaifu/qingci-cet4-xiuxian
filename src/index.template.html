@@ -1267,6 +1267,8 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   <div class="sect-panel" role="group" aria-label="道场建设：捐献灵石共建三处设施">
     <p class="section-label">道场建设 · SECT</p><span class="cloud-rule" aria-hidden="true"></span>
     <div class="row" style="justify-content:space-between"><span class="muted">道场总捐献</span><span class="badge" id="sectTotal">0 灵石</span></div>
+    <!-- v1.10 补：设施增益摘要（此前三个设施的承诺 buff 从未生效，也无任何展示） -->
+    <p class="muted sect-buffs hidden" id="sectBuffs" role="status" aria-live="polite"></p>
     <div class="fac-grid" id="facGrid"></div>
   </div>
 </div></details>
@@ -5067,12 +5069,40 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   window.__renderShopExtras = renderExtras;
 
   /* ---------- 购买执行（扣灵石 + 写库存 + 全局刷新） ---------- */
+  /* v1.10 补：藏经阁建成后「参悟古籍」-20%。
+     做法是把折扣价临时写入目录项再购买，买完还原 —— 因为 economy.purchase 只认
+     目录价（ITEM_CATALOG 是唯一事实源），不想为折扣改动服务层签名与既有测试。
+     未建成（bonus=0）时价格不变，既有行为一字不改。 */
+  function bookPriceWithSect(basePrice) {
+    try {
+      var SB = S.sectBuffs;
+      // 折扣由道场 IIFE 写入 window.__sectBuffs（跨 IIFE 共享通道）
+      var b = window.__sectBuffs || null;
+      var disc = b ? Number(b.detailUnlockBonus) || 0 : 0;
+      if (SB && SB.discountedBookPrice && disc > 0) {
+        return SB.discountedBookPrice(basePrice, disc);
+      }
+    } catch (e) { /* 折扣不可用则原价 */ }
+    return basePrice;
+  }
   function doPurchase(item, targetId) {
+    var realPrice = item.price;
+    var payPrice = item.id === 'book' ? bookPriceWithSect(realPrice) : realPrice;
+    var restore = null;
+    if (payPrice !== realPrice) {
+      item.price = payPrice;                       // 临时改价（购买内部按 item.price 扣费）
+      restore = function () { item.price = realPrice; };
+    }
     ES.purchase(state, item.id, { targetId: targetId }).then(function (res) {
+      if (restore) restore();
       if (res.ok) {
-        if (window.toast) toast(item.name + '生效' + (targetId ? ' · ' + targetId : ''));
+        if (window.toast) {
+          var saved = realPrice - payPrice;
+          toast(item.name + '生效' + (targetId ? ' · ' + targetId : '')
+            + (saved > 0 ? '（藏经阁优惠 -' + saved + ' 灵石）' : ''));
+        }
       } else if (res.reason === 'no-funds') {
-        if (window.toast) toast('灵石不足，还差 ' + Math.max(0, item.price - spiritNow()) + ' 灵石');
+        if (window.toast) toast('灵石不足，还差 ' + Math.max(0, payPrice - spiritNow()) + ' 灵石');
       } else if (res.reason === 'already-active') {
         if (window.toast) toast('该词的记忆丹仍在生效');
       } else if (res.reason === 'already-owned') {
@@ -5084,7 +5114,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
       if (window.renderShop) renderShop(); else renderExtras();
       // 境界卡道具胶囊联动（渡劫脚本监听）
       try { window.dispatchEvent(new CustomEvent('qingci:inventory-changed')); } catch (e) { /* 忽略 */ }
-    });
+    }).catch(function () { if (restore) restore(); });
   }
 
   /* ---------- 选词器（记忆丹 / 参悟古籍） ---------- */
@@ -5733,9 +5763,22 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     var correct = Math.min(total, Math.max(0, Math.round(total * (0.45 + rnd(1) * 0.45))));
     return { correct: correct, timeMs: Math.max(1000, Math.round((total * 1000) * (0.55 + rnd(2) * 0.6))) };
   }
+  /* 演武场加成缓存（renderSect 时刷新；默认 0 = 未建成，与旧行为一致） */
+  var arenaBonus = 0;
   /* 本机答卷：本机侧取「模拟」并由用户实际答题在 sessionStorage 记录；此处无真题入口，
      故统一用固定种子模拟本机表现，保证单次会话内可复现、离线可演示 */
-  function myScore(total) { return simulate(Math.floor(Math.random() * 1e6) + total, total); }
+  function myScore(total) {
+    var s = simulate(Math.floor(Math.random() * 1e6) + total, total);
+    // v1.10 补：演武场建成后论剑 +5%（此前 getFacilityBuffs 从未被调用 → 该承诺从未生效）
+    try {
+      var SB = S.sectBuffs;
+      var bonus = arenaBonus || (window.__sectBuffs ? Number(window.__sectBuffs.duelWinBonus) || 0 : 0);
+      if (SB && SB.applyArenaBonus && bonus > 0) {
+        s = { correct: SB.applyArenaBonus(s.correct, bonus), timeMs: s.timeMs };
+      }
+    } catch (e) { /* 设施数据不可用不影响论剑 */ }
+    return s;
+  }
 
   /* ---------- 论剑 ---------- */
   function renderPeers(containerId, actAttr) {
@@ -5944,6 +5987,41 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     SC.load().then(function (st) {
       var total = byId('sectTotal');
       if (total) total.textContent = st.totalContributed + ' 灵石';
+      /* v1.10 补：读取设施增益并落到实际机制上。
+         此前 getFacilityBuffs() 从未被调用 → 三个设施承诺的 buff 一个都不生效。 */
+      var buffs = { detailUnlockBonus: 0, monthlyTalisman: 0, duelWinBonus: 0 };
+      try { if (SC.buffs) buffs = SC.buffs(st.facilities) || buffs; } catch (e) { /* 保持 0 */ }
+      sectBookDiscount = Number(buffs.detailUnlockBonus) || 0;
+      arenaBonus = Number(buffs.duelWinBonus) || 0;
+      /* 商店在**另一个 IIFE** 里（见 doPurchase），局部变量跨不过去 ——
+         故把折扣挂到 window 上作为共享通道（沿用本仓库既有 __* 约定）。
+         不这么做的话，藏经阁折扣在真实购买路径里读不到，等于没生效。 */
+      try { window.__sectBuffs = buffs; } catch (e) { /* 忽略 */ }
+      // 炼丹房：每月 1 张护道符（幂等：同月只发一次，跨月重发）
+      try {
+        var SBm = S.sectBuffs;
+        var ESm = S.economy;
+        if (SBm && SBm.claimMonthlyTalisman && ESm && ESm.grantItem && Number(buffs.monthlyTalisman) > 0) {
+          var got = SBm.claimMonthlyTalisman(Number(buffs.monthlyTalisman));
+          if (got > 0) {
+            ESm.grantItem('talisman').then(function () {
+              /* 必须刷新库存缓存：talismanCount() 读的是 cache，
+                 不刷新的话「护道符 +1」在界面上不体现（渡劫抵扣也会误判为 0）。 */
+              if (ESm.refreshInventory) ESm.refreshInventory();
+              if (window.toast) toast('炼丹房 · 本月护道符 +' + got);
+              try { window.dispatchEvent(new CustomEvent('qingci:inventory-changed')); } catch (e) { /* 忽略 */ }
+            });
+          }
+        }
+      } catch (e) { /* 发放失败不影响道场渲染 */ }
+      // 增益摘要行（让「已生效」看得见）
+      var buffLine = byId('sectBuffs');
+      if (buffLine) {
+        var labels = [];
+        try { if (S.sectBuffs && S.sectBuffs.summary) labels = S.sectBuffs.summary(buffs) || []; } catch (e) { labels = []; }
+        buffLine.textContent = labels.length ? ('已生效：' + labels.join(' · ')) : '';
+        buffLine.classList.toggle('hidden', !labels.length);
+      }
       box.innerHTML = SC.FACILITIES.map(function (def) {
         var fac = st.facilities.filter(function (f) { return f.id === def.id; })[0];
         var pct = SC.percent(fac);
@@ -5966,6 +6044,8 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
       }).join('');
     }).catch(function () { if (byId('facGrid')) byId('facGrid').innerHTML = '<p class="sect-empty">道场数据读取失败。</p>'; });
   }
+  /* 藏经阁折扣缓存（renderSect 时刷新；默认 0 = 未建成，与旧行为一致） */
+  var sectBookDiscount = 0;
 
   var FAC_ART = {
     scripture_hall: '<path d="M4.5 20.5V9L12 4l7.5 5v11.5"/><path d="M9.5 20.5v-6h5v6"/><circle cx="12" cy="8.6" r="1.2" fill="currentColor" stroke="none"/>',
@@ -6032,6 +6112,13 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     renderJoints();
     renderSect();
   }
+  /* v1.10：对外暴露道场刷新入口（沿用本仓库既有约定 __fieldRefresh / __lexiconOnSwitch）。
+     为什么需要：renderSect 只在「初始化」与「捐献后」调用，而设施 buff 的生效依赖它
+     （藏经阁折扣 / 演武场加成 / 炼丹房月度符都写在这条路径里）。
+     没有这个钩子，任何在别处改了设施状态（或需要重算 buff）的场景都无法刷新。 */
+  window.__sectRefresh = function () {
+    try { renderSect(); } catch (e) { /* 刷新失败不影响既有界面 */ }
+  };
 })();
 </script>
 

@@ -2660,6 +2660,273 @@ export const PRETCO_DIALOGUE_SKELETONS = [
 ];
 
 /**
+ * 中学段听力对话骨架（v1.10 第四批：给初中/高中补听力）。
+ *
+ * 与 PRETCO 那 21 条同一套变体机制（骨架带槽位 → makeFiller 填词），
+ * 但场景刻意贴近校园生活（课堂/作业/食堂/运动会/家长会…），
+ * 词汇与语速都更适合中学生。
+ *
+ * 正解仍是**场景短语**（不是词），干扰项复用 PRETCO_DIALOGUE_DECOYS ——
+ * 那 30 条本身就是校园场景，跨学段通用。
+ */
+export const SCHOOL_DIALOGUE_SKELETONS = [
+  {
+    id: 'sdlg-class',
+    question: 'What are the two speakers mainly talking about?',
+    answer: '讨论明天的课程安排',
+    sents: [
+      'W: Do we have {N1@subject} class tomorrow morning?',
+      'M: Yes, and the teacher will {V1@do} a short test.',
+      'W: I should review the {N2@bookish} tonight then.',
+      'M: Let us study together in the {N3@room}.',
+    ],
+  },
+  {
+    id: 'sdlg-homework',
+    question: 'What is the boy worried about?',
+    answer: '担心作业交不上',
+    sents: [
+      'M: I still have not finished my {N1@homework}.',
+      'W: How much is left? The deadline is this {T1}.',
+      'M: About {NUM1} pages. I started too late.',
+      'W: I can {V1@do} you with the last part.',
+    ],
+  },
+  {
+    id: 'sdlg-canteen',
+    question: 'What does the girl suggest?',
+    answer: '建议换个食堂吃饭',
+    sents: [
+      'W: The {N1@food} here is always so crowded.',
+      'M: I know. We wait {NUM1} minutes every noon.',
+      'W: Let us try the one near the {N2@place}.',
+      'M: Good idea. It is {A1@itemAdj} there.',
+    ],
+  },
+  {
+    id: 'sdlg-sports',
+    question: 'What will the two speakers do this afternoon?',
+    answer: '一起参加运动会项目',
+    sents: [
+      'M: Are you joining the {N1@sportPlace} meeting this week?',
+      'W: Yes, I signed up for the {N2@sportPlace} race.',
+      'M: Great. Shall we {V1@do} together after class?',
+      'W: Sure, at the {N3@place} at four.',
+    ],
+  },
+  {
+    id: 'sdlg-parents',
+    question: 'Why does the girl look nervous?',
+    answer: '担心家长会的成绩单',
+    sents: [
+      'W: My parents are coming to the {N1@fac} tomorrow.',
+      'M: Why does that make you {A1@feel}?',
+      'W: My {N2@subject} grade was not good this time.',
+      'M: You can {V1@do} better next term.',
+    ],
+  },
+  {
+    id: 'sdlg-library',
+    question: 'What does the boy want to do?',
+    answer: '想借一本参考书',
+    sents: [
+      'M: Excuse me, is this {N1@bookish} still available?',
+      'W: Let me check. It is on the {N2@place} shelf.',
+      'M: Thank you. I need it for my {N3@subject} project.',
+      'W: You can keep it for {NUM1} days.',
+    ],
+  },
+  {
+    id: 'sdlg-weather',
+    question: 'What does the woman advise the man to take?',
+    answer: '建议带伞出门',
+    sents: [
+      'W: It will {V1@do} this afternoon, I heard.',
+      'M: Really? I did not bring anything.',
+      'W: Take my {N1@rainGear} with you.',
+      'M: Thanks. I will return it this {T1}.',
+    ],
+  },
+  {
+    id: 'sdlg-club',
+    question: 'What are the two speakers discussing?',
+    answer: '商量加入哪个社团',
+    sents: [
+      'M: Which {N1@team} are you joining this term?',
+      'W: I am thinking about the {N2@hobby} club.',
+      'M: That sounds {A1@itemAdj}. Can I come too?',
+      'W: Of course. Sign up before this {T1}.',
+    ],
+  },
+  {
+    id: 'sdlg-health',
+    question: 'What is the matter with the boy?',
+    answer: '身体不舒服需要休息',
+    sents: [
+      'W: You look {A1@feel} today. What happened?',
+      'M: I did not sleep well and my head hurts.',
+      'W: You should {V1@do} a rest in the {N1@room}.',
+      'M: I will, after this class.',
+    ],
+  },
+  {
+    id: 'sdlg-travel',
+    question: 'What are the two speakers planning?',
+    answer: '计划周末的班级出游',
+    sents: [
+      'M: Where shall we {V1@do} this weekend?',
+      'W: The class is going to the {N1@place}.',
+      'M: How long does it take by {N2@vehicle}?',
+      'W: About {NUM1} minutes. We leave at eight.',
+    ],
+  },
+  {
+    id: 'sdlg-teacher',
+    question: 'What does the teacher ask the student to do?',
+    answer: '要求课后留下补课',
+    sents: [
+      'W: Your last {N1@homework} had several mistakes.',
+      'M: I am sorry. I did not understand the {N2@subject}.',
+      'W: Stay after class and I will {V1@do} you again.',
+      'M: Thank you. I will be there this {T1}.',
+    ],
+  },
+  {
+    id: 'sdlg-friend',
+    question: 'What does the girl want from her friend?',
+    answer: '想借同学的笔记',
+    sents: [
+      'W: I missed the {N1@subject} class yesterday.',
+      'M: Do you want to borrow my {N2@note}?',
+      'W: Yes please. I will {V1@do} it back tomorrow.',
+      'M: No hurry. Take your time this {T1}.',
+    ],
+  },
+];
+
+/**
+ * 考研听力讲座骨架（v1.10 第四批：给考研补听力）。
+ *
+ * 考研英语本身**不考听力**（初试无听力），但任务书要求补 500+ 听力题
+ * 作为「短文听写 / 对话 / 讲座」训练。这里按**学术讲座**与**校园长对话**
+ * 两类骨架生成，文本长度接近考研阅读的听力化改写，适合做精听训练。
+ *
+ * 题面明确标注这是「训练用」而非考研真题题型，避免误导。
+ */
+export const KY_DIALOGUE_SKELETONS = [
+  {
+    id: 'kydlg-lecture',
+    question: 'What is the main topic of the talk?',
+    answer: '介绍某项研究的主要发现',
+    sents: [
+      'Today I want to {V1@talkV} about a recent study on {N1@subject}.',
+      'The researchers examined how {N2@team} respond to change over time.',
+      'They found that the effect was {A1@itemAdj} in the first {NUM1} months.',
+      'This suggests we should {V1@do} our assumptions about the process.',
+    ],
+  },
+  {
+    id: 'kydlg-seminar',
+    question: 'What does the professor suggest the student do?',
+    answer: '建议先读文献再定题',
+    sents: [
+      'M: I want to {V1@do} my paper on this {N1@subject}.',
+      'W: Have you read the recent {N2@bookish} on it?',
+      'M: Not yet. I thought I could start writing first.',
+      'W: Read at least {NUM1} sources before you decide the question.',
+    ],
+  },
+  {
+    id: 'kydlg-lab',
+    question: 'Why does the experiment need to be repeated?',
+    answer: '因为样本量不足',
+    sents: [
+      'W: The results look promising, but the sample was small.',
+      'M: How many {N1@team} did you include?',
+      'W: Only {NUM1}. That is not enough to be {A1@itemAdj}.',
+      'M: Then we should {V1@do} the experiment again.',
+    ],
+  },
+  {
+    id: 'kydlg-conference',
+    question: 'What will the speaker do next?',
+    answer: '准备会议报告',
+    sents: [
+      'M: The {N1@fac} is next {T1}. Are you ready?',
+      'W: Almost. I still need to {V1@do} the last section.',
+      'M: How long will your talk be?',
+      'W: About {NUM1} minutes, including questions.',
+    ],
+  },
+  {
+    id: 'kydlg-library',
+    question: 'What is the student looking for?',
+    answer: '查找过期的期刊资料',
+    sents: [
+      'M: I need an article from a journal published in {NUM1}.',
+      'W: Older issues are kept in the {N1@place} collection.',
+      'M: Can I {V1@do} them out of the library?',
+      'W: No, but you can copy what you need.',
+    ],
+  },
+  {
+    id: 'kydlg-scholarship',
+    question: 'What does the woman advise the man to do?',
+    answer: '建议尽早提交申请材料',
+    sents: [
+      'M: I am thinking about applying for the {N1@chance}.',
+      'W: The deadline is this {T1}, you know.',
+      'M: I have not prepared the documents yet.',
+      'W: You should {V1@do} them right away then.',
+    ],
+  },
+  {
+    id: 'kydlg-data',
+    question: 'What is the problem with the data?',
+    answer: '数据存在缺失值',
+    sents: [
+      'W: The dataset has many missing values in {N1@subject}.',
+      'M: How did you {V1@do} with them so far?',
+      'W: I simply removed those rows, which may be {A1@itemAdj}.',
+      'M: That could bias the result. Let us discuss it this {T1}.',
+    ],
+  },
+  {
+    id: 'kydlg-thesis',
+    question: 'What are the two speakers discussing?',
+    answer: '讨论论文的修改意见',
+    sents: [
+      'W: I read your draft. The argument is clear but long.',
+      'M: Should I {V1@do} the middle section shorter?',
+      'W: Yes, and add {NUM1} more examples in the last part.',
+      'M: I will revise it before this {T1}.',
+    ],
+  },
+  {
+    id: 'kydlg-field',
+    question: 'What did the researchers find in the field?',
+    answer: '实地观察与预期不符',
+    sents: [
+      'M: Our field observations did not match the model.',
+      'W: In what way were they {A1@itemAdj}?',
+      'M: The {N1@team} behaved differently in the second {T1}.',
+      'W: Then the theory may need to be revised.',
+    ],
+  },
+  {
+    id: 'kydlg-course',
+    question: 'What does the student ask about?',
+    answer: '询问选课与学分要求',
+    sents: [
+      'M: How many credits does this {N1@subject} course carry?',
+      'W: It is worth {NUM1} credits this term.',
+      'M: Can I take it without the prerequisite?',
+      'W: Only if the professor agrees. Ask before this {T1}.',
+    ],
+  },
+];
+
+/**
  * PRETCO 应用文素材（写作题，F3 要求 200+）。
  *
  * 与考研写作（KAOYAN_WRITING，100–200 词议论文/书信）不同，PRETCO 写的是

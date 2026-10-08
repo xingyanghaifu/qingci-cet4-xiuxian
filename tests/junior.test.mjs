@@ -110,8 +110,8 @@ test('A-4 题库分片：五种中考题型齐全、总量 3000–5000、单片 
   assert.equal(bankMf.lexicon, 'junior');
   assert.equal(bankMf.exam, 'zhongkao');
   const kinds = Object.keys(bankMf.kinds).sort();
-  assert.deepEqual(kinds, ['bankfill', 'cloze', 'grammar', 'reading', 'writing'],
-    '五种题型：语法选择 / 完形填空 / 阅读理解 / 选词填空 / 书面表达');
+  assert.deepEqual(kinds, ['bankfill', 'cloze', 'grammar', 'reading', 'talk', 'writing'],
+    '六种题型：语法选择 / 完形填空 / 阅读理解 / 选词填空 / 听力短对话 / 书面表达');
   const total = bankMf.counts.total;
   assert.ok(total >= 3000 && total <= 5000, `题量 ${total} 应在 3000–5000`);
   let sum = 0;
@@ -168,25 +168,25 @@ test('A-7 题型覆盖：每道选择题 4 选项（选词 10）互异且正解�
 
 /* ---------------- A-8 模考模式（中考模拟卷） ---------------- */
 
-test('A-8 模考模式：3 套中考模拟卷、各 40 题、题号可解析、两两不重', () => {
+test('A-8 模考模式：3 套中考模拟卷、各 45 题（含 v1.10 听力）、题号可解析、两两不重', () => {
   const keys = Object.keys(bankMf.papers);
   assert.deepEqual(keys.sort(), ['zk-01', 'zk-02', 'zk-03']);
   const all = new Set();
   for (const [k, p] of Object.entries(bankMf.papers)) {
-    assert.equal(p.ids.length, 40, `${k} 应为 40 题`);
+    assert.equal(p.ids.length, 45, `${k} 应为 45 题`);
     assert.deepEqual(p.structure,
-      { grammar: 14, cloze: 10, reading: 10, bankfill: 5, writing: 1 },
-      `${k} 结构为中考题型配比`);
+      { grammar: 14, cloze: 10, reading: 10, bankfill: 5, talk: 5, writing: 1 },
+      `${k} 结构为中考题型配比（v1.10 起含听力短对话 5 题）`);
     const kindSet = new Set();
     for (const id of p.ids) {
       assert.ok(!all.has(id), `${k} 与前一套卷子重题：${id}`);
       all.add(id);
       const kind = id.split('_')[2];
       kindSet.add(kind);
-      assert.ok(all.size > 0 && ['grammar', 'cloze', 'reading', 'bankfill', 'writing'].includes(kind),
+      assert.ok(all.size > 0 && ['grammar', 'cloze', 'reading', 'bankfill', 'talk', 'writing'].includes(kind),
         `${k} 含未知题型 ${id}`);
     }
-    assert.equal(kindSet.size, 5, `${k} 五种题型齐全`);
+    assert.equal(kindSet.size, 6, `${k} 六种题型齐全`);
   }
   // 题号确实能解析到题目
   const g = readJson(join(QB_DIR, 'grammar.json'));

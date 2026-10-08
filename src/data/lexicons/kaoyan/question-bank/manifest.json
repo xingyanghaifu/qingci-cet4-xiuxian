@@ -3,12 +3,13 @@
   "lexicon": "kaoyan",
   "exam": "kaoyan",
   "counts": {
-    "total": 3276,
+    "total": 3839,
     "byKind": {
       "reading": 1600,
       "gapped": 531,
       "cloze": 599,
       "trans": 320,
+      "talk": 563,
       "writing": 226
     }
   },
@@ -28,6 +29,10 @@
     "trans": {
       "file": "trans.json",
       "count": 320
+    },
+    "talk": {
+      "file": "talk.json",
+      "count": 563
     },
     "writing": {
       "file": "writing.json",
@@ -59,6 +64,11 @@
       "count": 5
     },
     {
+      "kind": "talk",
+      "type": "direct",
+      "count": 4
+    },
+    {
       "kind": "writing",
       "type": "direct",
       "count": 2
@@ -72,6 +82,7 @@
         "gapped": 5,
         "cloze": 20,
         "trans": 5,
+        "talk": 4,
         "writing": 2
       },
       "ids": [
@@ -125,6 +136,10 @@
         "q_ky_trans_0003",
         "q_ky_trans_0004",
         "q_ky_trans_0005",
+        "q_ky_talk_0001",
+        "q_ky_talk_0002",
+        "q_ky_talk_0003",
+        "q_ky_talk_0004",
         "q_ky_writing_0001",
         "q_ky_writing_0002"
       ]
@@ -136,6 +151,7 @@
         "gapped": 5,
         "cloze": 20,
         "trans": 5,
+        "talk": 4,
         "writing": 2
       },
       "ids": [
@@ -189,6 +205,10 @@
         "q_ky_trans_0008",
         "q_ky_trans_0009",
         "q_ky_trans_0010",
+        "q_ky_talk_0005",
+        "q_ky_talk_0006",
+        "q_ky_talk_0007",
+        "q_ky_talk_0008",
         "q_ky_writing_0003",
         "q_ky_writing_0004"
       ]
@@ -200,6 +220,7 @@
         "gapped": 5,
         "cloze": 20,
         "trans": 5,
+        "talk": 4,
         "writing": 2
       },
       "ids": [
@@ -253,6 +274,10 @@
         "q_ky_trans_0013",
         "q_ky_trans_0014",
         "q_ky_trans_0015",
+        "q_ky_talk_0009",
+        "q_ky_talk_0010",
+        "q_ky_talk_0011",
+        "q_ky_talk_0012",
         "q_ky_writing_0005",
         "q_ky_writing_0006"
       ]

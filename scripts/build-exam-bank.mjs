@@ -37,6 +37,7 @@ import {
   GRE_WRITING,
   IELTS_WRITING,
   TOEFL_WRITING,
+  SCHOOL_DIALOGUE_SKELETONS, KY_DIALOGUE_SKELETONS,
 } from './exam-bank-content.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -75,10 +76,12 @@ const LEXICONS = {
       { kind: 'cloze', type: 'group', per: 10, groups: 1 },
       { kind: 'reading', type: 'group', per: 5, groups: 2 },
       { kind: 'bankfill', type: 'group', per: 5, groups: 1 },
+      { kind: 'talk', type: 'direct', count: 5 },   // v1.10 第四批：听力短对话
       { kind: 'writing', type: 'direct', count: 1 },
     ],
     // group 类的目标是**篇数**，direct 类的目标是**题数**
-    targets: { grammar: 2400, cloze: 96, reading: 144, bankfill: 140, writing: 30 },
+    // v1.10 第四批：talk 补 800+（任务书要求），故 targets.talk = 900（留余量）
+    targets: { grammar: 2400, cloze: 96, reading: 144, bankfill: 140, talk: 900, writing: 30 },
     detailQs: 3, // 每篇阅读出几道细节题（+主旨1 +词义1 = 5/4）
     content: 'junior', // 用初中素材
   },
@@ -93,12 +96,14 @@ const LEXICONS = {
       { kind: 'gapped', type: 'group', per: 5, groups: 1 },
       { kind: 'cloze', type: 'group', per: 10, groups: 2 },
       { kind: 'grammarfill', type: 'group', per: 10, groups: 1 },
+      { kind: 'talk', type: 'direct', count: 6 },   // v1.10 第四批：听力短对话
       { kind: 'writing', type: 'direct', count: 1 },
       { kind: 'continuation', type: 'direct', count: 1 },
     ],
     // gapped 篇章无变体槽（句子是写死的行文），5 篇就是 5 篇 —— 目标写 5，
     // 多写只会空转（去重后留 5 篇 ×5 题）；其余题型靠 N/T/NAME 槽位产生变体。
-    targets: { reading: 400, gapped: 5, cloze: 150, grammarfill: 200, writing: 30, continuation: 10 },
+    // v1.10 第四批：talk 补 1000+（任务书要求），故 targets.talk = 1100。
+    targets: { reading: 400, gapped: 5, cloze: 150, grammarfill: 200, talk: 1100, writing: 30, continuation: 10 },
     detailQs: 2,
     content: 'senior',
   },
@@ -124,6 +129,7 @@ const LEXICONS = {
       { kind: 'gapped', type: 'group', per: 5, groups: 1 },
       { kind: 'cloze', type: 'group', per: 20, groups: 1 },
       { kind: 'trans', type: 'direct', count: 5 },
+      { kind: 'talk', type: 'direct', count: 4 },   // v1.10 第四批：听力讲座（训练用）
       { kind: 'writing', type: 'direct', count: 2 },
     ],
     // group 类目标是**篇数**，direct 类是**题数**
@@ -131,7 +137,9 @@ const LEXICONS = {
     //   超 1.5 MB 单片上限；915 B/题 → 1.5 MB 上限约 1640 题，留 40 题余量。
     // 七选五 210 篇（去重后 ~520 题，要 500+）、完形 30 篇 × 20 空 = 600（要 500+）、
     // 英译汉 320（要 300+）；写作由任务表定（226，要 200+）
-    targets: { reading: 320, gapped: 210, cloze: 30, trans: 320, writing: 226 },
+    // v1.10 第四批：talk 补 500+（任务书要求），故 targets.talk = 600。
+    //   注意考研初试无听力，这批是**精听训练用**，题面已标注，不冒充真题题型。
+    targets: { reading: 320, gapped: 210, cloze: 30, trans: 320, talk: 600, writing: 226 },
     detailQs: 3,
     clozeBlanks: 20,
     content: 'kaoyan',
@@ -1047,18 +1055,22 @@ function buildTranslation(target, rand) {
 
 
 /**
- * 听力短对话（PRETCO 特色，阶段 F）：一段对话 + 一道理解题。
+ * 听力短对话生成：一段对话 + 一道理解题。
  *
  * 复用既有听力链路 —— 题目带 `passage`（对话文本），`show()` 会因 `speak` 自动
  * 显示播放条（TTS 朗读对话），用户听后选答案。kind 用 `talk`（与 CET-4 卷的
  * 「长对话」同一题型标识，`EXAM_KIND_TITLE` 与 `question-bank.ts` 均已支持）。
  *
+ * @param skeletons 骨架集。缺省用 PRETCO 那 21 条（校园/生活场景）；
+ *                  中学段传 SCHOOL_DIALOGUE_SKELETONS、考研传 KY_DIALOGUE_SKELETONS
+ *                  —— 同一套变体机制，只是场景与难度不同。
+ *
  * 变体机制与 cloze/reading 同源：骨架句带槽位 → makeFiller 按 seed 填词 →
  * 每个 vi 一篇新对话。正解是骨架烧死的场景短语，干扰项从 PRETCO_DIALOGUE_DECOYS
  * 确定性取 3 个（与正解不同、互不重复）。
  */
-function buildDialogue(target, rand, pool) {
-  const sks = PRETCO_DIALOGUE_SKELETONS;
+function buildDialogue(target, rand, pool, skeletons) {
+  const sks = skeletons && skeletons.length ? skeletons : PRETCO_DIALOGUE_SKELETONS;
   const DECOYS = PRETCO_DIALOGUE_DECOYS;
   const questions = [];
   const seenQ = new Set();
@@ -1326,8 +1338,13 @@ function main() {
         byKind.trans = buildTranslation(t, rand);
         break;
       case 'talk':
-        // 听力短对话（F3 PRETCO 特色）：21 骨架 × 槽位变体
-        byKind.talk = buildDialogue(t, rand, pool).questions;
+        // 听力短对话：按学段选骨架集（中学 = 校园场景，考研 = 学术讲座，其余 = PRETCO 校园/生活）
+        byKind.talk = buildDialogue(
+          t, rand, pool,
+          L.content === 'junior' || L.content === 'senior' ? SCHOOL_DIALOGUE_SKELETONS
+            : L.content === 'kaoyan' ? KY_DIALOGUE_SKELETONS
+              : PRETCO_DIALOGUE_SKELETONS,
+        ).questions;
         break;
       case 'grammarfill':
         byKind.grammarfill = buildGrammarFill(pool, t, rand).questions;
@@ -1351,7 +1368,7 @@ function main() {
       grammar: '语法选择', cloze: '完形填空', reading: '阅读理解', bankfill: '选词填空',
       gapped: '七选五', grammarfill: '语法填空', writing: '书面表达', continuation: '读后续写',
       trans: '英译汉', talk: '听力短对话',
-    }[step.kind];
+    }[step.kind] || step.kind;
     console.log(`   ${label} ${byKind[step.kind].length}${pass ? `（${pass}）` : ''}`);
   }
 
@@ -1373,6 +1390,8 @@ function main() {
   const FLOOR = {
     grammar: 100, cloze: 100, reading: 100, bankfill: 100, grammarfill: 100,
     gapped: 5, writing: 30, continuation: 10, trans: 100,
+    // v1.10 第四批：听力短对话。PRETCO 原为 800；中学/考研新补的量更大。
+    talk: 100,
   };
   for (const [k, v] of Object.entries(byKind)) {
     const floor = FLOOR[k] ?? 100;

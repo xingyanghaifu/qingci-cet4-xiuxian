@@ -118,13 +118,13 @@ test('E6-4 Mnemonic 覆盖：总覆盖率 ≥90%（top-1000 档），其余 ≥6
 
 /* ---------------- E6-5 题库题量 ---------------- */
 
-test('E6-5 考研题库 3000-5000 题，五题型齐全', () => {
+test('E6-5 考研题库 3000-5000 题，六题型齐全（v1.10 起含精听训练）', () => {
   assert.equal(bankMf.schema, 'qingci-exam-bank/1');
   assert.equal(bankMf.lexicon, 'kaoyan');
   assert.equal(bankMf.exam, 'kaoyan');
   const kinds = Object.keys(bankMf.kinds).sort();
-  assert.deepEqual(kinds, ['cloze', 'gapped', 'reading', 'trans', 'writing'],
-    '五种题型：完形 / 七选五 / 阅读 / 英译汉 / 写作');
+  assert.deepEqual(kinds, ['cloze', 'gapped', 'reading', 'talk', 'trans', 'writing'],
+    '六种题型：完形 / 七选五 / 阅读 / 听力讲座（精听训练）/ 英译汉 / 写作');
   const total = bankMf.counts.total;
   assert.ok(total >= 3000 && total <= 5000, `题量 ${total} 应在 3000–5000`);
   // 各题型达 E4 目标
@@ -133,6 +133,8 @@ test('E6-5 考研题库 3000-5000 题，五题型齐全', () => {
   assert.ok(bankMf.counts.byKind.gapped >= 500, `七选五 ${bankMf.counts.byKind.gapped} 应 ≥500`);
   assert.ok(bankMf.counts.byKind.trans >= 300, `英译汉 ${bankMf.counts.byKind.trans} 应 ≥300`);
   assert.ok(bankMf.counts.byKind.writing >= 200, `写作 ${bankMf.counts.byKind.writing} 应 ≥200`);
+  // v1.10 第四批：精听训练题（考研初试无听力，这批是训练用，任务书要求 500+）
+  assert.ok(bankMf.counts.byKind.talk >= 500, `听力讲座 ${bankMf.counts.byKind.talk} 应 ≥500`);
   // 分片 ≤1.5MB
   let sum = 0;
   for (const [kind, info] of Object.entries(bankMf.kinds)) {
@@ -221,20 +223,20 @@ test('E6-8 进度隔离：考研进度进复合键仓，不污染 CET-4 老仓',
 
 /* ---------------- E6-9 模考模式 ---------------- */
 
-test('E6-9 模考模式：考研题型（阅读20 + 七选五5 + 完形20 + 英译汉5 + 写作2）', () => {
-  const want = { reading: 20, gapped: 5, cloze: 20, trans: 5, writing: 2 };
+test('E6-9 模考模式：考研题型（阅读20 + 七选五5 + 完形20 + 英译汉5 + 精听4 + 写作2）', () => {
+  const want = { reading: 20, gapped: 5, cloze: 20, trans: 5, talk: 4, writing: 2 };
   assert.deepEqual(Object.keys(bankMf.papers).sort(), ['ky-01', 'ky-02', 'ky-03']);
   const all = new Set();
   for (const [k, p] of Object.entries(bankMf.papers)) {
-    assert.equal(p.ids.length, 52, `${k} 应为 52 题`);
-    assert.deepEqual(p.structure, want, `${k} 结构为考研题型配比`);
+    assert.equal(p.ids.length, 56, `${k} 应为 56 题`);
+    assert.deepEqual(p.structure, want, `${k} 结构为考研题型配比（v1.10 起含精听训练 4 题）`);
     const kinds = new Set();
     for (const id of p.ids) {
       assert.ok(!all.has(id), `${k} 与前一套卷子重题：${id}`);
       all.add(id);
       kinds.add(id.split('_')[2]);
     }
-    assert.equal(kinds.size, 5, `${k} 五种题型齐全`);
+    assert.equal(kinds.size, 6, `${k} 六种题型齐全`);
   }
   // 题号可解析
   const r = readJson(join(QB_DIR, 'reading.json'));

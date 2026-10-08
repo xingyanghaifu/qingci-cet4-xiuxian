@@ -18,7 +18,7 @@ const dir = path.join(ROOT, 'src', 'data', 'lexicons', lex, 'question-bank');
 const LEX = {
   junior: {
     tag: 'junior',
-    kinds: ['grammar', 'cloze', 'reading', 'bankfill', 'writing'],
+    kinds: ['grammar', 'cloze', 'reading', 'bankfill', 'talk', 'writing'],
     choiceCount: (k) => (k === 'bankfill' ? 10 : 4),
     passageKinds: ['cloze', 'bankfill'],
     groups: [
@@ -26,15 +26,17 @@ const LEX = {
       { name: '阅读', kind: 'reading', per: 5, need: 6 },
       { name: '选词', kind: 'bankfill', per: 5, need: 3 },
     ],
+    parts: ['读', '写', '听'],   // v1.10 第四批：听力短对话的 part 是「听」
     paper: {
-      size: 40, kinds: 5,
-      structure: { grammar: 14, cloze: 10, reading: 10, bankfill: 5, writing: 1 },
+      size: 45, kinds: 6,
+      // v1.10 第四批：加入听力短对话 5 题（中考听力占分不小）
+      structure: { grammar: 14, cloze: 10, reading: 10, bankfill: 5, talk: 5, writing: 1 },
     },
     writeKinds: ['writing'],
   },
   senior: {
     tag: 'senior',
-    kinds: ['reading', 'gapped', 'cloze', 'grammarfill', 'writing', 'continuation'],
+    kinds: ['reading', 'gapped', 'cloze', 'grammarfill', 'talk', 'writing', 'continuation'],
     choiceCount: (k) => (k === 'gapped' ? 7 : 4),
     passageKinds: ['cloze', 'gapped', 'grammarfill'],
     groups: [
@@ -43,9 +45,11 @@ const LEX = {
       { name: '完形', kind: 'cloze', per: 10, need: 6 },
       { name: '语法填空', kind: 'grammarfill', per: 10, need: 3 },
     ],
+    parts: ['读', '写', '听'],   // v1.10 第四批：听力短对话的 part 是「听」
     paper: {
-      size: 53, kinds: 6,
-      structure: { reading: 16, gapped: 5, cloze: 20, grammarfill: 10, writing: 1, continuation: 1 },
+      size: 59, kinds: 7,
+      // v1.10 第四批：加入听力短对话 6 题（高考听力占 30 分）
+      structure: { reading: 16, gapped: 5, cloze: 20, grammarfill: 10, talk: 6, writing: 1, continuation: 1 },
     },
     writeKinds: ['writing', 'continuation'],
   },
@@ -56,7 +60,7 @@ const LEX = {
    */
   kaoyan: {
     tag: 'kaoyan',
-    kinds: ['cloze', 'reading', 'gapped', 'trans', 'writing'],
+    kinds: ['cloze', 'reading', 'gapped', 'trans', 'talk', 'writing'],
     choiceCount: (k) => (k === 'gapped' ? 7 : 4),
     passageKinds: ['cloze', 'gapped'],
     groups: [
@@ -65,11 +69,13 @@ const LEX = {
       { name: '完形', kind: 'cloze', per: 20, need: 3 },
     ],
     paper: {
-      size: 52, kinds: 5,
-      structure: { reading: 20, gapped: 5, cloze: 20, trans: 5, writing: 2 },
+      size: 56, kinds: 6,
+      // v1.10 第四批：加入听力讲座 4 题。考研初试无听力，这批是**精听训练用**
+      // （题面已标注「训练用」），放进模拟卷是为了让用户有机会练到。
+      structure: { reading: 20, gapped: 5, cloze: 20, trans: 5, talk: 4, writing: 2 },
     },
     writeKinds: ['writing', 'trans'],
-    parts: ['读', '写', '译'],
+    parts: ['读', '写', '译', '听'],
   },
   /**
    * GRE（v1.10 第一批）。

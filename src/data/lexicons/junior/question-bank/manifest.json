@@ -3,12 +3,13 @@
   "lexicon": "junior",
   "exam": "zhongkao",
   "counts": {
-    "total": 3514,
+    "total": 4358,
     "byKind": {
       "grammar": 1376,
       "cloze": 959,
-      "reading": 716,
+      "reading": 720,
       "bankfill": 433,
+      "talk": 840,
       "writing": 30
     }
   },
@@ -23,11 +24,15 @@
     },
     "reading": {
       "file": "reading.json",
-      "count": 716
+      "count": 720
     },
     "bankfill": {
       "file": "bankfill.json",
       "count": 433
+    },
+    "talk": {
+      "file": "talk.json",
+      "count": 840
     },
     "writing": {
       "file": "writing.json",
@@ -59,6 +64,11 @@
       "groups": 1
     },
     {
+      "kind": "talk",
+      "type": "direct",
+      "count": 5
+    },
+    {
       "kind": "writing",
       "type": "direct",
       "count": 1
@@ -72,6 +82,7 @@
         "cloze": 10,
         "reading": 10,
         "bankfill": 5,
+        "talk": 5,
         "writing": 1
       },
       "ids": [
@@ -114,6 +125,11 @@
         "q_jun_bankfill_0003",
         "q_jun_bankfill_0004",
         "q_jun_bankfill_0005",
+        "q_jun_talk_0001",
+        "q_jun_talk_0002",
+        "q_jun_talk_0003",
+        "q_jun_talk_0004",
+        "q_jun_talk_0005",
         "q_jun_writing_0001"
       ]
     },
@@ -124,6 +140,7 @@
         "cloze": 10,
         "reading": 10,
         "bankfill": 5,
+        "talk": 5,
         "writing": 1
       },
       "ids": [
@@ -166,6 +183,11 @@
         "q_jun_bankfill_0018",
         "q_jun_bankfill_0019",
         "q_jun_bankfill_0020",
+        "q_jun_talk_0006",
+        "q_jun_talk_0007",
+        "q_jun_talk_0008",
+        "q_jun_talk_0009",
+        "q_jun_talk_0010",
         "q_jun_writing_0002"
       ]
     },
@@ -176,6 +198,7 @@
         "cloze": 10,
         "reading": 10,
         "bankfill": 5,
+        "talk": 5,
         "writing": 1
       },
       "ids": [
@@ -218,6 +241,11 @@
         "q_jun_bankfill_0033",
         "q_jun_bankfill_0034",
         "q_jun_bankfill_0035",
+        "q_jun_talk_0011",
+        "q_jun_talk_0012",
+        "q_jun_talk_0013",
+        "q_jun_talk_0014",
+        "q_jun_talk_0015",
         "q_jun_writing_0003"
       ]
     }

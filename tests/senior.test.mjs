@@ -105,8 +105,8 @@ test('B-4 题库分片：六种高考题型齐全、总量 3000–5000、单片 
   assert.equal(bankMf.lexicon, 'senior');
   assert.equal(bankMf.exam, 'gaokao');
   const kinds = Object.keys(bankMf.kinds).sort();
-  assert.deepEqual(kinds, ['cloze', 'continuation', 'gapped', 'grammarfill', 'reading', 'writing'],
-    '六种题型：阅读理解 / 七选五 / 完形填空 / 语法填空 / 应用文 / 读后续写');
+  assert.deepEqual(kinds, ['cloze', 'continuation', 'gapped', 'grammarfill', 'reading', 'talk', 'writing'],
+    '七种题型：阅读理解 / 七选五 / 完形填空 / 语法填空 / 听力短对话 / 应用文 / 读后续写');
   const total = bankMf.counts.total;
   assert.ok(total >= 3000 && total <= 5000, `题量 ${total} 应在 3000–5000`);
   let sum = 0;
@@ -173,24 +173,24 @@ test('B-7 题型覆盖：选择题选项互异且正解在其中；主观题 wri
 
 /* ---------------- B-8 模考模式（高考模拟卷） ---------------- */
 
-test('B-8 模考模式：3 套高考模拟卷、各 53 题、题号可解析、两两不重', () => {
+test('B-8 模考模式：3 套高考模拟卷、各 59 题（含 v1.10 听力）、题号可解析、两两不重', () => {
   const keys = Object.keys(bankMf.papers);
   assert.deepEqual(keys.sort(), ['gk-01', 'gk-02', 'gk-03']);
   const all = new Set();
-  const wantStructure = { reading: 16, gapped: 5, cloze: 20, grammarfill: 10, writing: 1, continuation: 1 };
+  const wantStructure = { reading: 16, gapped: 5, cloze: 20, grammarfill: 10, talk: 6, writing: 1, continuation: 1 };
   for (const [k, p] of Object.entries(bankMf.papers)) {
-    assert.equal(p.ids.length, 53, `${k} 应为 53 题`);
-    assert.deepEqual(p.structure, wantStructure, `${k} 结构为高考题型配比`);
+    assert.equal(p.ids.length, 59, `${k} 应为 59 题`);
+    assert.deepEqual(p.structure, wantStructure, `${k} 结构为高考题型配比（v1.10 起含听力短对话 6 题）`);
     const kindSet = new Set();
     for (const id of p.ids) {
       assert.ok(!all.has(id), `${k} 与前一套卷子重题：${id}`);
       all.add(id);
       const kind = id.split('_')[2];
       kindSet.add(kind);
-      assert.ok(['reading', 'gapped', 'cloze', 'grammarfill', 'writing', 'continuation'].includes(kind),
+      assert.ok(['reading', 'gapped', 'cloze', 'grammarfill', 'talk', 'writing', 'continuation'].includes(kind),
         `${k} 含未知题型 ${id}`);
     }
-    assert.equal(kindSet.size, 6, `${k} 六种题型齐全`);
+    assert.equal(kindSet.size, 7, `${k} 七种题型齐全`);
   }
   // 题号确实能解析到题目
   const r = readJson(join(QB_DIR, 'reading.json'));

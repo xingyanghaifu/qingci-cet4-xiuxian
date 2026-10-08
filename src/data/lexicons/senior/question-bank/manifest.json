@@ -3,12 +3,13 @@
   "lexicon": "senior",
   "exam": "gaokao",
   "counts": {
-    "total": 3124,
+    "total": 4253,
     "byKind": {
-      "reading": 1482,
+      "reading": 1600,
       "gapped": 25,
       "cloze": 1455,
       "grammarfill": 122,
+      "talk": 1011,
       "writing": 30,
       "continuation": 10
     }
@@ -16,7 +17,7 @@
   "kinds": {
     "reading": {
       "file": "reading.json",
-      "count": 1482
+      "count": 1600
     },
     "gapped": {
       "file": "gapped.json",
@@ -29,6 +30,10 @@
     "grammarfill": {
       "file": "grammarfill.json",
       "count": 122
+    },
+    "talk": {
+      "file": "talk.json",
+      "count": 1011
     },
     "writing": {
       "file": "writing.json",
@@ -65,6 +70,11 @@
       "groups": 1
     },
     {
+      "kind": "talk",
+      "type": "direct",
+      "count": 6
+    },
+    {
       "kind": "writing",
       "type": "direct",
       "count": 1
@@ -83,6 +93,7 @@
         "gapped": 5,
         "cloze": 20,
         "grammarfill": 10,
+        "talk": 6,
         "writing": 1,
         "continuation": 1
       },
@@ -99,10 +110,10 @@
         "q_sen_reading_0010",
         "q_sen_reading_0011",
         "q_sen_reading_0012",
+        "q_sen_reading_0013",
+        "q_sen_reading_0014",
+        "q_sen_reading_0015",
         "q_sen_reading_0016",
-        "q_sen_reading_0017",
-        "q_sen_reading_0018",
-        "q_sen_reading_0019",
         "q_sen_gapped_0001",
         "q_sen_gapped_0002",
         "q_sen_gapped_0003",
@@ -138,6 +149,12 @@
         "q_sen_grammarfill_0008",
         "q_sen_grammarfill_0009",
         "q_sen_grammarfill_0010",
+        "q_sen_talk_0001",
+        "q_sen_talk_0002",
+        "q_sen_talk_0003",
+        "q_sen_talk_0004",
+        "q_sen_talk_0005",
+        "q_sen_talk_0006",
         "q_sen_writing_0001",
         "q_sen_continuation_0001"
       ]
@@ -149,11 +166,11 @@
         "gapped": 5,
         "cloze": 20,
         "grammarfill": 10,
+        "talk": 6,
         "writing": 1,
         "continuation": 1
       },
       "ids": [
-        "q_sen_reading_0024",
         "q_sen_reading_0025",
         "q_sen_reading_0026",
         "q_sen_reading_0027",
@@ -165,10 +182,11 @@
         "q_sen_reading_0033",
         "q_sen_reading_0034",
         "q_sen_reading_0035",
-        "q_sen_reading_0042",
-        "q_sen_reading_0043",
-        "q_sen_reading_0044",
-        "q_sen_reading_0045",
+        "q_sen_reading_0036",
+        "q_sen_reading_0037",
+        "q_sen_reading_0038",
+        "q_sen_reading_0039",
+        "q_sen_reading_0040",
         "q_sen_gapped_0016",
         "q_sen_gapped_0017",
         "q_sen_gapped_0018",
@@ -204,6 +222,12 @@
         "q_sen_grammarfill_0038",
         "q_sen_grammarfill_0039",
         "q_sen_grammarfill_0040",
+        "q_sen_talk_0007",
+        "q_sen_talk_0008",
+        "q_sen_talk_0009",
+        "q_sen_talk_0010",
+        "q_sen_talk_0011",
+        "q_sen_talk_0012",
         "q_sen_writing_0002",
         "q_sen_continuation_0002"
       ]
@@ -215,13 +239,11 @@
         "gapped": 5,
         "cloze": 20,
         "grammarfill": 10,
+        "talk": 6,
         "writing": 1,
         "continuation": 1
       },
       "ids": [
-        "q_sen_reading_0046",
-        "q_sen_reading_0047",
-        "q_sen_reading_0048",
         "q_sen_reading_0049",
         "q_sen_reading_0050",
         "q_sen_reading_0051",
@@ -231,10 +253,13 @@
         "q_sen_reading_0055",
         "q_sen_reading_0056",
         "q_sen_reading_0057",
+        "q_sen_reading_0058",
+        "q_sen_reading_0059",
+        "q_sen_reading_0060",
+        "q_sen_reading_0061",
+        "q_sen_reading_0062",
+        "q_sen_reading_0063",
         "q_sen_reading_0064",
-        "q_sen_reading_0065",
-        "q_sen_reading_0066",
-        "q_sen_reading_0067",
         "q_sen_gapped_0006",
         "q_sen_gapped_0007",
         "q_sen_gapped_0008",
@@ -270,6 +295,12 @@
         "q_sen_grammarfill_0018",
         "q_sen_grammarfill_0019",
         "q_sen_grammarfill_0020",
+        "q_sen_talk_0013",
+        "q_sen_talk_0014",
+        "q_sen_talk_0015",
+        "q_sen_talk_0016",
+        "q_sen_talk_0017",
+        "q_sen_talk_0018",
         "q_sen_writing_0003",
         "q_sen_continuation_0003"
       ]

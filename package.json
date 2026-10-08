@@ -38,7 +38,9 @@
     "verify:minified:runtime": "node scripts/verify-minified-runtime.mjs",
     "verify:cultivation": "node scripts/verify-cultivation-phase1.mjs",
     "verify:cultivation2": "node scripts/verify-cultivation-phase2.mjs",
-    "verify:gre": "node scripts/verify-gre-online.mjs"
+    "verify:gre": "node scripts/verify-gre-online.mjs",
+    "verify:listening": "node scripts/verify-listening-online.mjs",
+    "check:lexicons": "node scripts/check-lexicon-registry.mjs"
   },
   "keywords": [
     "CET-4",

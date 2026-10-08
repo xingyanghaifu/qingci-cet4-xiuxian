@@ -101,10 +101,34 @@ function loadManifest() {
     return { entries: {} };
   }
 }
+/**
+ * 取「该朗读的文本」。
+ *
+ * 修正（v1.10 第四批）：**听力题必须朗读 passage（对话/短文正文），
+ * 而不是 prompt + choices**。
+ *
+ * 原实现只读 `audioMeta.text`，否则回落 `content.prompt + choices` ——
+ * 对 `talk` 类题目，这会朗读「题干 + 中文选项」（例如
+ * "What are the two speakers mainly doing? 问路并确认公交路线 …"），
+ * 而真正的对话在 `content.passage` 里从未被读到。
+ *
+ * 后果：所有 talk 题的音频都是「把题目念一遍」，用户点播放听到的是题面，
+ * 完全无法据此作答 —— 而 PRETCO 的 811 条从 v1.9.1 起就一直如此
+ * （那时没有端到端播放验收，所以没被发现）。
+ *
+ * 现在按题型取文本：
+ *   · 听力类（talk / passage / news / listen）→ passage 优先
+ *   · 其余 → audioMeta.text → prompt + choices
+ */
+const LISTENING_TEXT_KINDS = new Set(['talk', 'passage', 'news', 'listen']);
 function textOf(q) {
+  const c = q.content || {};
   const t = q.audioMeta && typeof q.audioMeta.text === 'string' ? q.audioMeta.text.trim() : '';
   if (t) return t;
-  const c = q.content || {};
+  // 听力题：正文（对话/短文）才是要听的内容
+  if (LISTENING_TEXT_KINDS.has(q.kind) && typeof c.passage === 'string' && c.passage.trim()) {
+    return c.passage.trim();
+  }
   return [c.prompt, ...(Array.isArray(c.choices) ? c.choices : [])].filter(Boolean).join(' ');
 }
 function voiceForIndex(kind, index) {
@@ -201,9 +225,17 @@ async function main() {
   console.log('📋 听力题分类报告：');
   for (const [k, n] of Object.entries(byKind)) console.log(`   ${String(k).padEnd(8)} ${String(n).padStart(5)} 条  →  ${KIND_LABEL[k] || ''}`);
   const talkAll = listening.filter((q) => q.kind === 'talk');
-  const turns = talkAll.filter((q) => /\b(Man|Woman|Speaker|W|M|A|B)\s*[:：]/.test(q.audioMeta?.text || ''));
+  // 轮次标记要查**真正会朗读的文本**（textOf），而不是 audioMeta.text ——
+  // 后者对分片题库里的 talk 题基本为空，会把「有轮次标记」误报成「没有」。
+  const TURN_RE = /\b(Man|Woman|Speaker|W|M|A|B)\s*[:：]/;
+  const turns = talkAll.filter((q) => TURN_RE.test(textOf(q)));
   if (talkAll.length && turns.length === 0) {
     console.log(`   ⚠️ 长对话 ${talkAll.length} 条均无对话轮次标记（Man/Woman/M:/W:）→ 按约定统一 Aria，voiceRole 留空；题库补齐轮次后重跑本脚本即自动升级为 Aria+Guy 分声`);
+  } else if (turns.length) {
+    // 有标记但仍用单音色：mp3 无法原地混音（需要拼接/重采样），
+    // 强行按轮次切分再拼字节会产出时长错误的文件。这里如实报告，不假装已分声。
+    console.log(`   ℹ️ 长对话 ${turns.length}/${talkAll.length} 条带对话轮次标记；`
+      + `但本后端每条只支持单一音色（拼接多段需要重采样），故仍统一 Aria —— 待引入音频拼接后再升级`);
   }
   console.log(`   音色 Aria=${VOICE_MAP.main} · Guy=${VOICE_MAP.male} · Ryan=${VOICE_MAP.british}，语速 ${SPEED}\n`);
 

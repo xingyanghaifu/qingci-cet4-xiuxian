@@ -5296,6 +5296,23 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
     if (btn) btn.onclick = function () { applyEncounter(rec, def); };
   }
 
+  /* ── 未领取奇遇的恢复（v1.10 补）──
+     修复前的真实缺陷：`encounters.listPending()` 已实现、已导出、已单测，
+     但**模板从未调用它**（全模板 0 次）。后果：奇遇掷出后若用户没点「领取」
+     就刷新/关页，那条奇遇**永久丢失**（记录里 resolved:false，再也没人读）。
+
+     现在开机恢复今天仍未结算且未过期的奇遇，逐条重新提示。
+     注意「只恢复一条」：通知条是单例（noticeEl），多条会互相顶掉 ——
+     所以取最近一条展示，其余保留在库中，下次开机继续恢复。 */
+  function restorePendingEncounters() {
+    if (!EN.listPending) return;
+    EN.listPending().then(function (list) {
+      if (!Array.isArray(list) || !list.length) return;
+      var last = list[list.length - 1];
+      showEncounterNotice(last);
+    }).catch(function () { /* 静默：恢复失败不影响使用 */ });
+  }
+
   /* ── 奇遇效果结算（阶段 B 补全）──
      修复前的真实缺陷：6 个奇遇里只有 qi_rain 真结算，其余 5 个**只弹一句 toast**
      （'待与词库联动' / '认主了' / '效果已生效'）—— 承诺了效果但什么都没发生。
@@ -5451,6 +5468,8 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
      · __encounterRefreshBadges 供切换词库等场景刷新徽标。 */
   window.__encounterApply = applyEncounter;
   window.__encounterRefreshBadges = function () { renderBoostBadge(); renderBeastBadge(); };
+  /* v1.10：开机恢复未领取的奇遇（此前 listPending 从未被调用 → 刷新即丢失） */
+  restorePendingEncounters();
   setTimeout(syncDemons, 300);
 })();
 </script>

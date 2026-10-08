@@ -272,3 +272,28 @@ test('模板接线契约：调用点必须是「无参只读」形态', () => {
   assert.ok(/E\.focusBonusFor\?E\.focusBonusFor\(word\)/.test(html),
     '模板应以 word 为第一参调用 focusBonusFor(word)');
 });
+
+/* ───────── 六、未领取奇遇必须能恢复（第二个「实现了但没人调用」的缺口） ─────────
+ *
+ * 背景：`encounters.listPending()` 已实现、已导出、已单测，但**模板从未调用**
+ * （全模板 0 次）。后果：奇遇掷出后若用户没点「领取」就刷新/关页，
+ * 那条奇遇**永久丢失**（库里 resolved:false，再也没人读）。
+ *
+ * 这与「5/6 空头支票」是同一类缺陷：**服务层实现了，但没有消费点**。
+ * 所以这条守卫断言的是「模板必须调用 listPending」这个**接线事实**。
+ */
+test('接线：模板必须调用 listPending 恢复未领取奇遇', () => {
+  const html = readFileSync(join(ROOT, 'src', 'index.template.html'), 'utf8');
+  assert.ok(/EN\.listPending\s*\(/.test(html),
+    '模板未调用 encounters.listPending() —— 刷新后未领取的奇遇会永久丢失');
+  assert.ok(/restorePendingEncounters/.test(html),
+    '模板缺 restorePendingEncounters 恢复入口');
+  assert.ok(/restorePendingEncounters\(\)\s*;/.test(html),
+    'restorePendingEncounters 必须被实际调用（开机恢复）');
+});
+
+test('接线：服务层必须暴露 listPending（供模板恢复）', () => {
+  const idx = readFileSync(join(ROOT, 'src', 'services', 'index.ts'), 'utf8');
+  assert.ok(/listPending:\s*listPendingEncounters/.test(idx),
+    'QingciServices.encounters 未暴露 listPending');
+});

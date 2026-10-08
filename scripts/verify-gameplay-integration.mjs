@@ -71,10 +71,19 @@ const bp = [
 if (!bp) { console.log('⏭️  未找到浏览器，跳过'); process.exit(0); }
 
 const profile = mkdtempSync(path.join(tmpdir(), 'edge-integ-'));
-const proc = spawn(bp, ['--headless=new', '--disable-gpu', '--no-sandbox',
+/**
+ * 访问**线上**目标时需要显式给浏览器代理参数 ——
+ * Chromium 不读 HTTP_PROXY/HTTPS_PROXY 环境变量（Node 侧也一样，
+ * 需要 --use-env-proxy）。缺了它页面会一直加载不出来，
+ * 表现是「CDP 未就绪」，很容易误判成脚本坏了。
+ */
+const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '';
+const browserArgs = ['--headless=new', '--disable-gpu', '--no-sandbox',
   `--remote-debugging-port=${CDP}`, `--user-data-dir=${profile}`, '--no-first-run',
-  '--disable-extensions', '--hide-scrollbars', '--window-size=1440,1100',
-  TARGET], { stdio: 'ignore' });
+  '--disable-extensions', '--hide-scrollbars', '--window-size=1440,1100'];
+if (REMOTE && proxy) browserArgs.push(`--proxy-server=${proxy}`);
+browserArgs.push(TARGET);
+const proc = spawn(bp, browserArgs, { stdio: 'ignore' });
 
 function cdp(ws) {
   let id = 0; const pend = new Map();

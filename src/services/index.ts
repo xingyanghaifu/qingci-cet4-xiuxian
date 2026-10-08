@@ -52,6 +52,12 @@ import {
   ENCOUNTER_DAILY_LIMIT,
 } from './encounters';
 import {
+  applyEffect, applyEncounterEffect, loadEffects, saveEffects,
+  caveActive, beastActive, focusWordOf, focusBonusFor, qiMultiplier, applyQiMultiplier,
+  activeBoostLabels, beastName, EFFECTS_KEY, CAVE_QI_MULTIPLIER, BEAST_QI_MULTIPLIER,
+  FOCUS_BONUS_QI, QI_RAIN_MIN, QI_RAIN_MAX, BEAST_NAMES, localDayKey as effectsDayKey,
+} from './encounter-effects';
+import {
   loadField, plantSeed, waterField, harvest, applyWitherPenalty, isMature,
   effectiveMatureDays, streakState, fieldDayKey, CROPS as FIELD_CROPS, PLOT_COUNT,
   isPlotUnlocked as fieldPlotUnlocked, DEFAULT_PLOT_UNLOCK_BY_REALM,
@@ -367,6 +373,34 @@ const QingciServices = {
     def: encounterDef,
     dayKey: encounterDayKey,
     DAILY_LIMIT: ENCOUNTER_DAILY_LIMIT,
+  },
+  /**
+   * 奇遇效果结算（阶段 B 补全）：把 6 个奇遇的 effect 全部落成真实机制。
+   * 纯函数 + 独立存储键（qingci.encounterEffects），不动学习存档。
+   */
+  encounterEffects: {
+    applyEffect,
+    apply: applyEncounterEffect,
+    load: loadEffects,
+    save: saveEffects,
+    // 只读判定（模板与测试共用）
+    caveActive,
+    beastActive,
+    focusWordOf,
+    focusBonusFor,
+    qiMultiplier,
+    applyQiMultiplier,
+    activeBoostLabels,
+    beastName,
+    // 常量
+    EFFECTS_KEY,
+    CAVE_QI_MULTIPLIER,
+    BEAST_QI_MULTIPLIER,
+    FOCUS_BONUS_QI,
+    QI_RAIN_MIN,
+    QI_RAIN_MAX,
+    BEAST_NAMES,
+    localDayKey: effectsDayKey,
   },
   economy: {
     spendSpirit,

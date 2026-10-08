@@ -29,6 +29,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+// 词库编解码：源码模板是对象数组，构建产物是紧凑列式；统一走 decodeLexicon
+import core from '../src/core/utils.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const TEMPLATE = path.join(ROOT, 'src', 'index.template.html');
@@ -130,7 +132,7 @@ function readLexicon() {
   const html = fs.readFileSync(TEMPLATE, 'utf8');
   const m = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
   if (!m) throw new Error('模板缺少 <script id="lexicon">');
-  const rows = JSON.parse(m[1]);
+  const rows = core.decodeLexicon(JSON.parse(m[1]));
   if (!Array.isArray(rows) || rows.length !== 4540) {
     throw new Error(`词库条数异常：期望 4540，实际 ${rows && rows.length}`);
   }

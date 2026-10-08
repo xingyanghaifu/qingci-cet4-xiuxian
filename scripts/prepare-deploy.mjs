@@ -9,6 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+// 词库编解码：产物是紧凑列式，decodeLexicon 兼容两种格式
+import core from '../src/core/utils.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
@@ -26,7 +28,8 @@ fs.mkdirSync(OUT, { recursive: true });
 const html = fs.readFileSync(src, 'utf8');
 const words = (() => {
   const m = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
-  return m ? JSON.parse(m[1]).length : 0;
+  // v1.10：产物里是紧凑列式，decodeLexicon 兼容两种格式
+  return m ? core.decodeLexicon(JSON.parse(m[1])).length : 0;
 })();
 const sha = crypto.createHash('sha256').update(html).digest('hex').slice(0, 16);
 

@@ -41,7 +41,8 @@ function lexiconCount() {
     const { file } = appFile();
     const html = fs.readFileSync(file, 'utf8');
     const m = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
-    _lexCache = m ? JSON.parse(m[1]).length : 0;
+    // v1.10：产物里是紧凑列式，decodeLexicon 兼容两种格式
+    _lexCache = m ? core.decodeLexicon(JSON.parse(m[1])).length : 0;
   } catch (e) {
     _lexCache = 0;
   }

@@ -18,6 +18,8 @@ import { createMistakeStore } from './../services/mistake-store';
 import { createBankService } from './../services/question-bank';
 import { currentLexiconId } from './../services/lexicon';
 import { createVocabSrsStore } from './../services/vocab-srs';
+// 内联词库解码器（core/utils.js 是 CommonJS，esbuild 可正常打包）
+import coreUtils from './../core/utils.js';
 import { createReportStore } from './../services/report-store';
 import { runLegacyMigration, describeMigration, LEGACY_STATE_KEY } from './../services/migrate';
 import { APP_VERSION } from './../config/app-version';
@@ -33,6 +35,19 @@ const host = globalThis as unknown as {
 };
 
 host.QingciServices = QingciServices;
+
+/**
+ * 内联词库解码器挂到全局（v1.10 体积优化）。
+ *
+ * 为什么必须挂全局：内联词库在**构建期**被改写成紧凑列式
+ * （`{k:[字段名],v:[[值],…]}`），比对象数组省约 102 KB。
+ * 模板里有 5 处各自 `JSON.parse(document.getElementById('lexicon').textContent)`，
+ * 它们都需要先解码。把解码器挂全局，模板就能统一写 `decodeLexicon(...)`，
+ * 而不必把 core/utils.js 整个打进主脚本。
+ *
+ * 兼容：`decodeLexicon` 同时接受对象数组（旧格式 / 词库分片）与紧凑列式。
+ */
+(host as unknown as { decodeLexicon?: unknown }).decodeLexicon = coreUtils.decodeLexicon;
 
 // 固化题库服务：单例，供随机练习入口复用（含 IndexedDB 缓存与防重复窗口）
 host.__QINGCI_BANK__ = createBankService();

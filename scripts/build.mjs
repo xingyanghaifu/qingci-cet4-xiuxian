@@ -20,6 +20,7 @@ import { build as esbuild, transform as esbuildTransform } from 'esbuild';
 import { makeIcons } from './make-icons.mjs';
 import { buildChangelog } from './build-changelog.mjs';
 import { buildQuestionBank, serializeBank, decideDelivery } from './build-question-bank.mjs';
+import core from '../src/core/utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -135,8 +136,27 @@ const lexiconMatch = html.match(/<script id="lexicon" type="application\/json">(
 if (!lexiconMatch) fail('模板缺少词库 <script id="lexicon">');
 let words;
 try { words = JSON.parse(lexiconMatch[1]); } catch (e) { fail('词库 JSON 解析失败: ' + e.message); }
+// 兼容两种格式：源码模板是**对象数组**（可读），已编码的产物是紧凑列式
+words = core.decodeLexicon(words);
 if (!Array.isArray(words) || words.length < 4000) fail('词库条目异常，实际 ' + (words ? words.length : 0));
 console.log('   ✓ 校验词库 ' + words.length + ' 条');
+
+// —— 3b. 内联词库改紧凑列式（省约 102 KB）——
+// 为什么必须做：原本是对象数组，每条重复 `"w":` / `"ipa":` / `"zh":` / `"short":`
+// 四个键名约 23 B，4540 条 = 约 102 KB **纯键名开销**（零信息量）。
+// 单文件预算（19 KB 增量）此前只剩 6.04 KB，这一步把可用空间提到约 108 KB。
+//
+// 安全性：`core.decodeLexicon()` 同时接受两种格式，页面侧统一走它；
+// 词库分片（lexicons/*/wordlist.json）**不受影响**，仍是对象数组。
+const lexiconJson = JSON.stringify(core.encodeLexicon(words));
+html = html.replace(
+  /(<script id="lexicon" type="application\/json">)[\s\S]*?(<\/script>)/,
+  (_m, open, close) => open + lexiconJson + close,
+);
+const lexiconBytes = Buffer.byteLength(lexiconJson, 'utf8');
+console.log('   ✓ 内联词库改紧凑列式 ' + (Buffer.byteLength(lexiconMatch[1], 'utf8') / 1024).toFixed(1)
+  + ' KB → ' + (lexiconBytes / 1024).toFixed(1) + ' KB（省 '
+  + ((Buffer.byteLength(lexiconMatch[1], 'utf8') - lexiconBytes) / 1024).toFixed(1) + ' KB）');
 
 const required = [
   ['面板：斗法场', 'id="panel-duel"'],

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -1386,7 +1386,7 @@ const SCHEMA_VERSION = 4;
    默认 CET-4 用内联那份，**一个请求都不发**；其余词库按需取
    lexicons/<id>/wordlist.json（~100 KB，SW 可缓存、离线可用）。
    硬约束：词库数据不内联进主文件，所以必须是独立 JSON。 */
-const LEXICON_INLINE = JSON.parse(document.getElementById("lexicon").textContent);
+const LEXICON_INLINE = decodeLexicon(JSON.parse(document.getElementById("lexicon").textContent));
 let WORDS = LEXICON_INLINE;
 const PAPERS = JSON.parse(document.getElementById("papers").textContent);
 let byWord = new Map(WORDS.map((w) => [w.w, w]));
@@ -2719,7 +2719,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   var lexiconEl = document.getElementById('lexicon');
   if (!S || !lexiconEl) return;
   var WORDS = [];
-  try { WORDS = JSON.parse(lexiconEl.textContent); } catch (e) { return; }
+  try { WORDS = decodeLexicon(JSON.parse(lexiconEl.textContent)); } catch (e) { return; }
   var indexOf = {};
   WORDS.forEach(function (w, i) { indexOf[w.w] = i; });
 
@@ -3085,7 +3085,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   var lexiconEl = document.getElementById('lexicon');
   if (!S || !lexiconEl) return;
   var WORDS = [];
-  try { WORDS = JSON.parse(lexiconEl.textContent); } catch (e) { return; }
+  try { WORDS = decodeLexicon(JSON.parse(lexiconEl.textContent)); } catch (e) { return; }
   var byWord = {};
   WORDS.forEach(function (w) { byWord[w.w] = w; });
 
@@ -4138,7 +4138,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   function svc() { return window.QingciServices; }
   function getLexicon() {
     if (lexicon) return lexicon;
-    try { lexicon = JSON.parse(document.getElementById('lexicon').textContent) || []; } catch (e) { lexicon = []; }
+    try { lexicon = decodeLexicon(JSON.parse(document.getElementById('lexicon').textContent)); } catch (e) { lexicon = []; }
     lexiconMap = {};
     lexicon.forEach(function (r) { lexiconMap[r.w] = r; });
     return lexicon;
@@ -5221,7 +5221,7 @@ if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+p
   function lexiconMap() {
     if (lexMap) return lexMap;
     try {
-      var rows = JSON.parse(document.getElementById('lexicon').textContent) || [];
+      var rows = decodeLexicon(JSON.parse(document.getElementById('lexicon').textContent));
       lexMap = {};
       rows.forEach(function (r) { lexMap[r.w] = r; });
     } catch (e) { lexMap = {}; }

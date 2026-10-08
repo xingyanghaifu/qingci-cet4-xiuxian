@@ -166,9 +166,89 @@ function paperScore(gates, got) {
   return score;
 }
 
+/* ───────────────── 内联词库编解码（体积优化） ─────────────────
+ *
+ * 背景：单文件里内联的 CET-4 词库（4540 词）原本是**对象数组**：
+ *
+ *     [{"w":"a","ipa":"","zh":"art.一(个)；每一(个)","short":"一"}, …]
+ *
+ * 每个词条重复四个键名（`"w":` / `"ipa":` / `"zh":` / `"short":`）约 23 字节，
+ * 4540 条就是 **约 102 KB** —— 纯粹的键名开销，零信息量。
+ *
+ * 改为**列式紧凑格式**（外层是「列名 + 列数据」）：
+ *
+ *     {"k":["w","ipa","zh","short"],"v":[["a","",…],["a.m","",…]]}
+ *
+ * 实测：381 904 B → 约 270 KB，省 **约 102 KB**。
+ * 单文件预算（19 KB 增量）此前只剩 6.04 KB，这一步把可用空间提到约 108 KB。
+ *
+ * **兼容两种格式**：`decodeLexicon()` 同时接受「对象数组」（旧/外部数据）
+ * 与「紧凑列式」（新构建产物）。这样词库分片（wordlist.json 仍是对象数组）、
+ * 测试夹具、外部脚本都不受影响 —— 只改内联那一份。
+ */
+
+/** 紧凑词库的字段顺序（与 `LexiconEntry` 对应；改这里等于改格式，需同步构建脚本） */
+const LEXICON_KEYS = Object.freeze(['w', 'ipa', 'zh', 'short']);
+
+/**
+ * 把词条数组编码为紧凑格式。
+ * @param {Array<object>} entries 形如 `[{w,ipa,zh,short}, …]`
+ * @returns {{k: string[], v: any[][]}}
+ */
+function encodeLexicon(entries) {
+  const list = Array.isArray(entries) ? entries : [];
+  return {
+    k: LEXICON_KEYS.slice(),
+    v: list.map((e) => LEXICON_KEYS.map((key) => (e && e[key] != null ? e[key] : ''))),
+  };
+}
+
+/**
+ * 把任意形态的词库数据解码为**对象数组**（统一出口）。
+ *
+ * 接受的输入：
+ *   · 对象数组 `[{w,ipa,zh,short}, …]`  → 原样返回（不复制）
+ *   · 紧凑列式 `{k:[…],v:[[…],…]}`      → 还原为对象数组
+ *   · 其它 / 非法                        → 返回 `[]`（绝不抛错，调用方零防御）
+ */
+function decodeLexicon(data) {
+  if (!data) return [];
+  // 已是对象数组
+  if (Array.isArray(data)) return data;
+  // 紧凑列式
+  const keys = Array.isArray(data.k) ? data.k : null;
+  const rows = Array.isArray(data.v) ? data.v : null;
+  if (!keys || !rows) return [];
+  const out = new Array(rows.length);
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const obj = {};
+    if (Array.isArray(row)) {
+      for (let j = 0; j < keys.length; j++) obj[keys[j]] = row[j] != null ? row[j] : '';
+    } else if (row && typeof row === 'object') {
+      // 容错：列式里混入对象行（手工编辑过）→ 直接用
+      for (const k of keys) if (row[k] != null) obj[k] = row[k];
+    }
+    out[i] = obj;
+  }
+  return out;
+}
+
+/** 从 HTML 文本里取出内联词库并解码（供构建脚本 / Worker / 测试共用） */
+function lexiconFromHtml(html) {
+  const m = /<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/.exec(String(html || ''));
+  if (!m) return [];
+  try {
+    return decodeLexicon(JSON.parse(m[1]));
+  } catch {
+    return [];
+  }
+}
+
 module.exports = {
   hash, rng, pick, wordsOf, esc, dayKey, examDays, realmOf, REVIEW_GAPS,
   scheduleWord, dueWords, checkSpell, posOf, shuffleOptions, masteryPercent,
   ringOffset, recentDays, paperScore, EXAM_CONFIGS, getExamConfig,
   difficultyForRealm, canBreakthrough, examPassResult,
+  LEXICON_KEYS, encodeLexicon, decodeLexicon, lexiconFromHtml,
 };

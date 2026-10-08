@@ -25,6 +25,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+// 词库编解码：源码模板是对象数组，构建产物是紧凑列式；统一走 decodeLexicon
+import core from '../src/core/utils.js';
 import {
   NAMES, PLACES, TIMES, NUMS, NOUNS, ADJ_QUALITY, ADJ_COLOR, ADVS, VERBS_BASE,
   VERB_FORMS, FEMININE, SLOTS, GRAMMAR_FRAMES, CLOZE_SKELETONS, READING_SKELETONS, BANKFILL_SKELETONS,
@@ -299,7 +301,7 @@ function loadWordlist(file) {
     const html = fs.readFileSync(path.join(ROOT, 'src', 'index.template.html'), 'utf8');
     const m = /<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
     if (!m) throw new Error('模板缺少 <script id="lexicon">');
-    const arr = JSON.parse(m[1]);
+    const arr = core.decodeLexicon(JSON.parse(m[1]));
     return { arr, map: new Map(arr.map((w) => [String(w.w).toLowerCase(), w])) };
   }
   const arr = JSON.parse(fs.readFileSync(file, 'utf8'));

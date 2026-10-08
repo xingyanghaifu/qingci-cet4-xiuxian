@@ -26,7 +26,8 @@ function lexiconCount(html) {
   const m = html.match(/<script id="lexicon" type="application\/json">([\s\S]*?)<\/script>/);
   if (!m) return 0;
   try {
-    return JSON.parse(m[1]).length;
+    // v1.10：内联词库在构建期改为紧凑列式，decodeLexicon 同时兼容两种格式
+    return core.decodeLexicon(JSON.parse(m[1])).length;
   } catch (e) {
     return 0;
   }

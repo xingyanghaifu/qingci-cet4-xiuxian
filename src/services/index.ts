@@ -124,6 +124,10 @@ import {
   TARGET_STEP, TARGET_CAP,
 } from './spiritual-root';
 import {
+  collectBackup, applyBackup, isBackupFile, describeBackup, backupRecordCount,
+  clearAllData, BACKUP_FORMAT, DEFAULT_SKIP_STORES, DEFAULT_STATE_KEY,
+} from './backup';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -337,6 +341,22 @@ const QingciServices = {
     def: decorationDef,
     decorations: DECORATIONS,
     SPRING_WATER: SPRING_WATER_ID,
+  },
+  /**
+   * 完整修行录备份（导出 / 导入）。
+   * 修掉真实缺陷：原导出只写 localStorage 的 state，
+   * 心魔录/错题本/词汇 SRS/库存/流水/灵田/洞府/道场等 17 个 IDB 仓**全都没备份**。
+   */
+  backup: {
+    collect: collectBackup,
+    apply: applyBackup,
+    isBackup: isBackupFile,
+    describe: describeBackup,
+    recordCount: backupRecordCount,
+    clearAll: clearAllData,
+    FORMAT: BACKUP_FORMAT,
+    SKIP_STORES: DEFAULT_SKIP_STORES,
+    STATE_KEY: DEFAULT_STATE_KEY,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

@@ -61,12 +61,21 @@ export interface MinimalRequest<T = unknown> {
 }
 
 export interface MinimalObjectStore {
-  put(value: unknown, key?: string): MinimalRequest;
+  // key 允许 number：自增主键仓（attempts / reviews / qiLog）的键是数字。
+  // 真实 IDB 的 put(value, key) 接受 IDBValidKey（number | string | Date | 数组）。
+  put(value: unknown, key?: string | number): MinimalRequest;
   get(key: string): MinimalRequest;
   getAll(): MinimalRequest;
   delete(key: string): MinimalRequest;
   clear(): MinimalRequest;
   index(name: string): { getAll(query?: unknown): MinimalRequest };
+  /**
+   * 列出全部主键（可选）。
+   * 备份功能用它把「自增主键仓」（attempts / reviews / qiLog）的**原始键一并带走** ——
+   * 否则恢复时 put(value) 会重新分配自增键，虽然内容不丢，但键序与历史不一致。
+   * 真实浏览器 IDB 一直有该方法；测试用的假 IDB 若未实现则安全降级为不带键。
+   */
+  getAllKeys?(): MinimalRequest;
 }
 
 export interface MinimalTransaction {

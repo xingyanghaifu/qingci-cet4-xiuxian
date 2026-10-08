@@ -118,6 +118,10 @@ import {
   isEmptyLedger, REASON_LABEL, ITEM_LABEL, CROP_LABEL,
 } from './ledger';
 import {
+  computeRoot, gradeOf, labelOf, samplesToReveal, elementBreakdown, rootAdvice,
+  ELEMENTS, GRADE_LABEL, MIN_SAMPLES, HEAVEN_PURITY, DUAL_PURITY, TRIPLE_PURITY,
+} from './spiritual-root';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -331,6 +335,24 @@ const QingciServices = {
     def: decorationDef,
     decorations: DECORATIONS,
     SPRING_WATER: SPRING_WATER_ID,
+  },
+  /**
+   * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。
+   * 纯只读推导 —— 不写存档、不改 SRS、不影响出题。
+   */
+  root: {
+    compute: computeRoot,
+    gradeOf,
+    labelOf,
+    samplesToReveal,
+    breakdown: elementBreakdown,
+    advice: rootAdvice,
+    ELEMENTS,
+    GRADES: GRADE_LABEL,
+    MIN_SAMPLES,
+    HEAVEN_PURITY,
+    DUAL_PURITY,
+    TRIPLE_PURITY,
   },
   /**
    * 灵石流水账本（阶段 A2 补全）：把 append-only 的 qiLog 变成用户看得懂的账。

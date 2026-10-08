@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -1070,6 +1070,26 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .ledger-amt.out{color:var(--text-secondary)}
 .ledger-empty{color:var(--muted);font-size:.86em;padding:6px 0}
 .ledger-sum{display:flex;gap:12px;flex-wrap:wrap;font-size:.84em;color:var(--muted);margin-top:4px}
+
+/* v1.10 第三期 · 灵根：五行倾向卡。
+   五系各用自己的五行 token 上色（金木水火土），未显的系降为中性色 ——
+   「未显」是样本不足，不是缺陷，故不做灰暗/警示处理。 */
+.root-card{margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.root-elems{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin:8px 0 4px}
+.root-elem{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:10px;
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:.82em}
+.root-elem.revealed{border-color:color-mix(in srgb,currentColor 42%,transparent);
+  background:color-mix(in srgb,currentColor 10%,transparent)}
+.root-elem .re-char{font-weight:700;letter-spacing:.06em}
+.root-elem .re-pct{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--text-secondary)}
+.root-elem.dominant{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 55%,transparent)}
+.root-elem.e-metal{color:var(--color-metal)}
+.root-elem.e-wood{color:var(--color-wood)}
+.root-elem.e-water{color:var(--color-water)}
+.root-elem.e-fire{color:var(--color-fire)}
+.root-elem.e-earth{color:var(--color-earth)}
+.root-elem:not(.revealed){color:var(--text-secondary)}
+#rootGrade{color:var(--gold);font-weight:700}
 /* 只抬静态内容层（.app 是 static，需要 relative+z-index 才能压住 ::before 宣纸层）。
    ⚠️ 不要把 .toast / .overlay 写进来：它们是 position:fixed 的浮层，这里再写
    position:relative 会以 (0,2,0) 的特异度覆盖掉 .overlay 的 (0,1,0) fixed，
@@ -1317,7 +1337,7 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
       <p class="section-label">今日功课 · DAILY QUESTS</p><span class="cloud-rule" aria-hidden="true"></span>
       <div class="mission-list" id="missionList"></div>
       <div class="study-summary" id="studySummary" aria-live="polite"></div>
-      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
+      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div><!-- v1.10 第三期：灵根（五行倾向，由真实正确率推导） --><div class="root-card" id="rootCard"><div class="row" style="justify-content:space-between"><b>灵根</b><span class="muted" id="rootGrade">—</span></div><p class="muted" id="rootLead">灵根由各题型的**实际正确率**推导，不是随机抽的。</p><div class="root-elems" id="rootElems"></div><p class="muted" id="rootAdvice"></p></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
       <footer class="side-foot"><button type="button" class="btn" id="sideSettings">⚙ 设置</button><button type="button" class="btn" id="sideTheme">主题 · 跟随系统</button><button type="button" class="btn" id="sideAudioSrc">🔊 音频来源</button></footer>
     </aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
@@ -1706,7 +1726,39 @@ function renderDashboard(){ try{ const known=Object.keys(state.known).length, wr
   const kinds=state.memRotate===false?[MEMORY_KINDS[(state.memKind||0)%MEMORY_KINDS.length]]:MEMORY_KINDS;
   const rows=kinds.map(k=>{ const r=ms[k]||{r:0,n:0}; const p=r.n?Math.round(r.r/r.n*100):0; return '<div class="mem-row"><span class="lbl">'+labelMap[k]+'</span><span class="track"><i style="width:'+p+'%"></i></span><span class="pct">'+(r.n?p+'%':'—')+'</span></div>'; }).join("");
   $("memStat").innerHTML=rows||'<p class="muted">开始背词后显示各题型正确率</p>';
+  /* v1.10 第三期 · 灵根：由 memStats 的真实正确率推导五行倾向。
+     纯只读（服务层不写盘、不改 SRS）；服务层不可用时整块隐藏，不影响看板。 */
+  try{ renderRoot(ms); }catch(e){ /* 灵根渲染失败不影响学情看板 */ }
   }catch(e){ /* 存档缺字段时静默跳过，不影响主流程 */ } }
+/* 灵根卡渲染：五系各自的正确率 + 档位 + 一句可执行建议 */
+function renderRoot(ms){
+  var card=$("rootCard"); if(!card) return;
+  var R=window.QingciServices&&window.QingciServices.root;
+  if(!R||!R.compute){ card.classList.add('hidden'); return; }
+  var r=R.compute(ms||memStats());
+  var gradeEl=$("rootGrade");
+  if(gradeEl) gradeEl.textContent=r.label;
+  var lead=$("rootLead");
+  if(lead){
+    lead.textContent = r.grade==='undetermined'
+      ? ('再做 '+R.samplesToReveal(ms||memStats())+' 题即可显现灵根（每系需满 '+R.MIN_SAMPLES+' 题）。')
+      : ('主导纯度 '+Math.round(r.purity*100)+'% · 已显 '+r.revealed.length+' 系 · 共 '+r.sampleTotal+' 题。');
+  }
+  var box=$("rootElems");
+  if(box){
+    box.innerHTML=r.elements.map(function(e){
+      var isDom=r.dominant&&r.dominant.id===e.id;
+      var pct=e.total?Math.round(e.accuracy*100)+'%':'—';
+      return '<span class="root-elem e-'+e.id+(e.revealed?' revealed':'')+(isDom?' dominant':'')+'"'
+        + ' title="'+esc(e.name+' · '+e.blurb+'（'+e.correct+'/'+e.total+'）')+'">'
+        + '<span class="re-char">'+esc(e.char)+'</span>'
+        + '<span class="re-name">'+esc(e.revealed?e.skill:'未显')+'</span>'
+        + '<span class="re-pct">'+pct+'</span></span>';
+    }).join('');
+  }
+  var adv=$("rootAdvice");
+  if(adv){ var a=R.advice?R.advice(ms||memStats()):''; adv.textContent=a||''; adv.classList.toggle('hidden',!a); }
+}
 function nextMemory(){ if(state.pool==='words'&&state.memRotate!==false) state.memKind=((state.memKind||0)+1)%MEMORY_KINDS.length; save(); ask(); }
 function submitSpell(){ if(!current||current.kind!=='spell'||locked) return; const raw=$("spellInput").value.trim(); if(!raw) return toast("先写出拼写"); locked=true; const ans=current.answer; const norm=(s)=>s.toLowerCase().replace(/[^a-z]/g,''); const ok=norm(raw)===norm(ans); const near=!ok&&norm(raw).length>1&&(Math.abs(norm(raw).length-norm(ans).length)<=1)&&(norm(raw)[0]===norm(ans)[0]); $("spellInput").disabled=true; $("spellInput").style.borderColor=ok?'var(--ok)':'var(--bad)'; $("feedback").innerHTML='<b>'+(ok?'拼写正确':'拼写有误')+'</b><div>正确拼写：<b>'+esc(ans)+'</b> '+esc(current.explain)+'</div>'+(near?'<div class="muted">很接近了，注意中间字母。</div>':''); settle(ok,current.explain); }
 let audioState={text:"",paused:false,rate:.9,progress:0,timer:0};

@@ -76,6 +76,19 @@ else if(p===null){document.documentElement.dataset.theme='dark';}})();
   --color-earth:#a88964;   /* 土 · 赭石：承载类（错题 / 归档） */
   --color-metal:#b8b8b8;   /* 金 · 素银：中性金属（中立 / 数值） */
   --color-water:#4a6b8a;   /* 水 · 石青：沉静类（听力 / 阅读） */
+  /* —— 五行**文字色**（v1.10 第七轮新增）——
+     上面那组 --color-* 是为**描边/填充**设计的（低饱和、可与底色接近），
+     直接拿来当正文颜色会不达标：实测深色底下水 3.10 / 火 3.90，
+     浅色底（data-theme="light"）下金 3.27，均低于 AA 正文要求的 4.5。
+     所以另设一组「同色相、对比度达标」的文字色 —— 只改明度不改色相，
+     五行观感保持一致。规则里凡是用作**文字**的地方一律用 --elem-*-text。
+     （具体实测数值见 tests/elem-contrast.test.mjs，本注释不写色值以免被
+       「规则里零裸 hex」守卫误判 —— 那条守卫扫的是声明体全文。） */
+  --elem-metal-text:#b8b8b8;  /* 8.72 达标，沿用原色 */
+  --elem-wood-text:#5a8f7b;   /* 4.65 达标，沿用原色 */
+  --elem-water-text:#6889a8;  /* 3.10 → 4.72（提亮，保石青色相） */
+  --elem-fire-text:#d9645d;   /* 3.90 → 4.89（提亮，保朱砂色相） */
+  --elem-earth-text:#a88964;  /* 5.29 达标，沿用原色 */
   --color-moonwhite:#e8e4d8; /* 月白：字与细线的高亮面 */
   --color-dai:#2c3e50;     /* 黛色：墨韵底纹与深描边 */
   /* v1.7.0 遗留硬编码色值的 token 化（层次 1 的另一半）：
@@ -108,6 +121,12 @@ else if(p===null){document.documentElement.dataset.theme='dark';}})();
   /* 五行色 · 浅色：暗色版在浅底上偏灰偏浅，需压深一档才够对比 */
   --color-wood:#3f7461; --color-fire:#b03a32; --color-earth:#8a6a48; --color-metal:#8d8d8d;
   --color-water:#3a5b7a; --color-moonwhite:#f7f4ec; --color-dai:#5b6b7a;
+  /* 五行文字色 · 浅色：浅底上原「金」色对比度仅 3.27（不足 AA 4.5），压暗到达标 */
+  --elem-metal-text:#6f6f6f;
+  --elem-wood-text:#3f7461;
+  --elem-water-text:#3a5b7a;
+  --elem-fire-text:#b03a32;
+  --elem-earth-text:#8a6a48;
   --paper:#ffffff; --jade-deep:#12866b; --jade-abyss:#0a4a3a; --gold-warm:#c8902f;
   --bar-jade:#0e6b53; --jade-mist:#e7f6ee; --jade-mist-ink:#103824;
   --fire-mist:#f8e7e2; --fire-mist-ink:#5d2418; --wood-mist:#e7fff1;
@@ -302,6 +321,8 @@ html:root[data-contrast="high"]{--bg:#fff;--bg2:#fff;--card:#fff;--ink:#000;--mu
   --jade-ink:#00513d;--solid-fg:#fff;--shadow:none;
   /* 高对比：五行色推到纯度两端，靠字重与形状而非色相区分 */
   --color-wood:#00563f;--color-fire:#8c0000;--color-earth:#4a3a20;--color-metal:#000;--color-water:#00335c;--color-moonwhite:#fff;--color-dai:#000;
+  /* 五行文字色 · 高对比浅底：实测全部 ≥ 8.7，直接沿用（不需额外调整） */
+  --elem-metal-text:#000;--elem-wood-text:#00563f;--elem-water-text:#00335c;--elem-fire-text:#8c0000;--elem-earth-text:#4a3a20;
   --paper:#000;--jade-deep:#00563f;--jade-abyss:#002a1e;--gold-warm:#6b3d00;--bar-jade:#00513d;
   --jade-mist:#fff;--jade-mist-ink:#002a1e;--fire-mist:#fff;--fire-mist-ink:#4a0000;
   --wood-mist:#fff;--wood-mist-ink:#002a1e;--earth-mist:#000;--fire-light:#fff;--shadow-jade:rgba(0,0,0,.5)}
@@ -313,6 +334,8 @@ html:root[data-contrast="high"]{--bg:#fff;--bg2:#fff;--card:#fff;--ink:#000;--mu
     --accent-gold:#ffd166;--accent-jade:#5fe3bd;--accent-cinnabar:#ff8a8a;
     --jade-ink:#5fe3bd;--solid-fg:#000;--shadow:none;
     --color-wood:#5fe3bd;--color-fire:#ff8a8a;--color-earth:#d8c49a;--color-metal:#fff;--color-water:#9fd0ff;--color-moonwhite:#fff;--color-dai:#fff;
+    /* 五行文字色 · 高对比深底：实测全部 ≥ 9.2，直接沿用 */
+    --elem-metal-text:#fff;--elem-wood-text:#5fe3bd;--elem-water-text:#9fd0ff;--elem-fire-text:#ff8a8a;--elem-earth-text:#d8c49a;
     --paper:#fff;--jade-deep:#5fe3bd;--jade-abyss:#5fe3bd;--gold-warm:#ffd166;--bar-jade:#5fe3bd;
     --jade-mist:#000;--jade-mist-ink:#5fe3bd;--fire-mist:#000;--fire-mist-ink:#ff8a8a;
     --wood-mist:#000;--wood-mist-ink:#5fe3bd;--earth-mist:#fff;--fire-light:#000;--shadow-jade:rgba(0,0,0,.6)}
@@ -353,7 +376,7 @@ html:root[data-contrast="high"]{--bg:#fff;--bg2:#fff;--card:#fff;--ink:#000;--mu
 /* 屏幕阅读器专用文本（视觉隐藏但可朗读） */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* ===== P0.5：手动主题（覆盖系统偏好）+ 三档响应式断点 ===== */
-:root[data-theme="light"] { --bg-deep:#f7f3ec; --bg-surface:#fffdf9; --bg-elevated:#ffffff; --bg-sidebar:#f2ede4; --text-primary:#241f19; --text-secondary:#5f5648; --text-muted:#6f6659; --accent-gold:#96611b; --accent-jade:#0e6b53; --accent-cinnabar:#b3352b; --border-subtle:rgba(36,31,25,.07); --border-default:rgba(36,31,25,.13); --border-strong:rgba(36,31,25,.24); --ink:#241f19; --soft:#5a5044; --muted:#6b6255; --bg:#f7f3ec; --bg2:#efe9de; --card:#fffdf9; --line:rgba(36,31,25,.13); --jade:#0e6b53; --jade-ink:#08382c; --gold:#96611b; --ok:#176b3f; --bad:#922f1d; --solid-fg:#f8f3ea; --color-wood:#3f7461; --color-fire:#b03a32; --color-earth:#8a6a48; --color-metal:#8d8d8d; --color-water:#3a5b7a; --color-moonwhite:#f7f4ec; --color-dai:#5b6b7a; --paper:#ffffff; --jade-deep:#12866b; --jade-abyss:#0a4a3a; --gold-warm:#c8902f; --bar-jade:#0e6b53; --jade-mist:#e7f6ee; --jade-mist-ink:#103824; --fire-mist:#f8e7e2; --fire-mist-ink:#5d2418; --wood-mist:#e7fff1; --wood-mist-ink:#173428; --earth-mist:#3c241e; --fire-light:#ffe4dc; --shadow-jade:rgba(14,107,83,.22); --shadow:0 18px 40px rgba(62,36,12,.09); color-scheme:light; }
+:root[data-theme="light"] { --bg-deep:#f7f3ec; --bg-surface:#fffdf9; --bg-elevated:#ffffff; --bg-sidebar:#f2ede4; --text-primary:#241f19; --text-secondary:#5f5648; --text-muted:#6f6659; --accent-gold:#96611b; --accent-jade:#0e6b53; --accent-cinnabar:#b3352b; --border-subtle:rgba(36,31,25,.07); --border-default:rgba(36,31,25,.13); --border-strong:rgba(36,31,25,.24); --ink:#241f19; --soft:#5a5044; --muted:#6b6255; --bg:#f7f3ec; --bg2:#efe9de; --card:#fffdf9; --line:rgba(36,31,25,.13); --jade:#0e6b53; --jade-ink:#08382c; --gold:#96611b; --ok:#176b3f; --bad:#922f1d; --solid-fg:#f8f3ea; --color-wood:#3f7461; --color-fire:#b03a32; --color-earth:#8a6a48; --color-metal:#8d8d8d; --color-water:#3a5b7a; --color-moonwhite:#f7f4ec; --color-dai:#5b6b7a; --elem-metal-text:#6f6f6f; --elem-wood-text:#3f7461; --elem-water-text:#3a5b7a; --elem-fire-text:#b03a32; --elem-earth-text:#8a6a48; --paper:#ffffff; --jade-deep:#12866b; --jade-abyss:#0a4a3a; --gold-warm:#c8902f; --bar-jade:#0e6b53; --jade-mist:#e7f6ee; --jade-mist-ink:#103824; --fire-mist:#f8e7e2; --fire-mist-ink:#5d2418; --wood-mist:#e7fff1; --wood-mist-ink:#173428; --earth-mist:#3c241e; --fire-light:#ffe4dc; --shadow-jade:rgba(14,107,83,.22); --shadow:0 18px 40px rgba(62,36,12,.09); color-scheme:light; }
 :root[data-theme="dark"] { --bg-deep:#0d1117; --bg-surface:#161b22; --bg-elevated:#1c2129; --bg-sidebar:#0f1319; --text-primary:#e6edf3; --text-secondary:#8b949e; --text-muted:#808894; --accent-gold:#d4a853; --accent-jade:#3fb950; --accent-cinnabar:#f85149; --border-subtle:rgba(240,246,252,.08); --border-default:rgba(240,246,252,.12); --border-strong:rgba(240,246,252,.2); --ink:#e6edf3; --soft:#a7b1ba; --muted:#8b949e; --bg:#0d1117; --bg2:#1c2129; --card:#161b22; --line:rgba(240,246,252,.12); --jade:#3fb950; --jade-ink:#dffcf1; --gold:#d4a853; --ok:#3fb950; --bad:#f85149; --solid-fg:#10241c; --shadow:0 18px 40px rgba(0,0,0,.45); color-scheme:dark; }
 :root[data-theme="dark"] .btn.solid{color:var(--solid-fg)}
 :root[data-theme="dark"] .audio-dock button.primary{color:var(--solid-fg)}
@@ -1091,11 +1114,14 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .root-elem .re-char{font-weight:700;letter-spacing:.06em}
 .root-elem .re-pct{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--text-secondary)}
 .root-elem.dominant{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 55%,transparent)}
-.root-elem.e-metal{color:var(--color-metal)}
-.root-elem.e-wood{color:var(--color-wood)}
-.root-elem.e-water{color:var(--color-water)}
-.root-elem.e-fire{color:var(--color-fire)}
-.root-elem.e-earth{color:var(--color-earth)}
+/* v1.10 第七轮：改用**文字色** token（--elem-*-text）——
+   原来的 --color-* 是为描边/填充设计的，当正文色会不达标（水 3.10 / 火 3.90 / 浅色金 3.27）。
+   各系仍保留自己的五行色相，只是明度调到 AA 达标。 */
+.root-elem.e-metal{color:var(--elem-metal-text)}
+.root-elem.e-wood{color:var(--elem-wood-text)}
+.root-elem.e-water{color:var(--elem-water-text)}
+.root-elem.e-fire{color:var(--elem-fire-text)}
+.root-elem.e-earth{color:var(--elem-earth-text)}
 .root-elem:not(.revealed){color:var(--text-secondary)}
 #rootGrade{color:var(--gold);font-weight:700}
 /* v1.10 第四期 · 灵根修习目标。
@@ -1138,7 +1164,7 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .seal-imprint{
   position:relative;display:inline-flex;align-items:center;justify-content:center;
   width:34px;height:34px;border-radius:5px;flex:0 0 auto;
-  color:var(--color-fire);
+  color:var(--elem-fire-text);
   border:1.5px solid color-mix(in srgb,var(--color-fire) 70%,transparent);
   background:
     linear-gradient(135deg,color-mix(in srgb,var(--color-fire) 26%,transparent),transparent 58%),

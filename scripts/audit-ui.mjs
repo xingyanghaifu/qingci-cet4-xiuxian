@@ -8,11 +8,25 @@
  * 有前/后对照的数字，而不是形容词。
  *
  * 指标（越低越好）：
- *   · 首屏可点击元素数   —— 选择过载
- *   · 首屏可见边框组数   —— 视觉噪声
- *   · 首屏不同字号档位数 —— 排版混乱
+ *   · 首屏可点击元素数   —— 选择过载（阈值 ≤12）
+ *   · **容器边框组数**   —— 视觉噪声（**真正的噪声指标**，阈值 ≤5）
+ *   · 控件边框组数       —— button/input/select 的边框（只报告，**不设阈值**）
+ *   · 首屏不同字号档位数 —— 排版混乱（阈值 ≤8）
  *   · 首屏主按钮数       —— 主次不分（.btn.solid 应 ≤ 2）
  *   · 文案问题数         —— undefined / [object Object]
+ *
+ * ── v2 口径：为什么把边框分成「容器 / 控件」两类 ──
+ *   v1 把按钮的边框也算进「边框组」，于是「降噪」会去动 `.btn{border:1px}`。
+ *   但按钮边框是**可点击性的功能提示** —— 为了一个自设指标去改它是本末倒置。
+ *   故 v2 起：
+ *     containerBorders = 装饰/结构容器 ← 计入 noise，阈值 5
+ *     controlBorders   = 可交互控件    ← 只报告
+ *
+ *   ⚠️ 另记一个认知错误：回纹边/如意角走 `.panel::before/::after` 的
+ *      background + mask，**border 为 0**，且伪元素**进不了
+ *      querySelectorAll('*')** —— 它们本来就不被本指标计入。
+ *      最初我以为边框组来自这些纹饰，实际来自 `.paper-card` / `.lx-card` /
+ *      `.plot` / `.lx-tag` 等真实元素。此点由 ui-batch2 子代理指出并经 Lead 复核。
  *
  * 用法：
  *   node scripts/audit-ui.mjs                    # 人工可读报告
@@ -118,6 +132,27 @@ function measureInPage(arg) {
     groups.push(e);
   });
 
+  /* ── 容器 vs 控件（v2 口径）──
+     原口径把**按钮/输入框的边框**也算进「边框组」，于是「降噪」会去动 `.btn{border}`
+     —— 那是可点击性的功能提示，为了指标改它是**本末倒置**。
+
+     新口径：
+       · containerBorders —— 装饰性/结构性容器边框 ← **真正的噪声指标，目标 ≤5**
+       · controlBorders   —— button/input/select/textarea 的边框 ← 只报告，不设阈值
+
+     ⚠️ 另需注意：回纹边/如意角走 `.panel::before/::after` 的 background+mask，
+        **border:0 且伪元素进不了 querySelectorAll('*')** —— 它们本来就不被计入。
+        （我最初的审查记录误以为边框组来自纹饰，实际来自 .paper-card/.lx-card/.plot 等真实元素。） */
+  function isControl(e) {
+    var tag = e.tagName;
+    if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
+    if (e.classList.contains('btn')) return true;
+    var role = e.getAttribute('role');
+    return role === 'button' || role === 'tab';
+  }
+  var controlBorders = 0, containerBorders = 0;
+  groups.forEach(function (e) { if (isControl(e)) controlBorders++; else containerBorders++; });
+
   var fonts = {}, gaps = {}, pads = {};
   var solidButtons = 0;
   clickable.forEach(function (e) {
@@ -157,6 +192,8 @@ function measureInPage(arg) {
     diag: diag,
     clickable: clickable.length,
     borders: groups.length,
+    containerBorders: containerBorders,
+    controlBorders: controlBorders,
     fontSizes: Object.keys(fonts).length,
     fontList: Object.keys(fonts).sort(),
     solidButtons: solidButtons,
@@ -262,6 +299,8 @@ try {
     panelCount: vals.length,
     maxClickable: max('clickable'),
     maxBorders: max('borders'),
+    maxContainerBorders: max('containerBorders'),
+    maxControlBorders: max('controlBorders'),
     maxFontSizes: max('fontSizes'),
     maxSolidButtons: max('solidButtons'),
     sumClickable: vals.reduce((a, v) => a + (Number(v.clickable) || 0), 0),
@@ -271,9 +310,12 @@ try {
   result.score = {
     clickable: result.totals.maxClickable,
     borders: result.totals.maxBorders,
+    containerBorders: result.totals.maxContainerBorders,
+    controlBorders: result.totals.maxControlBorders,
     fontSizes: result.totals.maxFontSizes,
     solidButtons: result.totals.maxSolidButtons,
-    noise: result.totals.maxBorders * 2 + result.totals.maxFontSizes
+    // 噪声分只用**容器**边框（控件边框是可点击性的功能提示，不算噪声）
+    noise: result.totals.maxContainerBorders * 2 + result.totals.maxFontSizes
   };
 
   if (SAVE) {
@@ -285,30 +327,33 @@ try {
     console.log(JSON.stringify(result, null, 2));
   } else {
     console.log('界面「混乱度」审计 · 各面板首屏指标');
-    console.log('─'.repeat(84));
-    console.log('面板'.padEnd(12) + '可点击'.padEnd(9) + '边框组'.padEnd(9) + '字号'.padEnd(7)
-      + '主按钮'.padEnd(9) + 'DOM'.padEnd(8) + '文案问题');
+    console.log('─'.repeat(92));
+    console.log('面板'.padEnd(12) + '可点击'.padEnd(9) + '容器边'.padEnd(9) + '控件边'.padEnd(9)
+      + '字号'.padEnd(7) + '主按钮'.padEnd(9) + 'DOM'.padEnd(8) + '文案问题');
     for (const [k, v] of Object.entries(result.panels)) {
       if (!v || v.missing) { console.log(k.padEnd(12) + '(缺失)'); continue; }
       if (v.__err) { console.log(k.padEnd(12) + 'ERR ' + String(v.__err).slice(0, 48)); continue; }
       console.log(k.padEnd(12)
         + String(v.clickable).padEnd(9)
-        + String(v.borders).padEnd(9)
+        + String(v.containerBorders).padEnd(9)
+        + String(v.controlBorders).padEnd(9)
         + String(v.fontSizes).padEnd(7)
         + String(v.solidButtons).padEnd(9)
         + String(v.domNodes).padEnd(8)
         + (v.textIssues && v.textIssues.length ? v.textIssues.join(' / ') : '—'));
     }
-    console.log('─'.repeat(84));
-    console.log(`最差屏：可点击 ${result.totals.maxClickable} · 边框组 ${result.totals.maxBorders}`
+    console.log('─'.repeat(92));
+    console.log(`最差屏：可点击 ${result.totals.maxClickable}`
+      + ` · 容器边框 ${result.totals.maxContainerBorders}（阈值 ≤5）`
+      + ` · 控件边框 ${result.totals.maxControlBorders}（不设阈值）`
       + ` · 字号 ${result.totals.maxFontSizes} · 主按钮 ${result.totals.maxSolidButtons}`);
-    console.log(`混乱度评分 noise = ${result.score.noise}（边框×2 + 字号，越低越好）`);
+    console.log(`混乱度评分 noise = ${result.score.noise}（**容器边框**×2 + 字号，越低越好）`);
     console.log(`页面错误：${result.totals.pageErrors}`);
     if (SAVE) console.log(`已保存基线：backups/ui-baseline/${SAVE}.json`);
 
     const warn = [];
     if (result.totals.maxClickable > 12) warn.push(`可点击 ${result.totals.maxClickable} > 12（选择过载）`);
-    if (result.totals.maxBorders > 5) warn.push(`边框组 ${result.totals.maxBorders} > 5（视觉噪声）`);
+    if (result.totals.maxContainerBorders > 5) warn.push(`容器边框 ${result.totals.maxContainerBorders} > 5（视觉噪声）`);
     if (result.totals.maxFontSizes > 8) warn.push(`字号 ${result.totals.maxFontSizes} > 8（排版混乱）`);
     if (result.totals.maxSolidButtons > 2) warn.push(`主按钮 ${result.totals.maxSolidButtons} > 2（主次不分）`);
     if (result.totals.sumTextIssues > 0) warn.push(`文案问题 ${result.totals.sumTextIssues} 处`);
@@ -324,15 +369,25 @@ try {
       if (existsSync(baseFile)) {
         const base = JSON.parse(fs.readFileSync(baseFile, 'utf8'));
         console.log(`\n与基线「${COMPARE}」对比：`);
-        console.log('─'.repeat(84));
-        for (const [label, key] of [['可点击', 'maxClickable'], ['边框组', 'maxBorders'],
-          ['字号', 'maxFontSizes'], ['主按钮', 'maxSolidButtons'], ['文案问题', 'sumTextIssues']]) {
+        console.log('─'.repeat(92));
+        const rows = [
+          ['可点击', 'maxClickable'],
+          ['容器边框', 'maxContainerBorders'],
+          ['控件边框', 'maxControlBorders'],
+          ['字号', 'maxFontSizes'],
+          ['主按钮', 'maxSolidButtons'],
+          ['文案问题', 'sumTextIssues'],
+        ];
+        for (const [label, key] of rows) {
           const b = base.totals[key], a = result.totals[key];
+          if (b === undefined) { console.log(`  ${label.padEnd(10)}   ——（旧基线无此项）`); continue; }
           const delta = a - b;
           const arrow = delta < 0 ? '↓ 改善' : delta > 0 ? '↑ 变差' : '= 持平';
           console.log(`  ${label.padEnd(10)}${String(b).padStart(4)} → ${String(a).padStart(4)}   ${delta >= 0 ? '+' : ''}${delta}  ${arrow}`);
         }
-        console.log(`  ${'noise'.padEnd(10)}${String(base.score.noise).padStart(4)} → ${String(result.score.noise).padStart(4)}   ${result.score.noise - base.score.noise >= 0 ? '+' : ''}${result.score.noise - base.score.noise}`);
+        if (base.score.noise !== undefined) {
+          console.log(`  ${'noise'.padEnd(10)}${String(base.score.noise).padStart(4)} → ${String(result.score.noise).padStart(4)}   ${result.score.noise - base.score.noise >= 0 ? '+' : ''}${result.score.noise - base.score.noise}`);
+        }
       } else {
         console.log(`\n（未找到基线 ${COMPARE}.json，跳过对比）`);
       }

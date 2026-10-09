@@ -79,10 +79,20 @@ export const ITEM_LABEL: Readonly<Record<string, string>> = {
   break: '破障丹',
 };
 
-/** 作物 ID → 名字 */
+/**
+ * 作物 ID → 名字。
+ *
+ * ⚠️ **必须与 `spirit-field.CROPS[id].name` 完全一致**。
+ * 这里是**冗余副本**（ledger.ts 刻意零依赖，不 import 任何模块），
+ * 所以容易漂移 —— 实测踩到：`memory_flower` 在这里叫「忆魂花」，
+ * 而灵田里叫「记忆花」，于是**同一作物在流水与灵田显示两个名字**。
+ *
+ * 改作物名时必须**两处同步**；`tests/name-consistency.test.mjs` 会逐项比对，
+ * 不一致立刻失败。
+ */
 export const CROP_LABEL: Readonly<Record<string, string>> = {
   qi_grass: '灵石草',
-  memory_flower: '忆魂花',
+  memory_flower: '记忆花',
   enlighten_tree: '悟道树',
 };
 

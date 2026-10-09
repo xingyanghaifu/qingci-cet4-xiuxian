@@ -34,13 +34,18 @@
  *   node scripts/audit-ui.mjs --save=before      # 存基线（backups/ui-baseline/）
  *   node scripts/audit-ui.mjs --compare=before   # 与基线对比
  *
- * ── 实现上的三个坑（都踩过，已规避）──
+ * ── 实现上的坑（都踩过，已规避）──
  *   1. 不要把注入页面的代码写在**模板字符串**里 —— `\[` 会退化成 `[`，
  *      正则在页面里变成字符类，匹配一切（曾报出 16 处假的「文案问题」）。
  *      本脚本用 `String(fn)` 序列化独立函数注入，并改用 indexOf，彻底绕开。
  *   2. 不能用 `offsetParent` 判可见 —— 本应用里它对所有面板都返回 null，
  *      会让统计全为 0。改用「rect 有尺寸 + 祖先非 display:none/visibility:hidden」。
- *   3. 汇总时不能对**数组**做数值求和 —— `0 + []` 会变成字符串 "[object Object]"。
+ *   3. 汇总时不能对**数组**做数值求和 —— `0 + []` 会变成字符串 "。
+ *   4. **已关闭的 `<details>` 内容不算可见** —— Chrome 对它不是设 `display:none`，
+ *      而是放进内部 slot 并加 `content-visibility:hidden`，于是 `display` 仍是
+ *      `block`/`list-item`。只用 display/visibility 判断会把**折叠内容算成首屏可见**，
+ *      导致「折叠起来的选择过载」反而被报成指标变差（实测可点击 12→17 的假回归）。
+ *      故 `shown()` 显式排除 `<details>:not([open])` 的非 summary 后代。
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -87,9 +92,33 @@ function measureInPage(arg) {
     });
   }
 
+  /* 是否在**已关闭的 `<details>`** 里（且自身不是它的 `<summary>`）
+     ⚠️ 必须显式判断：Chrome 对关闭的 `<details>` 内容不是设 `display:none`，
+        而是放进内部 slot 并加 `content-visibility:hidden`。
+        于是 `display` 仍是 block/block，只用 display/visibility 判断会**把折叠内容
+        当成首屏可见** —— 曾因此把「折叠起来的选择过载」误报成「可点击 12→17 变差」。
+
+     实测证据（关闭的 details 内的 summary）：
+         display=list-item  visibility=hidden  checkVisibility()=false
+     即 `checkVisibility()` 是权威判据，而 `display` 不是。 */
+  function inClosedDetails(e) {
+    var d = e.closest ? e.closest('details') : null;
+    while (d) {
+      if (!d.open) {
+        var sm = d.querySelector(':scope > summary');
+        // summary 自身（及其后代）在 details 关闭时**仍然可见** —— 它是开关
+        if (!(sm && (sm === e || sm.contains(e)))) return true;
+      }
+      d = d.parentElement ? d.parentElement.closest('details') : null;
+    }
+    return false;
+  }
+
   /* 可见性：rect 有尺寸 + 自身与祖先都不是 display:none / visibility:hidden
+     + 不在已关闭的 `<details>` 里
      ⚠️ 不能用 offsetParent —— 本应用里对所有面板都返回 null */
   function shown(e) {
+    if (inClosedDetails(e)) return false;
     var q = e;
     while (q && q.nodeType === 1) {
       var cs = getComputedStyle(q);

@@ -46,7 +46,8 @@
     "verify:focus": "node scripts/verify-focus-touch.mjs",
     "audit:constraints": "node scripts/audit-constraints.mjs",
     "check:usage": "node scripts/check-service-usage.mjs",
-    "check:usage:strict": "node scripts/check-service-usage.mjs --strict"
+    "check:usage:strict": "node scripts/check-service-usage.mjs --strict",
+    "verify:learning": "node scripts/verify-learning.mjs"
   },
   "keywords": [
     "CET-4",

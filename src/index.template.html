@@ -711,13 +711,32 @@ aside.side > section.panel{padding:14px 16px}
     background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(10px);
     border-bottom:1px solid var(--border-subtle)}
   .brand{order:1;flex:0 1 auto;min-width:0;gap:8px}
+  /* v1.10 第九轮：品牌文字同样会被压成竖排（实测「青词天路」只剩 29×44，一字一行）。
+     与 .seal 同因：.hero 是 flex-wrap:nowrap，收缩到 min-content = 一个汉字宽。
+     品牌名是识别标志，不该被压扁 —— 关掉收缩并禁止折行；极窄屏由
+     下面的 @media (max-width:359px) 整块隐藏文字、只留「青」字标。 */
+  .brand-text{flex:0 0 auto;min-width:max-content}
+  .brand-text b{white-space:nowrap}
   .brand-text b{font-size:14px}
   .hero .seal{order:2;flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;
     padding:6px 10px;min-height:38px;max-width:none}
   .seal b{font-size:14px}
   .seal #daoName{display:none}                 /* 道号让位给进度条（抽屉内仍可见） */
   .seal .bar{flex:1 1 auto;height:5px;margin:0;min-width:56px}
-  .seal > .row.muted:last-child{display:none}  /* 灵气/连击明细移入抽屉，状态条只留境界+进度 */
+  /* v1.10 第九轮：原来写的是 `.seal > .row.muted:last-child{display:none}` ——
+     **这条规则从未生效**：后来在 .seal 末尾追加了 `.seal-corner` 与 `.creed`，
+     那个 row 不再是 :last-child。于是它在窄屏里仍然占位，且因 .seal 是
+     flex-wrap:nowrap，把每个子项压到 min-content（中文 = 一个字宽）——
+     实测 #realmName 只剩 15px、#qiText 只剩 19px，**文字竖排成一字一行**。 */
+  .seal > .row.muted{display:none}             /* 明细移入抽屉；状态条只留境界+进度 */
+  /* 防御：窄屏下文本项不得被压到 1 个字宽 */
+  .seal > .row{flex:0 1 auto;min-width:max-content}
+  .seal > .row > b{white-space:nowrap}
+  /* .seal 是 flex-wrap:nowrap，子项默认 flex:0 1 auto —— 一旦总宽超出容器，
+     flex-shrink 会把**每个**子项压到 min-content。中文的 min-content 就是**一个字宽**，
+     于是「渡劫」按钮被压成 40×205 的竖排。给非进度条的文本/按钮项关掉收缩。 */
+  .seal > .trib-status, .seal > .trib-items, .seal > .boost-badge, .seal > .beast-badge{flex:0 0 auto}
+  .seal > .trib-status .btn, .seal > .trib-items .btn{white-space:nowrap}
   .ov-toggle{display:inline-flex;order:3;flex:0 0 auto;min-height:38px;padding:7px 11px;margin:0;font-size:12.5px}
   /* 状态条吸顶后，试炼殿计时条下移避免遮挡 */
   .clock-row{top:55px}
@@ -1100,7 +1119,14 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   color:var(--text-secondary);background:color-mix(in srgb,var(--gold) 8%,transparent);
   border:1px solid color-mix(in srgb,var(--gold) 22%,transparent)}
 .backup-hint .bh-act{color:var(--gold);cursor:pointer;text-decoration:underline;
-  background:none;border:0;font:inherit;padding:0 2px}
+  background:none;border:0;font:inherit;
+  /* v1.10 第八轮：原来只有 56×20 —— 高度 20px **连 WCAG 2.2 AA 的 24×24 都不满足**
+     （移动端实测），更达不到本项目 .btn 的 44px 约定。
+     这里用 inline-flex + min-height 撑出触控区，同时用负 margin 抵消
+     垂直内边距带来的行高变化，视觉上仍是一行文字链接。 */
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:24px;min-width:24px;padding:2px 6px;margin:-2px 0}
+@media (max-width:767px){ .backup-hint .bh-act{min-height:44px;padding:2px 10px;margin:0} }
 
 /* v1.10 第三期 · 灵根：五行倾向卡。
    五系各用自己的五行 token 上色（金木水火土），未显的系降为中性色 ——

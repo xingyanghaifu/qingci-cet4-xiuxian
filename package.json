@@ -47,7 +47,8 @@
     "audit:constraints": "node scripts/audit-constraints.mjs",
     "check:usage": "node scripts/check-service-usage.mjs",
     "check:usage:strict": "node scripts/check-service-usage.mjs --strict",
-    "verify:learning": "node scripts/verify-learning.mjs"
+    "verify:learning": "node scripts/verify-learning.mjs",
+    "audit:ui": "node scripts/audit-ui.mjs"
   },
   "keywords": [
     "CET-4",

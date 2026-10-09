@@ -136,6 +136,10 @@ import {
   DAILY_STREAK_TARGET, DAILY_STREAK_QUEST_ID,
 } from './daily-quest';
 import {
+  summarizeWeek, compareWeeks, weekTitle, weekMessage, accuracyNote,
+  startOfWeek, dateKey, WEEKDAY_LABELS, FULL_DAYS, DAYS_PER_WEEK, MIN_ACCURACY_SAMPLES,
+} from './week-cycle';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -390,6 +394,23 @@ const QingciServices = {
     ensure: ensureBestStreak,
     STREAK_TARGET: DAILY_STREAK_TARGET,
     STREAK_ID: DAILY_STREAK_QUEST_ID,
+  },
+  /**
+   * 周天（修行周循环）：本周进度 + 与上周对照。
+   * 纯只读推导，数据来自既有 state.days —— 不新增存档字段、不发新货币。
+   */
+  week: {
+    summary: summarizeWeek,
+    compare: compareWeeks,
+    title: weekTitle,
+    message: weekMessage,
+    accuracyNote,
+    startOf: startOfWeek,
+    dateKey,
+    LABELS: WEEKDAY_LABELS,
+    FULL_DAYS,
+    DAYS_PER_WEEK,
+    MIN_ACCURACY_SAMPLES,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

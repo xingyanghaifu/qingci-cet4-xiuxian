@@ -1158,6 +1158,17 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 .root-goal{margin:8px 0 0;font-size:.84em;line-height:1.5}
 .root-goal .rg-txt{display:block;min-width:0}
 .root-goal .rg-go{margin-top:5px;white-space:nowrap;padding:3px 12px;font-size:.95em}
+/* v1.10 第十一轮 · 周天：7 格一周进度（周一起）+ 上周对照。
+   圆满/未圆满只用金砂色深浅区分，不用红/绿警示 —— 周天是自省节奏，不是考核。 */
+.week-card{margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0 4px}
+.week-cell{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72em;color:var(--text-secondary)}
+.week-cell .wc-bar{width:100%;height:22px;border-radius:4px;background:color-mix(in srgb,var(--line) 70%,transparent)}
+.week-cell.on .wc-bar{background:color-mix(in srgb,var(--gold) 55%,transparent)}
+.week-cell.today .wc-bar{box-shadow:inset 0 0 0 1px var(--gold)}
+.week-cell .wc-lbl{font-variant-numeric:tabular-nums}
+#weekTitle{color:var(--gold);font-weight:700}
+
 /* 只抬静态内容层（.app 是 static，需要 relative+z-index 才能压住 ::before 宣纸层）。
    ⚠️ 不要把 .toast / .overlay 写进来：它们是 position:fixed 的浮层，这里再写
    position:relative 会以 (0,2,0) 的特异度覆盖掉 .overlay 的 (0,1,0) fixed，
@@ -1406,7 +1417,7 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
       <p class="section-label">今日功课 · DAILY QUESTS</p><span class="cloud-rule" aria-hidden="true"></span>
       <div class="mission-list" id="missionList"></div>
       <div class="study-summary" id="studySummary" aria-live="polite"></div>
-      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div><!-- v1.10 第三期：灵根（五行倾向，由真实正确率推导） --><div class="root-card" id="rootCard"><div class="row" style="justify-content:space-between"><b>灵根</b><span class="muted" id="rootGrade">—</span></div><p class="muted" id="rootLead">灵根由各题型的**实际正确率**推导，不是随机抽的。</p><div class="root-elems" id="rootElems"></div><p class="muted" id="rootAdvice"></p><p class="root-goal" id="rootGoal" role="status" aria-live="polite"></p></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
+      <section class="panel"><h2>今日</h2><div class="row muted" id="today"></div></section><section class="panel"><h2>学情看板</h2><div class="stat-grid" id="statGrid"></div><div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" id="masteryRing" aria-label="词库掌握度"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle cx="60" cy="60" r="48" class="ring-fg" id="ringFg"/></svg><div class="ring-center"><b id="ringPct">0%</b><span class="muted">词库掌握</span></div></div><div class="spark-wrap"><div class="row" style="justify-content:space-between"><span class="muted">近 7 日正确题数</span><span class="muted" id="sparkSum"></span></div><svg class="spark" id="sparkLine" viewBox="0 0 280 64" preserveAspectRatio="none" aria-label="近七日学习曲线"></svg></div><div class="mem-stat" id="memStat"></div><!-- v1.10 第三期：灵根（五行倾向，由真实正确率推导） --><div class="root-card" id="rootCard"><div class="row" style="justify-content:space-between"><b>灵根</b><span class="muted" id="rootGrade">—</span></div><p class="muted" id="rootLead">灵根由各题型的**实际正确率**推导，不是随机抽的。</p><div class="root-elems" id="rootElems"></div><p class="muted" id="rootAdvice"></p><p class="root-goal" id="rootGoal" role="status" aria-live="polite"></p></div><!-- v1.10 第十一轮：周天（修行周循环）。纯只读推导，数据来自既有 state.days，不新增存档字段、不发奖励。 --><div class="week-card" id="weekCard"><div class="row" style="justify-content:space-between"><b>周天</b><span class="muted" id="weekTitle">—</span></div><div class="week-grid" id="weekGrid" role="img" aria-label="本周每日修行情况"></div><p class="muted" id="weekMsg"></p><p class="muted" id="weekTrend"></p></div></section><section class="panel"><h2>最近斩获</h2><div class="row" id="recent"></div></section><section class="panel"><h2>本卷</h2><div class="muted" id="sidePaper">尚未开卷。</div></section><section class="panel"><h2>成就</h2><div class="achievement-grid" id="achievementList"></div></section>
       <footer class="side-foot"><button type="button" class="btn" id="sideSettings">⚙ 设置</button><button type="button" class="btn" id="sideTheme">主题 · 跟随系统</button><button type="button" class="btn" id="sideAudioSrc">🔊 音频来源</button></footer>
     </aside></div>
   <p class="note" id="sourceNote">快捷键：1–9 选择答案，Enter 下一题，Space 播放当前听力。快捷键不会在输入框内生效。</p>
@@ -1801,6 +1812,7 @@ function renderDashboard(){ try{ const known=Object.keys(state.known).length, wr
   /* v1.10 第三期 · 灵根：由 memStats 的真实正确率推导五行倾向。
      纯只读（服务层不写盘、不改 SRS）；服务层不可用时整块隐藏，不影响看板。 */
   try{ renderRoot(ms); }catch(e){ /* 灵根渲染失败不影响学情看板 */ }
+  try{ renderWeek(); }catch(e){ /* 周天渲染失败不影响学情看板 */ }
   }catch(e){ /* 存档缺字段时静默跳过，不影响主流程 */ } }
 /* 灵根卡渲染：五系各自的正确率 + 档位 + 一句可执行建议 */
 function renderRoot(ms){
@@ -2030,7 +2042,34 @@ function renderBackupHint(){
   var b=$('bhSnooze');
   if(b) b.onclick=function(){ setBackupMeta(H.snooze?H.snooze({}):{snoozedAt:new Date().toISOString()}); renderBackupHint(); };
 }
-window.__renderBackupHint=renderBackupHint; document.addEventListener("keydown",(e)=>{ if(e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!e.target.matches('button')){e.preventDefault(); playAudio();} });
+window.__renderBackupHint=renderBackupHint;
+/* v1.10 第十一轮 · 周天：本周 7 格（周一起）+ 与上周对照。
+   纯只读：只读 state.days，不写存档、不发奖励。 */
+function renderWeek(){
+  var el=$('weekCard'); if(!el) return;
+  var S=window.QingciServices, W=S&&S.week;
+  if(!W||!W.compare){ el.classList.add('hidden'); return; }
+  var cmp=W.compare(state.days||{});
+  var t=$('weekTitle'); if(t) t.textContent=W.title(cmp.thisWeek);
+  var grid=$('weekGrid');
+  if(grid){
+    var today=W.dateKey(new Date());
+    grid.innerHTML=cmp.thisWeek.days.map(function(d,i){
+      var cls='week-cell'+(d.active?' on':'')+(d.key===today?' today':'');
+      var lbl=W.LABELS[i]||'';
+      return '<span class="'+cls+'" title="'+esc(d.key+' · 对 '+d.right+' / 错 '+d.wrong)+'">'
+        + '<i class="wc-bar"></i><span class="wc-lbl">'+esc(lbl)+'</span></span>';
+    }).join('');
+  }
+  var m=$('weekMsg'); if(m) m.textContent=W.message(cmp.thisWeek);
+  var tr=$('weekTrend');
+  if(tr){
+    var parts=[cmp.trend];
+    if(W.accuracyNote){ var an=W.accuracyNote(cmp); if(an) parts.push(an); }
+    tr.textContent=parts.join(' · ');
+  }
+}
+window.__renderWeek=renderWeek; document.addEventListener("keydown",(e)=>{ if(e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!e.target.matches('button')){e.preventDefault(); playAudio();} });
 $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrstuvwxyz".split("").map(c=>"<option>"+c+"</option>").join("");renderRoad(); renderTop(); renderShelf(); renderMap();
 /* 第一期：启动时的两项修行结算
    ① 断签衰减（先算）：宽限 3 天、单次最多扣 50%、**不碰境界**
@@ -2066,6 +2105,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
 })();
 /* v1.10 第六轮：备份提醒（有学习量且久未导出才出现；温和、可忽略） */
   try{ renderBackupHint(); }catch(e){ /* 提醒失败不影响启动 */ }
+  try{ renderWeek(); }catch(e){ /* 周天渲染失败不影响启动 */ }
   if(state.activePaper&&restorePaper()){ window.askConfirm('发现未完成的 '+paper.meta.name+'，是否继续？',{title:'继续上次模考'}).then(function(ok){ if(!ok){ paper=null; delete state.activePaper; save(); return; } switchTab('trial'); $("paperProgress").textContent=paper.meta.name+' · '+paper.cursor+' / '+paper.queue.length; ask(); clearInterval(timer); timer=setInterval(()=>{ if(!paper)return; paper.left--; const m=Math.floor(paper.left/60),s=paper.left%60; $("clock").textContent=String(m).padStart(2,'0')+':'+String(Math.max(0,s)).padStart(2,'0'); if(paper.left<=0)finishPaper(); },1000); }); }
 
 </script>

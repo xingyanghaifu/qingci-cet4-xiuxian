@@ -140,6 +140,11 @@ import {
   startOfWeek, dateKey, WEEKDAY_LABELS, FULL_DAYS, DAYS_PER_WEEK, MIN_ACCURACY_SAMPLES,
 } from './week-cycle';
 import {
+  learningValue, applyLearningValue, freshnessFactor, tierWeight, normalizeTier,
+  masteryStage, describeLearningValue, comparePlaystyles,
+  TIER_WEIGHT, TIER_WEIGHT_LABEL, FRESHNESS_STEPS, CONQUER_BONUS, MASTERY_LABEL,
+} from './learning-value';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -411,6 +416,27 @@ const QingciServices = {
     FULL_DAYS,
     DAYS_PER_WEEK,
     MIN_ACCURACY_SAMPLES,
+  },
+  /**
+   * 学习价值：让修为/灵石产出与「真实学习收益」一一对应。
+   * 修掉实测确认的脱节：原 qiForCorrect(streak) 只认连对，
+   * 刷高频简单词与攻克生词收益完全相同。
+   * 纯函数 + 只读信号，不改 SM-2。
+   */
+  learning: {
+    value: learningValue,
+    apply: applyLearningValue,
+    freshness: freshnessFactor,
+    tierWeight,
+    normalizeTier,
+    stage: masteryStage,
+    describe: describeLearningValue,
+    compare: comparePlaystyles,
+    TIER_WEIGHT,
+    TIER_LABEL: TIER_WEIGHT_LABEL,
+    STEPS: FRESHNESS_STEPS,
+    CONQUER_BONUS,
+    STAGE_LABEL: MASTERY_LABEL,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

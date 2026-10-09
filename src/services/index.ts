@@ -128,6 +128,10 @@ import {
   clearAllData, BACKUP_FORMAT, DEFAULT_SKIP_STORES, DEFAULT_STATE_KEY,
 } from './backup';
 import {
+  backupHint, nextRemindAt, snoozeBackup,
+  REMIND_AFTER_DAYS, MIN_STUDY_DAYS, SNOOZE_DAYS,
+} from './backup-reminder';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -357,6 +361,18 @@ const QingciServices = {
     FORMAT: BACKUP_FORMAT,
     SKIP_STORES: DEFAULT_SKIP_STORES,
     STATE_KEY: DEFAULT_STATE_KEY,
+  },
+  /**
+   * 备份提醒（产品文档要求「建议提示用户定期备份」，此前从未实现）。
+   * 纯判定：温和、可忽略、不阻断功能、不制造焦虑。
+   */
+  backupHint: {
+    check: backupHint,
+    nextAt: nextRemindAt,
+    snooze: snoozeBackup,
+    AFTER_DAYS: REMIND_AFTER_DAYS,
+    MIN_STUDY_DAYS,
+    SNOOZE_DAYS,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

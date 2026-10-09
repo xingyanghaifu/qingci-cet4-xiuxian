@@ -48,6 +48,11 @@ export const REASON_LABEL: Readonly<Record<string, string>> = {
   tribulation_win: '渡劫成功',
   encounter_qi_rain: '奇遇 · 灵石雨',
   transmission_sent: '传功',
+  // v1.11 第二轮新增的灵石来源（学习里程碑）—— 当时**漏了这里的映射**，
+  // 导致流水里直接显示原始代码 `word_milestone`。
+  // 已加守卫测试：所有 earnSpirit 的 reason 都必须在此有中文映射。
+  word_milestone: '掌握里程碑',
+  word_milestone_crit: '掌握里程碑（暴击）',
   // 支出
   sect_donate: '道场捐献',
   // 前缀类（下面按前缀解析）

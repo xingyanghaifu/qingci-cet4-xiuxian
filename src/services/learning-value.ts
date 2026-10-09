@@ -67,6 +67,153 @@ export const TIER_WEIGHT: Readonly<Record<Tier, number>> = {
   recognition: 1.5,
 };
 
+/* ───────────────── 灵石产出（v1.11 第二轮补全） ─────────────────
+ *
+ * ── 为什么灵石也要接学习价值 ──
+ * 第一轮只把**修为**接上了学习价值。但灵石是另一条主货币，实测它**完全没接**：
+ *
+ *     · settle()（答对一题的核心循环）**一点都不给灵石** —— 只有修为
+ *     · 所有灵石来源都是固定常数：每日任务 30/45/60、斗法胜 50、联手 80、传功 30
+ *     · 商店定价 50–150 也与此无关
+ *
+ * 也就是：**「灵石怎么来的」与「学得多好」毫无关系**。
+ * 灵石只能靠每日任务和斗法获得，而这两者与词难度无关 ——
+ * 玩家攒灵石的最优路径是「刷任务/刷斗法」，而不是「攻克生词」。
+ *
+ * ── 关键设计：**经济中性**（不膨胀总产出）──
+ * 直接套用 TIER_WEIGHT 会推高期望产出（全库加权均值 1.2385），
+ * 相当于凭空多发 24% 灵石，破坏既有平衡（而平衡改动需人工确认）。
+ *
+ * 所以另设**归一化**权重：以「全库平均词」为 1.0，
+ * 使**期望产出恰好等于基准值**，只是重新分配 ——
+ * 攻克生词多拿，刷简单词少拿，总量不变。
+ *
+ *   档位          原权重   归一权重
+ *   高频 high      1.00  →  0.8074
+ *   核心 core      1.15  →  0.9285
+ *   低频 low       1.30  →  1.0496
+ *   认知 recognition 1.50 → 1.2111
+ *   （按真实词库分布 681/1589/1452/818 加权，全库均值 = 1.000000）
+ *
+ * 若词库分布变化，`tests/learning-value.test.mjs` 会用真实分布复算并守住「均值≈1」。
+ */
+
+/** 全库加权平均档位权重（由真实词库分布算得；用于归一化） */
+export const TIER_WEIGHT_MEAN = 1.238535;
+
+/** 归一化档位权重：期望值为 1.0，保证灵石总产出不膨胀 */
+export const TIER_WEIGHT_NORM: Readonly<Record<Tier, number>> = {
+  high: 1.0 / TIER_WEIGHT_MEAN,
+  core: 1.15 / TIER_WEIGHT_MEAN,
+  low: 1.3 / TIER_WEIGHT_MEAN,
+  recognition: 1.5 / TIER_WEIGHT_MEAN,
+};
+
+/** 取归一化档位权重 */
+export function tierWeightNorm(t: unknown): number {
+  return TIER_WEIGHT_NORM[normalizeTier(t)];
+}
+
+/**
+ * 灵石的基础值（**仅首次掌握 / 攻克心魔时**发放，见 spiritValue）。
+ *
+ * ── 取值依据（刻意取小，避免通胀）──
+ * 按学习计划每日约 16 新词：
+ *   期望产出 ≈ 16 × 4 ≈ **64 灵石/天**（复习不给灵石）
+ *
+ * 对比既有收入：每日任务满额 135/天，斗法胜 50/场。
+ * 新增的这条约占既有日常收入的 **1/3** ——
+ * 让「核心学习循环」终于有经济回报，但**不取代**任务与斗法。
+ *
+ * 商店单品 50–150：约 1–2 天可买一件，节奏合理。
+ */
+export const SPIRIT_BASE_PER_MILESTONE = 4;
+
+/**
+ * 计算一次答对产出的**灵石**。
+ *
+ * ── 关键设计：灵石只奖励「里程碑」，修为奖励「练习」 ──
+ *
+ * 实测发现原状是：答对一题**完全不给灵石**（只有修为），
+ * 而所有灵石来源都是固定常数（任务 30/45/60、斗法 50、联手 80），
+ * 与词难度无关 —— 于是「攒灵石」的最优路径是刷任务，而不是攻克生词。
+ *
+ * 但若**每题都给灵石**，又会通胀。所以这里把两条货币的**职能分开**：
+ *
+ *   · **修为** = 练习的回报 —— 每答对一题都有，按学习价值缩放（第一轮已做）
+ *   · **灵石** = **里程碑**的回报 —— 只在两件事上给：
+ *       ① **首次掌握**一个词（`correctTimes === 0`）
+ *       ② **攻克心魔**（该词在 `state.wrong` 里 —— 答对后即被删除，故只发一次）
+ *
+ * 这个划分与学习语义一致：**「第一次学会」和「攻下错词」是里程碑，
+ * 日常复习不是**。也天然避免了通胀（复习 29 题/天不发灵石）。
+ *
+ * 经济中性由 `TIER_WEIGHT_NORM` 保证：按真实词库分布加权，
+ * 期望值恰为 SPIRIT_BASE_PER_MILESTONE，只是重新分配（难词多、简单词少）。
+ */
+export interface SpiritValueInput extends LearningValueInput {}
+
+export interface SpiritValue {
+  /** 本次答对产出的灵石（整数；复习时为 0） */
+  amount: number;
+  /** 归一化系数（期望 1.0） */
+  factor: number;
+  /** 基础值 */
+  base: number;
+  /** 是否被压到最低档（用于界面提示） */
+  minimal: boolean;
+  /** 发放原因：first（首次掌握）/ conquer（攻克心魔）/ routine（复习，不发） */
+  reason: 'first' | 'conquer' | 'routine';
+}
+export function spiritValue(input: SpiritValueInput = {}): SpiritValue {
+  const src: SpiritValueInput = (input && typeof input === 'object') ? input : {};
+  const tier = normalizeTier(src.tier);
+  const times = Number.isFinite(Number(src.correctTimes)) && Number(src.correctTimes) > 0
+    ? Math.floor(Number(src.correctTimes)) : 0;
+
+  const firstMastery = times === 0;
+  const conquering = !!src.everWrong;
+
+  // 日常复习：不发灵石（那是修为的职责）
+  if (!firstMastery && !conquering) {
+    return { amount: 0, factor: 0, base: SPIRIT_BASE_PER_MILESTONE, minimal: false, reason: 'routine' };
+  }
+
+  const factor = tierWeightNorm(tier) * (conquering ? CONQUER_BONUS : 1);
+  const amount = Math.max(1, Math.round(SPIRIT_BASE_PER_MILESTONE * factor));
+
+  return {
+    amount,
+    factor: Math.round(factor * 1000) / 1000,
+    base: SPIRIT_BASE_PER_MILESTONE,
+    minimal: amount === 1,
+    reason: conquering ? 'conquer' : 'first',
+  };
+}
+
+/** 灵石发放原因（界面提示用） */
+export const SPIRIT_REASON_LABEL: Readonly<Record<string, string>> = {
+  first: '首次掌握',
+  conquer: '攻克心魔',
+  routine: '复习（不发灵石）',
+};
+
+/**
+ * 校验归一化是否正确：按给定档位分布算加权均值。
+ * 返回期望产出倍数（应 ≈1）。测试用它守住「经济不膨胀」。
+ */
+export function expectedSpiritMultiplier(counts: Partial<Record<Tier, number>>): number {
+  let total = 0;
+  let weighted = 0;
+  for (const [k, v] of Object.entries(counts || {})) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    total += n;
+    weighted += n * tierWeightNorm(k);
+  }
+  return total > 0 ? weighted / total : 1;
+}
+
 /** 档位的中文说明（界面用；让玩家知道「为什么这个词更值钱」） */
 export const TIER_WEIGHT_LABEL: Readonly<Record<Tier, string>> = {
   high: '高频词 ×1.0（最容易，收益基础值）',

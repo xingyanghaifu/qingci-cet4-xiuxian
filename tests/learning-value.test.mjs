@@ -293,3 +293,107 @@ test('回归守卫：两个函数在**同一个 script 块**内（否则跨块�
   assert.ok(a === b && b === c,
     `三个函数应在同一 script 块（实际 ${a}/${b}/${c}）—— 跨块会静默断开引用`);
 });
+
+/* ═══════════ 灵石产出（第二轮补全）═══════════ */
+
+test('灵石：只在「首次掌握」与「攻克心魔」时发放（里程碑语义）', () => {
+  const first = L.spiritValue({ tier: 'core', correctTimes: 0, everWrong: false });
+  const conquer = L.spiritValue({ tier: 'core', correctTimes: 2, everWrong: true });
+  const routine = L.spiritValue({ tier: 'core', correctTimes: 3, everWrong: false });
+  assert.ok(first.amount > 0, '首次掌握应发灵石');
+  assert.equal(first.reason, 'first');
+  assert.ok(conquer.amount > 0, '攻克心魔应发灵石（即使不是首次）');
+  assert.equal(conquer.reason, 'conquer');
+  assert.equal(routine.amount, 0, '日常复习不发灵石（那是修为的职责）');
+  assert.equal(routine.reason, 'routine');
+});
+
+test('灵石：**经济中性** —— 按真实词库分布期望值恰为 1.0', () => {
+  // 这是本设计最关键的不变量：新增收入流不得膨胀总产出。
+  // 用真实词库分布复算，若分布变化导致均值偏离 1，测试立刻失败。
+  const grades = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'vocab-grades.json'), 'utf8'));
+  const mult = L.expectedSpiritMultiplier(grades.counts);
+  assert.ok(Math.abs(mult - 1) < 0.001,
+    `期望产出倍数应为 1.0（实际 ${mult}）—— 否则灵石总量会通胀/紧缩`);
+});
+
+test('灵石：归一化权重按真实分布加权后均值 = 1（不依赖硬编码常数）', () => {
+  // 用真实分布**重新算**均值，而不是相信 TIER_WEIGHT_MEAN 这个常数
+  const grades = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'vocab-grades.json'), 'utf8'));
+  const counts = grades.counts;
+  let total = 0, weighted = 0;
+  for (const [k, v] of Object.entries(counts)) {
+    total += v;
+    weighted += v * L.TIER_WEIGHT_NORM[k];
+  }
+  const mean = weighted / total;
+  assert.ok(Math.abs(mean - 1) < 0.001,
+    `归一化权重按真实分布加权应为 1（实际 ${mean}）—— 说明 TIER_WEIGHT_MEAN 与词库脱节了`);
+  // TIER_WEIGHT_MEAN 必须等于真实加权均值
+  const rawMean = Object.entries(counts).reduce((s, [k, v]) => s + v * L.TIER_WEIGHT[k], 0) / total;
+  assert.ok(Math.abs(rawMean - L.TIER_WEIGHT_MEAN) < 0.001,
+    `TIER_WEIGHT_MEAN 常量(${L.TIER_WEIGHT_MEAN}) 与真实分布算出的(${rawMean.toFixed(6)}) 不一致`);
+});
+
+test('灵石：难词给的灵石 ≥ 简单词（单调不减）', () => {
+  const tiers = ['high', 'core', 'low', 'recognition'];
+  const amounts = tiers.map((t) => L.spiritValue({ tier: t, correctTimes: 0 }).amount);
+  for (let i = 1; i < amounts.length; i++) {
+    assert.ok(amounts[i] >= amounts[i - 1],
+      `${tiers[i]}(${amounts[i]}) 不应低于 ${tiers[i - 1]}(${amounts[i - 1]})`);
+  }
+  assert.ok(amounts[3] > amounts[0], '认知词应严格高于高频词');
+});
+
+test('灵石：攻克加成生效（心魔词收益更高）', () => {
+  const plain = L.spiritValue({ tier: 'core', correctTimes: 0, everWrong: false }).amount;
+  const conq = L.spiritValue({ tier: 'core', correctTimes: 0, everWrong: true }).amount;
+  assert.ok(conq >= plain, '攻克心魔应不低于首次掌握');
+});
+
+test('灵石：脏输入安全降级（复习返回 0，不抛错）', () => {
+  for (const bad of [null, undefined, {}, 'x', 42, [], { tier: 1, correctTimes: 'a' }]) {
+    const r = L.spiritValue(bad);
+    assert.ok(Number.isFinite(r.amount) && r.amount >= 0, `输入 ${JSON.stringify(bad)} 应返回 ≥0`);
+    assert.ok(['first', 'conquer', 'routine'].includes(r.reason));
+  }
+});
+
+test('灵石：纯函数，不修改入参', () => {
+  const input = { tier: 'low', correctTimes: 0, everWrong: true };
+  const snap = JSON.stringify(input);
+  L.spiritValue(input);
+  assert.equal(JSON.stringify(input), snap);
+});
+
+test('灵石：产出量与既有收入同量级（不喧宾夺主）', () => {
+  // 每日 16 新词 → 期望约 16 × base；既有每日任务满额 135。
+  // 新收入应明显低于任务，否则任务会被冷落。
+  const perDay = 16 * L.SPIRIT_BASE_PER_MILESTONE;
+  assert.ok(perDay > 0, '应有实在产出');
+  assert.ok(perDay <= 100, `每日新增收入 ${perDay} 不应超过既有任务量级（135）`);
+  assert.ok(L.SPIRIT_BASE_PER_MILESTONE >= 1, '基础值至少为 1');
+});
+
+/* ───────── 灵石接线 ───────── */
+
+test('接线：settle 必须发放灵石（核心循环此前完全不给灵石）', () => {
+  assert.ok(/const spiritGain=spiritGainFor\(/.test(html), 'settle 未计算灵石');
+  assert.ok(/earnSpirit\(state,spGain/.test(html), 'settle 未把灵石入账（应走 economy.earnSpirit）');
+  assert.ok(/word_milestone/.test(html), '灵石来源标签缺失（流水里应可辨识）');
+});
+
+test('接线：灵石必须在 known 自增 / wrong 删除**之前**结算', () => {
+  // 顺序错了就读不到「本次之前」的掌握状态 → 里程碑判断全错
+  const iGain = html.indexOf('const spiritGain=spiritGainFor(');
+  const iKnown = html.indexOf('state.known[current.word]=(state.known[current.word]||0)+1', iGain);
+  const iWrongDel = html.indexOf('delete state.wrong[current.word]', iGain);
+  assert.ok(iGain > 0, '找不到灵石结算');
+  assert.ok(iKnown > iGain, '灵石结算必须在 known 自增之前');
+  assert.ok(iWrongDel > iGain, '灵石结算必须在 wrong 删除之前');
+});
+
+test('接线：灵石标签只在有产出时显示', () => {
+  assert.ok(/spiritGain>0\?/.test(html), '应仅在有灵石时显示标签');
+  assert.ok(/\.sp-tag\{/.test(html), '缺 .sp-tag 样式');
+});

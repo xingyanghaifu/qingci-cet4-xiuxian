@@ -132,6 +132,10 @@ import {
   REMIND_AFTER_DAYS, MIN_STUDY_DAYS, SNOOZE_DAYS,
 } from './backup-reminder';
 import {
+  dailyBestStreak, recordDailyStreak, dailyStreakQuest, ensureBestStreak,
+  DAILY_STREAK_TARGET, DAILY_STREAK_QUEST_ID,
+} from './daily-quest';
+import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
   tribulationSessionYields, vocabSizeOf, createTribSession, answerPick, releaseTribLock,
   tribSessionDone, formatTribTime, tribTimerWarn, tribPickIndexFromKey, tribCorrectIndex,
@@ -373,6 +377,19 @@ const QingciServices = {
     AFTER_DAYS: REMIND_AFTER_DAYS,
     MIN_STUDY_DAYS,
     SNOOZE_DAYS,
+  },
+  /**
+   * 每日功课的「今日连对」口径。
+   * 修掉真实缺陷：每日任务「不息心法」原本用 state.best（历史最长连对），
+   * 导致只要曾经连对 10 题就**永久预完成**，每天白领 60 灵石。
+   */
+  dailyQuest: {
+    bestStreak: dailyBestStreak,
+    record: recordDailyStreak,
+    streakQuest: dailyStreakQuest,
+    ensure: ensureBestStreak,
+    STREAK_TARGET: DAILY_STREAK_TARGET,
+    STREAK_ID: DAILY_STREAK_QUEST_ID,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

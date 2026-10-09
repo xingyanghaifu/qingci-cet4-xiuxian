@@ -136,20 +136,16 @@ try {
 
       for (const name of PANELS) {
         await ev(`(async () => {
-          /* ⚠️ 必须把 panel-missions 也一起隐藏 —— 它**常驻可见**（不受 switchTab 控制），
-             否则拍任何面板都会看到「每日修炼设置」的内容覆盖在上面（曾拍出误导性截图）。 */
-          var ALL = ['paper','trial','speak','book','codex','map','duel','field','missions'];
+          /* ── 关于 panel-missions 的历史 ──
+             它曾是**常驻可见**面板（不受 switchTab 控制），会把「每日修炼设置」
+             压在所有面板顶部。当时为了拍到真实面板内容，本脚本不得不先隐藏它 ——
+             但那样拍出的图**不能作为 P0 证据**（拍的不是用户真实看到的画面）。
+
+             批次2 已把它改为默认收起的 <details id="missionsFold">（1019px → 44px），
+             所以现在**不再隐藏它**：拍出的就是用户真实所见，可作为 P0 证据。 */
           var target = ${JSON.stringify(name)};
-          ALL.forEach(function(n){ var e=document.getElementById('panel-'+n); if(e) e.classList.add('hidden'); });
-          var t = document.getElementById('panel-' + target);
-          if (t) t.classList.remove('hidden');
-          /* panel-missions 也需要走它自己的显示路径（它是常驻面板） */
-          if (target === 'missions') {
-            var m = document.getElementById('panel-missions');
-            if (m) m.classList.remove('hidden');
-          }
           if (window.switchTab && target !== 'missions') { try { switchTab(target); } catch(e){} }
-          await new Promise(function(r){ setTimeout(r, 140); });
+          await new Promise(function(r){ setTimeout(r, 200); });
           window.scrollTo(0, 0);
           return 1;
         })()`);

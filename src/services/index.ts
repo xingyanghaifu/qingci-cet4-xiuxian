@@ -145,6 +145,8 @@ import {
   TIER_WEIGHT, TIER_WEIGHT_LABEL, FRESHNESS_STEPS, CONQUER_BONUS, MASTERY_LABEL,
   spiritValue, tierWeightNorm, expectedSpiritMultiplier,
   TIER_WEIGHT_NORM, TIER_WEIGHT_MEAN, SPIRIT_BASE_PER_MILESTONE, SPIRIT_REASON_LABEL,
+  personalDifficulty, kindWeaknessFactor, selfRatedFactor, applyPersonalDifficulty,
+  KIND_MIN_SAMPLES, WEAK_KIND_TIERS, SELF_RATED_BONUS, PERSONAL_FACTOR_CAP,
 } from './learning-value';
 import {
   canTribulate, pickTribulationQuestions, gradeTribulation, difficultyRangeForRealm,
@@ -446,6 +448,14 @@ const QingciServices = {
     TIER_WEIGHT_MEAN,
     SPIRIT_BASE: SPIRIT_BASE_PER_MILESTONE,
     SPIRIT_REASON: SPIRIT_REASON_LABEL,
+    personal: personalDifficulty,
+    kindWeakness: kindWeaknessFactor,
+    selfRated: selfRatedFactor,
+    applyPersonal: applyPersonalDifficulty,
+    KIND_MIN_SAMPLES,
+    WEAK_KIND_TIERS,
+    SELF_RATED_BONUS,
+    PERSONAL_CAP: PERSONAL_FACTOR_CAP,
   },
   /**
    * 灵根（修行天赋 · 第三期）：由 memStats 的真实正确率推导五行倾向。

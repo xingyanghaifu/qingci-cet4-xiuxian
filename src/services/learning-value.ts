@@ -372,6 +372,149 @@ export const MASTERY_LABEL: Readonly<Record<ReturnType<typeof masteryStage>, str
   mastered: '已掌握',
 };
 
+/* ───────────────── 个人难度（v1.11 第三轮）─────────────────
+ *
+ * ── 为什么还需要这一层 ──
+ * 前两轮用的是**通用难度**（词频分层）与**掌握状态**（答对次数）。
+ * 但目标点名的另外两个信号一直没用上：
+ *
+ *   · `state.schedule[word].level` —— 用户在 SRS 复习里的**自评**（again/hard/good/easy）
+ *   · `state.memStats[kind]`       —— **按题型的正确率**（{r, n}）
+ *
+ * 它们描述的不是「这个词对一般人难不难」，而是「**对你**难不难」。
+ * 这是两件不同的事：一个高频词可能恰是某个用户的盲点；
+ * 一个认知难词可能是他的强项。只看通用难度会漏掉**个人差异**。
+ *
+ * ── 设计：弱项加成 + 自评难度加成 ──
+ *
+ *   1. **题型弱项**（memStats）：某题型正确率越低，答对它收益越高
+ *        < 50%  → ×1.20（明显弱项）
+ *        < 65%  → ×1.10（待提升）
+ *        其余   → ×1.0
+ *      样本不足（< KIND_MIN_SAMPLES）不加成 —— 避免「做 1 题全错」就白拿加成。
+ *
+ *   2. **自评难度**（schedule.level）：用户评过「again/hard」的词，答对时收益更高
+ *        again → ×1.25   hard → ×1.15   其余 → ×1.0
+ *
+ * ── 为什么这不会通胀（关键论证）──
+ * 弱项意味着**该题型正确率低**，而正确率低本身就意味着**答对的题更少** ——
+ * 例如某题型 50% 正确率，相比 80% 的题型，同样题量下少拿约 37% 修为。
+ * 弱项加成（最多 +20%）**不足以补回这个损失**，所以它只是**平滑**进步曲线
+ * （让弱项不至于越练越亏），而不是抬高标准产出。
+ * 两者叠加的上限 `PERSONAL_FACTOR_CAP = 1.5` 进一步兜底。
+ *
+ * ── 反刷题：故意答错来「制造弱项」是否划算 ──
+ * 实测推演（基础 7 修为/题、加成 20%）：
+ *     故意答错  5 题 → 损失 35 修为，之后每题多拿 1.4 → 需再答对 25 题才回本
+ *     故意答错 20 题 → 损失 140 修为，之后每题多拿 1.4 → 需再答对 100 题才回本
+ * **回本所需题量远大于压低正确率所需题量** —— 不划算。
+ * 而且答错还会：进心魔、断连对、失去灵石里程碑机会。故无需额外防刷机制。
+ */
+
+/** 题型被判定为「弱项」所需的最少作答数（防「1 题全错」白拿加成） */
+export const KIND_MIN_SAMPLES = 5;
+
+/** 题型弱项档位（正确率上限降序，取第一个命中） */
+export const WEAK_KIND_TIERS: ReadonlyArray<{ maxAccuracy: number; bonus: number; label: string }> = [
+  { maxAccuracy: 0.5, bonus: 1.2, label: '明显弱项' },
+  { maxAccuracy: 0.65, bonus: 1.1, label: '待提升' },
+];
+
+/** 自评难度加成（用户在 SRS 复习里给出的评级） */
+export const SELF_RATED_BONUS: Readonly<Record<string, number>> = {
+  again: 1.25,
+  hard: 1.15,
+};
+
+/** 个人难度总系数上限（兜底，防止多项叠加过度膨胀） */
+export const PERSONAL_FACTOR_CAP = 1.5;
+
+/** 题型统计行（与模板 state.memStats[kind] 一致） */
+export interface KindStat { r?: number; n?: number }
+
+/**
+ * 题型弱项系数。`stat` 形如 `{r: 答对, n: 总作答}`。
+ * 样本不足或数据非法时返回 1.0（不加成）。
+ */
+export function kindWeaknessFactor(stat: KindStat | null | undefined): number {
+  if (!stat || typeof stat !== 'object') return 1;
+  const n = Number(stat.n);
+  const r = Number(stat.r);
+  if (!Number.isFinite(n) || !Number.isFinite(r) || n < KIND_MIN_SAMPLES) return 1;
+  const correct = Math.max(0, Math.min(r, n));
+  const acc = correct / n;
+  for (const tier of WEAK_KIND_TIERS) if (acc < tier.maxAccuracy) return tier.bonus;
+  return 1;
+}
+
+/** 题型弱项的可读名（无弱项时返回空串） */
+export function weakKindLabel(stat: KindStat | null | undefined): string {
+  if (!stat || typeof stat !== 'object') return '';
+  const n = Number(stat.n);
+  const r = Number(stat.r);
+  if (!Number.isFinite(n) || !Number.isFinite(r) || n < KIND_MIN_SAMPLES) return '';
+  const acc = Math.max(0, Math.min(r, n)) / n;
+  for (const tier of WEAK_KIND_TIERS) if (acc < tier.maxAccuracy) return tier.label;
+  return '';
+}
+
+/** 自评难度系数（level 为 'again' / 'hard' / 'good' / 'easy' 或未知） */
+export function selfRatedFactor(level: unknown): number {
+  const k = String(level || '').toLowerCase();
+  return SELF_RATED_BONUS[k] || 1;
+}
+
+export interface PersonalDifficultyInput {
+  /** 当前题型的 memStats 行 */
+  kindStat?: KindStat | null;
+  /** 当前词在 SRS 里的自评 level */
+  selfLevel?: string | null;
+}
+
+export interface PersonalDifficulty {
+  /** 综合系数（已按 PERSONAL_FACTOR_CAP 封顶） */
+  factor: number;
+  /** 分项 */
+  parts: { kind: number; selfRated: number };
+  /** 是否命中弱项 */
+  weak: boolean;
+  /** 一句话解释（界面用；无加成时为空串） */
+  reason: string;
+}
+
+/**
+ * 个人难度系数 = 题型弱项 × 自评难度（封顶 PERSONAL_FACTOR_CAP）。
+ * 纯函数，不读 storage、不改入参。
+ */
+export function personalDifficulty(input: PersonalDifficultyInput = {}): PersonalDifficulty {
+  const src: PersonalDifficultyInput = (input && typeof input === 'object') ? input : {};
+  const kind = kindWeaknessFactor(src.kindStat);
+  const selfRated = selfRatedFactor(src.selfLevel);
+  const raw = kind * selfRated;
+  const factor = Math.round(Math.min(PERSONAL_FACTOR_CAP, raw) * 1000) / 1000;
+
+  const bits: string[] = [];
+  const kl = weakKindLabel(src.kindStat);
+  if (kl) bits.push(kl);
+  const lvl = String(src.selfLevel || '').toLowerCase();
+  if (lvl === 'again') bits.push('上次标记为「忘记」');
+  else if (lvl === 'hard') bits.push('上次标记为「模糊」');
+
+  return {
+    factor,
+    parts: { kind, selfRated },
+    weak: kind > 1,
+    reason: bits.join(' · '),
+  };
+}
+
+/** 把个人难度系数应用到基础收益上（与 applyLearningValue 同语义） */
+export function applyPersonalDifficulty(base: number, pd: PersonalDifficulty): number {
+  const b = Number.isFinite(Number(base)) && Number(base) > 0 ? Number(base) : 0;
+  const f = pd && Number.isFinite(pd.factor) && pd.factor > 0 ? pd.factor : 1;
+  return Math.max(1, Math.round(b * f));
+}
+
 /**
  * 估算「同样 20 题」在两种打法下的收益差异（用于界面说明与测试）。
  * 返回倍数（攻克生词 ÷ 刷已掌握高频词），便于直观展示「学习价值」的意义。

@@ -44,6 +44,7 @@
     "verify:final": "node scripts/verify-final-online.mjs",
     "verify:gameplay": "node scripts/verify-gameplay-integration.mjs",
     "verify:focus": "node scripts/verify-focus-touch.mjs",
+    "audit:constraints": "node scripts/audit-constraints.mjs",
     "check:usage": "node scripts/check-service-usage.mjs",
     "check:usage:strict": "node scripts/check-service-usage.mjs --strict"
   },

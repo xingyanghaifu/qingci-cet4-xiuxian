@@ -217,7 +217,11 @@ test('接线：settle 挂钩内浇水 + 静默（验收 18/R18）', () => {
 
 test('接线：灵田迁入独立 #panel-field + 导航增至 9 项（谕令一）', () => {
   const mapIdx = html.indexOf('id="panel-map"');
-  const mapEnd = html.indexOf('</section>', html.indexOf('id="reportCard"'));
+  /* ⚠️ 不能借「reportCard 之后的 </section>」当 panel-map 的结束位置 ——
+     v1.12 已把 reportCard 等记录类卡片移入菜单「修行录」，该锚点会失效，
+     导致 mapEnd 跑到面板之外、把正常内容判成「不在 panel-map 内」（假失败）。
+     改为从 panel-map 自身往后找第一个 </section>（面板边界本就该这样取）。 */
+  const mapEnd = html.indexOf('</section>', mapIdx);
   const fieldIdx = html.indexOf('id="panel-field"');
   assert.ok(fieldIdx > 0, 'panel-field 缺失');
   assert.ok(fieldIdx < mapIdx, 'panel-field 应位于 panel-map 之前（兄弟节点）');

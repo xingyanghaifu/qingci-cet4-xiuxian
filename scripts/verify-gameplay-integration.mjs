@@ -105,12 +105,42 @@ let fail = 0;
 const lines = [];
 const ok = (pass, msg) => { if (!pass) fail++; lines.push(`${pass ? 'PASS' : 'FAIL'}  ${msg}`); };
 
+/**
+ * 探测 CDP（本地 127.0.0.1）。
+ *
+ * ⚠️ **不要给本脚本加 `--use-env-proxy`**。
+ *
+ * 实测：加了之后 Node 会把**对 127.0.0.1:9470 的 CDP 请求也塞进代理**，
+ * 代理对本地地址返回 `other side closed` → 脚本报「CDP 未就绪」的假失败。
+ * 更坑的是：**在进程内临时删掉代理环境变量也没用** ——
+ * undici 的 dispatcher 在进程启动时就固定了（实测 A/B 两次 fetch 都失败）。
+ *
+ * 正确用法：访问线上目标时，代理只交给**浏览器**（脚本已按 REMOTE 自动加
+ * `--proxy-server`），Node 侧不带任何代理参数：
+ *
+ *     node scripts/verify-gameplay-integration.mjs https://<site>/
+ */
+async function cdpList() {
+  const res = await fetch(`http://127.0.0.1:${CDP}/json/list`);
+  return await res.json();
+}
+
 try {
   let page;
   for (let i = 0; i < 100; i++) {
     try {
-      const l = await (await fetch(`http://127.0.0.1:${CDP}/json/list`)).json();
-      page = l.find((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+      const l = await cdpList();
+      /* ⚠️ 不能只判 `t.type === 'page'` —— 浏览器自己还会开页面，
+         实测踩到：首个 page 是 `edge://sync-confirmation-dialog/`，
+         于是脚本连上了一个**空白的浏览器内部页**，
+         后续所有 evaluate 都取不到 QingciServices，表现为「CDP 未就绪」的假失败。
+         必须按**目标 URL** 选中我们要测的那个页面。 */
+      const want = REMOTE || `127.0.0.1:${PORT}`;
+      page = l.find((t) => t.type === 'page' && t.webSocketDebuggerUrl
+        && t.url && !/^(edge|chrome|about|devtools):/.test(t.url)
+        && t.url.includes(want))
+        || l.find((t) => t.type === 'page' && t.webSocketDebuggerUrl
+          && t.url && !/^(edge|chrome|about|devtools):/.test(t.url));
       if (page) break;
     } catch { /* 浏览器还没起 */ }
     await sleep(500);

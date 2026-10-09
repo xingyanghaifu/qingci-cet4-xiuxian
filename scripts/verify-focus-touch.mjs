@@ -77,7 +77,11 @@ try {
   let page;
   for (let i = 0; i < 100; i++) {
     try { const l = await (await fetch(`http://127.0.0.1:${CDP}/json/list`)).json();
-      page = l.find((t) => t.type === 'page' && t.webSocketDebuggerUrl); if (page) break; } catch {}
+      // 同 verify-gameplay-integration：必须排除浏览器内部页（edge://sync-... 等），
+  // 否则会连到空白内部页 → 所有断言取不到元素（假失败）。
+  page = l.find((t) => t.type === 'page' && t.webSocketDebuggerUrl
+    && t.url && !/^(edge|chrome|about|devtools):/.test(t.url)
+    && t.url.includes('127.0.0.1')); if (page) break; } catch {}
     await sleep(500);
   }
   const ws = new WebSocket(page.webSocketDebuggerUrl);

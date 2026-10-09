@@ -4535,9 +4535,30 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   });
   /* 设置入口：切到卷面/洞府面板并把焦点送到无障碍设置卡（目的与原有设置流程一致） */
   var setBtn = document.getElementById('sideSettings');
-  if (setBtn) setBtn.addEventListener('click', function () {
-    if (window.switchTab) switchTab('map');
+  if (setBtn) setBtn.addEventListener('click', function (ev) {
+    /* ⚠️ 必须阻止冒泡：document 上有「点菜单外部即关闭」的处理器，
+       否则这一次点击会在打开后立刻把菜单关掉（表现为「点了没反应」）。 */
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    /* v1.12：无障碍/外观等偏好卡已移入菜单「修行录」，
+       设置入口改为**打开菜单并滚到该卡** ——
+       此前切到洞府后看不到它，表现为「点击设置没反应 / 加载失败」。 */
     setDrawer(false);
+    var _setCard = document.getElementById('a11yCard');
+    var _setMenu = document.getElementById('navMenu');
+    var _setMenuBtn = document.getElementById('menuBtn');
+    var _cardInMenu = !!(_setCard && _setMenu && _setMenu.contains(_setCard));
+    if (_cardInMenu) {
+      /* 用菜单自己的 open(target)：它在打开后把焦点送到目标并滚动到视野内。
+         不能自己 click() + focus() —— open 的内部聚焦会覆盖。 */
+      /* 传卡内首个可聚焦元素而非卡片本身 —— <div> 不可聚焦，
+         直接 focus(div) 会让焦点落到 BODY。 */
+      var _setFirst = _setCard.querySelector('button, input, select, textarea, [tabindex]');
+      var _setTarget = _setFirst || _setCard;
+      if (typeof window.__openNavMenu === 'function') window.__openNavMenu(_setTarget);
+      else if (_setMenuBtn && !_setMenu.classList.contains('open')) _setMenuBtn.click();
+    } else if (window.switchTab) {
+      switchTab('map');
+    }
     var card = document.getElementById('a11yCard');
     var first = card && card.querySelector('button, input, select, textarea, [tabindex]');
     if (first) { try { first.focus({ preventScroll: true }); } catch (err) { first.focus(); } if (card.scrollIntoView) card.scrollIntoView({ block: 'center' }); }
@@ -4935,13 +4956,20 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       menu.querySelectorAll('button, [href], input, select, textarea, [tabindex]')
     );
   }
-  function open() {
+  function open(focusTarget) {
     if (isOpen()) return;
     lastFocus = document.activeElement;
     menu.classList.add('open');
     if (scrim) scrim.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');
     btn.setAttribute('aria-label', '关闭导航菜单');
+    /* v1.12：支持把焦点直接送到指定元素（设置入口用它直达无障碍卡）。
+       ⚠️ 必须在 classList.add('open') **之后**聚焦 —— 不可见元素无法获焦。 */
+    if (focusTarget && focusTarget.focus && menu.contains(focusTarget)) {
+      try { focusTarget.focus({ preventScroll: true }); } catch (e) { try { focusTarget.focus(); } catch (e2) { /* 忽略 */ } }
+      if (focusTarget.scrollIntoView) focusTarget.scrollIntoView({ block: 'center' });
+      return;
+    }
     var f = focusables();
     if (f.length) { try { f[0].focus({ preventScroll: true }); } catch (e) { f[0].focus(); } }
   }
@@ -4955,6 +4983,8 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       try { lastFocus.focus({ preventScroll: true }); } catch (e) { lastFocus.focus(); }
     }
   }
+  /* v1.12：把 open 暴露给设置入口（复用同一闭包，不重复实现打开逻辑） */
+  window.__openNavMenu = function (target) { open(target); };
   function focusMainTitle() {
     if (!mainTitle) return;
     try { mainTitle.focus({ preventScroll: true }); } catch (e) { try { mainTitle.focus(); } catch (e2) { /* 忽略 */ } }

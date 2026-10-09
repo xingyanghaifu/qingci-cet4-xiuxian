@@ -1487,6 +1487,37 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 /* 大号分数用比例数字：tabular 在大字号下会显得过疏 */
 .sect-score{font-variant-numeric:normal;font-feature-settings:normal}
 /* v1.9.1:排版意境:END */
+
+/* ===== 批次2 · 人性化设计（v1.13）：降噪 / 分组 / 层级 =====
+   ① 三处折叠（修炼设置 / 词库 / 试卷架）共用 .fold 一套视觉，用户只需学一次交互。
+      summary 的焦点环 + Enter/Space 展开全部来自原生 details 语义，零交互 JS。
+   ② field 降噪：境界封印格（不可交互）不再描边，只留压暗底色 ——
+      边界的作用是提示「这里可交互」，禁用格本就不需要它；6 个虚线框是真实噪声。
+      可交互格（空地 / 生长中）改用 inset box-shadow 保留同款视觉，可用性不变。
+   ③ 全部走既有 token / color-mix：零裸 hex、不新增 :root 块、零循环动效。 */
+.fold{margin:0 0 14px}
+.fold>summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  cursor:pointer;list-style:none;padding:11px 14px;border-radius:var(--radius-md);
+  background:color-mix(in srgb,var(--bg2) 62%,transparent);
+  box-shadow:inset 0 0 0 1px var(--border-default);
+  color:var(--text-primary);font-size:14px;letter-spacing:.04em;
+  transition:background .22s cubic-bezier(.4,0,.2,1),box-shadow .22s cubic-bezier(.4,0,.2,1)}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary:hover{background:color-mix(in srgb,var(--gold) 8%,var(--bg2))}
+.fold>summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.fold>summary::before{content:"▸";flex:0 0 auto;color:var(--gold);font-size:12px;
+  transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.fold[open]>summary::before{transform:rotate(90deg)}
+.fold[open]>summary{margin-bottom:10px}
+.fold-hint{margin-left:auto;color:var(--text-secondary);font-size:12px;letter-spacing:.08em;white-space:nowrap}
+.plot{border:0;box-shadow:inset 0 0 0 1px var(--border-subtle)}
+.plot.sealed{border:0;box-shadow:none}
+.plot.empty{border:1px dashed var(--border-subtle);box-shadow:none}
+.plot.mature{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 60%,transparent),0 0 10px color-mix(in srgb,var(--gold) 20%,transparent)}
+:root[data-contrast="high"] .plot{box-shadow:inset 0 0 0 2px var(--border-subtle)}
+:root[data-contrast="high"] .plot.empty{border-width:2px}
+/* ===== 批次2 END ===== */
+
 </style>
 </head>
 <body class="cloud-weave">
@@ -1519,8 +1550,10 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 </div></div></div><div class="nav-scrim" id="navScrim"></div>
   <div class="layout"><main id="main">
     <header class="main-head"><div class="mh-titles"><p class="kicker">CET-4 · 六卷天路</p><h1 id="mainTitle" tabindex="-1"><span class="mt" data-m="paper" aria-hidden="false">试炼殿</span><span class="mt" data-m="words" aria-hidden="true">背单词</span><span class="mt" data-m="single" aria-hidden="true">单题</span><span class="mt" data-m="speak" aria-hidden="true">口语小径</span><span class="mt" data-m="book" aria-hidden="true">心魔本</span><span class="mt" data-m="codex" aria-hidden="true">词谱</span><span class="mt" data-m="map" aria-hidden="true">卷面与洞府</span><span class="mt" data-m="duel" aria-hidden="true">问道斗法</span><span class="mt" data-m="field" aria-hidden="true">灵田</span></h1></div><div class="mh-actions"><button class="btn solid" id="startPaper">开考这一卷</button></div></header>
-    <section class="panel" id="panel-missions"><p class="section-label">每日修炼设置 · DAILY SETUP</p><span class="cloud-rule" aria-hidden="true"></span><div class="shop-card" id="dailyTargetCard"><div class="row" style="justify-content:space-between"><b>每日背词目标</b><span class="muted">DAILY TARGET</span></div><p class="muted">摸底入口已移至「洞府」页；这里只保留每日目标设置。</p><div class="tools"><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn solid icb ic-seal" id="saveDailyTarget">保存目标</button></div></div><div class="shop-card" id="planCard"><div class="row" style="justify-content:space-between"><b>动态学习计划</b><span class="muted" id="planSummary">加载中…</span></div><p class="muted" id="planAdvice">按考试日期、当前水平与每日可用时间生成，并根据完成情况与模考成绩自动调整。</p><div class="tools"><label class="muted">考试日期 <input id="planExamDate" type="date" style="width:150px"></label><label class="muted">每日可用 <input id="planDailyMinutes" type="number" min="10" max="240" step="5" style="width:86px"> 分钟</label><button class="btn icb ic-cauldron" id="planSave">保存设置</button></div><div class="tools"><button class="btn solid" id="planAssess">开始自适应摸底（30–50 题）</button><span class="muted" id="planAssessHint"></span></div><div id="planBody"></div></div><div class="shop-card" id="vocabSrsCard"><div class="row" style="justify-content:space-between"><b>词汇间隔复习（SM-2）</b><span class="muted" id="vsrsSummary">加载中…</span></div><p class="muted" id="vsrsPlan">按考试日期与掌握度动态安排每日学习量。</p><div class="tools" id="vsrsTiers"></div><div class="tools"><button class="btn solid" id="vsrsStart">开始今日复习</button><button class="btn" id="vsrsNew">学新词（按分级）</button><span class="muted" id="vsrsHint"></span></div><div class="mk-bars" id="vsrsStats"></div></div></section>
-    <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · <span id="lxPaperBadge">CET-4</span> DAILY TRIAL</p><span class="cloud-rule" aria-hidden="true"></span><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="kaoyan">考研英语 · 原创练习</option><option value="pretco">PRETCO · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option><option value="gre">GRE · 原创练习</option><option value="ielts">IELTS · 原创练习</option><option value="toefl">TOEFL · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型" aria-label="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><div class="shelf" id="shelf"></div><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn" id="randomPractice">随机练习（20 题）</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
+    <section class="panel" id="panel-missions">
+<details class="fold" id="missionsFold"><summary><span id="missionsBrief">每日修炼设置</span><span class="fold-hint">展开设置 ▾</span></summary><div class="shop-card" id="dailyTargetCard"><div class="row" style="justify-content:space-between"><b>每日背词目标</b><span class="muted">DAILY TARGET</span></div><p class="muted">摸底入口已移至「洞府」页；这里只保留每日目标设置。</p><div class="tools"><label class="muted">每日目标 <input id="dailyTarget" type="number" min="5" max="100" step="5" value="20" style="width:86px"> 词</label><button class="btn solid icb ic-seal" id="saveDailyTarget">保存目标</button></div></div><div class="shop-card" id="planCard"><div class="row" style="justify-content:space-between"><b>动态学习计划</b><span class="muted" id="planSummary">加载中…</span></div><p class="muted" id="planAdvice">按考试日期、当前水平与每日可用时间生成，并根据完成情况与模考成绩自动调整。</p><div class="tools"><label class="muted">考试日期 <input id="planExamDate" type="date" style="width:150px"></label><label class="muted">每日可用 <input id="planDailyMinutes" type="number" min="10" max="240" step="5" style="width:86px"> 分钟</label><button class="btn icb ic-cauldron" id="planSave">保存设置</button></div><div class="tools"><button class="btn solid" id="planAssess">开始自适应摸底（30–50 题）</button><span class="muted" id="planAssessHint"></span></div><div id="planBody"></div></div><div class="shop-card" id="vocabSrsCard"><div class="row" style="justify-content:space-between"><b>词汇间隔复习（SM-2）</b><span class="muted" id="vsrsSummary">加载中…</span></div><p class="muted" id="vsrsPlan">按考试日期与掌握度动态安排每日学习量。</p><div class="tools" id="vsrsTiers"></div><div class="tools"><button class="btn solid" id="vsrsStart">开始今日复习</button><button class="btn" id="vsrsNew">学新词（按分级）</button><span class="muted" id="vsrsHint"></span></div><div class="mk-bars" id="vsrsStats"></div></div></details></section>
+    <section class="panel" id="panel-paper"><p class="section-label">试炼殿 · <span id="lxPaperBadge">CET-4</span> DAILY TRIAL</p><span class="cloud-rule" aria-hidden="true"></span><div class="row clock-row" style="justify-content:space-between"><h2>整套试炼</h2><b id="clock">125:00</b></div><div class="exam-select"><label class="muted" for="examSelect">备考考试</label><select id="examSelect"><option value="junior">初中英语 · 原创练习</option><option value="senior">高中英语 · 原创练习</option><option value="kaoyan">考研英语 · 原创练习</option><option value="pretco">PRETCO · 原创练习</option><option value="pets3">PETS-3 · 原创练习</option><option value="cet4">CET-4 · 原创模拟</option><option value="cet6">CET-6 · 原创练习</option><option value="gre">GRE · 原创练习</option><option value="ielts">IELTS · 原创练习</option><option value="toefl">TOEFL · 原创练习</option></select><div class="exam-meta" id="examMeta"></div></div><div class="tools"><button class="btn solid" id="quickWords">立即背词</button><button class="btn" id="quickWrong">复习错词</button><select id="memKindSel" title="背词题型" aria-label="背词题型"><option value="rotate">题型轮换（推荐）</option><option value="0">中译英</option><option value="1">英译中</option><option value="2">形近辨析</option><option value="3">听音辨词</option><option value="4">拼写默写</option><option value="5">词性判断</option></select></div><details class="fold" id="paperShelfFold"><summary><span id="shelfBrief"></span><span class="fold-hint">换一卷 ▾</span></summary>
+<div class="shelf" id="shelf"></div></details><p class="muted" id="paperProgress">先选一卷。同一卷每次题序和选项都一样。</p><div class="tools"><button class="btn" id="randomPractice">随机练习（20 题）</button><button class="btn" id="handPaper">交卷</button></div><div id="report"></div></section>
     <section class="panel hidden" id="panel-trial" role="tabpanel" tabindex="-1"><div class="row" style="justify-content:space-between"><b id="trialTitle">单题</b><span class="badge" id="studyModeBadge">答题模式</span><span class="lx-badge" id="lxTrialBadge" title="当前词库">CET-4</span><span class="muted" id="poolLabel"></span><span class="combo-hud hidden" id="comboHud" aria-live="polite"></span></div><div class="trial-sticky"><div class="prompt" id="prompt" aria-live="polite" aria-atomic="true"></div><div class="muted" id="subline"></div><div class="audio-dock hidden" id="audioDock"><button type="button" class="primary" id="audioPlay">▶ 播放听力</button><button type="button" id="audioReplay">↻ 重播</button><button type="button" id="realAudioBtn" class="hidden">▶ 真实音频</button><button type="button" id="intensiveOpen">精听</button><label class="audio-status">语速 <select id="audioRate"><option value="0.75">0.75×</option><option value="0.9" selected>0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option></select></label><input id="audioProgress" type="range" min="0" max="100" value="0" aria-label="听力进度"><span id="audioStatus" class="audio-status">待播放</span></div><div class="passage hidden" id="passage"></div><div class="choices" id="choices" role="group" aria-label="选项" aria-describedby="prompt"></div><div id="writeBox" class="hidden"><textarea id="essay" aria-label="作文正文"></textarea><p class="muted" id="writeCount">0 词</p></div><div id="gradeBox" class="hidden"><div class="tools"><button class="btn" id="gradeBtn">提交 AI 批改</button><span class="muted" id="gradeHint"></span></div></div><div class="feedback hidden" id="gradeReport" aria-live="polite"></div><div id="spellBox" class="hidden"><div class="spell-tpl" id="spellHint"></div><input id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="按记忆拼写，回车核对" aria-label="按记忆拼写单词"><p class="muted">首字母已给出，其余用下划线占位。回车即可核对。</p></div><button class="btn solid hidden" id="submitSpell">核对拼写</button></div><div class="feedback" id="feedback" aria-live="polite"></div><div class="tools"><button class="btn" id="hear">听</button><button class="btn" id="vdBtn">详解</button><button class="btn" id="skip">换题</button><span class="rating-label" id="ratingLabel">记忆反馈</span><button class="btn rating-btn hidden" id="againWord">不认识</button><button class="btn rating-btn hidden" id="hardWord">模糊</button><button class="btn rating-btn hidden" id="goodWord">认识</button><button class="btn solid rating-btn hidden" id="easyWord">熟练</button><button class="btn solid hidden" id="next">下一题</button><button class="btn solid hidden" id="submitWrite">核对</button></div></section>
     <section class="panel hidden" id="panel-speak"><p class="section-label">口语小径 · SPEAKING LAB</p><span class="cloud-rule" aria-hidden="true"></span><h2>口语小径</h2><p class="muted" id="speakLead"></p><div class="prompt" id="speakTitle"></div><div id="speakBody"></div><div class="tools"><button class="btn" id="speakHear">朗读题目</button><button class="btn solid" id="speakRecord">● 开始录音</button><button class="btn" id="speakStop" disabled>停止</button><button class="btn" id="speakPlay" disabled>▶ 回放</button><button class="btn solid" id="speakNext">下一关</button></div><audio id="speakAudio" controls class="hidden"></audio><p class="muted" id="speakStatus" role="status">录音仅保存在本次页面会话，不会上传。</p><textarea id="speakNote" placeholder="先写提纲，再录一遍。完成后点下一关。" aria-label="口述提纲"></textarea></section>
     <section class="panel hidden" id="panel-book"><p class="section-label">心魔本 · MEMORY FORGE</p><span class="cloud-rule" aria-hidden="true"></span><h2>错题本与心魔</h2><p class="muted" id="bookLead"></p><div class="shop-card" id="mistakePanel"><div class="row" style="justify-content:space-between"><b>错题本 · 间隔复习（SM-2）</b><span class="muted" id="mkSummary">加载中…</span></div><p class="muted">答错的题会自动收进来，按 SM-2 动态安排复习间隔：越熟的题间隔越长，反复错的题始终留在短间隔。</p><div class="tools" id="mkFilters"></div><div class="tools"><button class="btn solid" id="mkReviewBtn">开始今日复习</button><span class="muted" id="mkHint"></span></div><div id="mkCards"></div><div id="mkStats"></div></div><button class="btn solid" id="drillWrong">只练这些词</button><div class="dict" id="bookList"></div></section>
@@ -1532,7 +1565,8 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   <p class="section-label">当前词库 · LEXICON</p>
   <span class="cloud-rule" aria-hidden="true"></span>
   <p class="muted lx-intro" id="lxPickerLabel">各词库的进度、错题与复习队列<b>相互独立</b>；切换不会影响另一个词库已积累的修炼记录。</p>
-  <div class="lx-grid" id="lxGrid"></div>
+  <details class="fold" id="lxFold"><summary><span id="lxBrief">当前词库</span><span class="fold-hint">更换词库 ▾</span></summary>
+<div class="lx-grid" id="lxGrid"></div></details>
   <p class="muted lx-status" id="lxStatus" role="status" aria-live="polite"></p>
 </div>
 <!-- v1.8.2:LEXICON_UI:END -->
@@ -1801,6 +1835,11 @@ function claimMission(m){ if(m.now<m.target||state.claimed[m.id]===dayKey()) ret
 function weakWords(){ return Object.keys(state.wrong).map(w=>byWord.get(w)).filter(Boolean).sort((a,b)=>(state.wrong[b.w]||0)-(state.wrong[a.w]||0)); }
 function renderAchievements(){ const items=[['first','初入词海','完成首题',state.seen>=1],['ten','十连问道','最长连对 10 题',state.best>=10],['hundred','百词斩','累计答对 100 题',state.right>=100],['paper','开卷有益','完成一场模拟卷',state.papers>=1],['demon','心魔尽斩','心魔本归零',state.seen>0&&Object.keys(state.wrong).length===0]]; $("achievementList").innerHTML=items.map(x=>"<div class='achievement "+(x[3]?"unlocked":"")+"><b>"+(x[3]?"✦":"○")+" "+x[1]+"</b><span>"+x[2]+"</span></div>").join(""); }
 function renderMissions(){ const missions=missionState(); $("missionList").innerHTML=missions.map(m=>{const done=m.now>=m.target; const claimed=state.claimed&&state.claimed[m.id]===dayKey(); return "<article class='mission "+(done?"done":"")+"' data-mission='"+esc(m.id)+"'><b>"+(done?"✓ ":"")+m.title+" <span class='reward'>"+(claimed?"已领取":"+"+m.reward+" 灵石")+"</span></b><small>"+m.desc+" · "+Math.min(m.now,m.target)+" / "+m.target+(done&&!claimed?" · 点击领取":"")+"</small><div class='mini-bar'><i style='width:"+Math.min(100,m.now/m.target*100)+"%'></i></div></article>";}).join(""); $("missionList").querySelectorAll('.mission').forEach((el,i)=>el.onclick=()=>claimMission(missions[i])); renderAchievements(); }
+/* 批次2：折叠态 summary 带信息量 —— 今日目标 / 待复习 / 新词。
+   数字全部取自既有 state 与已发布的 last-plan / last-vsrs，不新增任何存储。
+   待复习与新词要等 SRS / 计划异步渲染完成，故在那两处回填。 */
+function renderMissionsBrief(){ const el=$("missionsBrief"); if(!el) return; const target=Math.max(1,state.dailyTarget||20); const done=Math.min(state.dailyWords||0,target); const vsrs=window.__QINGCI_LAST_VSRS__; const plan=window.__QINGCI_LAST_PLAN__; let t="每日修炼设置 · 今日目标 "+done+"/"+target+" 词"; if(vsrs&&typeof vsrs.due==="number") t+=" · 待复习 "+vsrs.due; if(plan&&plan.newPerDay!=null) t+=" · 新词 "+plan.newPerDay; el.textContent=t; }
+window.__qcMissionsBrief=renderMissionsBrief;
 function renderStudySummary(){ renderAssessment(); const weak=weakWords(); const mastered=Object.keys(state.known).length; const next=weak.length?'建议下一轮先复习 <b>'+esc(weak[0].w)+'</b>（心魔 '+state.wrong[weak[0].w]+' 次）':'当前没有高频错词，继续拓展新词。'; $("studySummary").innerHTML='已掌握 <b>'+mastered+'</b> 词 · 心魔 <b>'+weak.length+'</b> · '+next; }
 function renderShop(){ $("shopSpirit").textContent=state.spirit||0; if(window.__renderShopExtras) window.__renderShopExtras(); }
 function buyItem(item){ const costs={review:30,listen:40,break:60}; const names={review:'复习令',listen:'听风符',break:'破障丹'}; const ESc=window.QingciServices&&window.QingciServices.economy; const paid=ESc?ESc.spendSpirit(state,costs[item],'purchase_'+item):null; if(paid?!paid.ok:((state.spirit||0)<costs[item])) return toast('灵石不足，先完成今日修炼'); if(!paid) state.spirit-=costs[item]; if(item==='review'){ state.pool='wrong'; toast('复习令生效：进入心魔复习'); switchTab('trial'); ask(); } else if(item==='listen'){ state.audioBoost=2; toast('听风符生效：下一次听力播放两遍'); } else { const list=weakWords(); if(!list.length){ if(ESc) ESc.earnSpirit(state,costs[item],'refund_'+item); else state.spirit+=costs[item]; return toast('当前没有心魔词');} const word=list[0].w; delete state.wrong[word]; toast('破障丹击破 '+word+'，请重新验证'); } save(); renderTop(); renderShop(); }
@@ -1810,10 +1849,13 @@ function renderTop(){ const r=realm(); if($("examSelect"))renderExamMeta(); $("r
      不该反复闪。首次渲染 lastRealm 为 undefined，静默跳过（避免每刷新一次都演一遍）。 */
   if(typeof window.__qcRealmSeen==='number'&&r.index>window.__qcRealmSeen){ bar.classList.remove('realm-sweep'); void bar.offsetWidth; bar.classList.add('realm-sweep'); }
   window.__qcRealmSeen=r.index;
-  $("streakText").textContent="连对 "+state.streak; $("paperText").textContent=state.papers?"最高 "+state.bestScore:"尚未开卷"; const d=day(); $("today").innerHTML=["对 "+d.right,"错 "+d.wrong,"斩 "+Object.keys(state.known).length,"魔 "+Object.keys(state.wrong).length].map((x)=>"<span>"+x+"</span>").join(""); renderMissions(); renderStudySummary(); $("recent").innerHTML=state.recent.slice(0,8).map((w)=>"<span class='btn'>"+esc(w)+"</span>").join("")||"<span class='muted'>还没有</span>"; $("pool").value=state.pool; $("poolLabel").textContent="词库 "+WORDS.length; renderDashboard(); }
+  $("streakText").textContent="连对 "+state.streak; $("paperText").textContent=state.papers?"最高 "+state.bestScore:"尚未开卷"; const d=day(); $("today").innerHTML=["对 "+d.right,"错 "+d.wrong,"斩 "+Object.keys(state.known).length,"魔 "+Object.keys(state.wrong).length].map((x)=>"<span>"+x+"</span>").join(""); renderMissions(); renderMissionsBrief(); renderStudySummary(); $("recent").innerHTML=state.recent.slice(0,8).map((w)=>"<span class='btn'>"+esc(w)+"</span>").join("")||"<span class='muted'>还没有</span>"; $("pool").value=state.pool; $("poolLabel").textContent="词库 "+WORDS.length; renderDashboard(); }
 function renderRoad(){ $("road").innerHTML=GATES.map((g)=>"<button class='gate' data-gate='"+g.id+"'><b>"+g.name+"</b><small>"+g.part+"</small><em>"+(g.weight||"口试")+"</em></button>").join(""); }
 function renderExamMeta(){ const e=selectedExam(); const d=difficultyForRealm(realm().index); $("examSelect").value=e.id; $("examMeta").textContent=e.description+' · '+e.count+'题 · '+e.minutes+'分钟 · 及格线 '+e.pass+'/'+e.total+' · 当前难度 '+d+'/5 · '+e.source; }
-function renderShelf(){ $("shelf").innerHTML=PAPERS.map((p)=>{ const rec=state.records[p.id]; return "<button class='paper-card"+(p.id===state.selected?" on":"")+"' data-paper='"+p.id+"'><b>"+p.name+"</b><span>"+p.scene+" · "+p.focus+"</span><small class='muted'>"+(rec?"上次 "+rec.score:"未开封")+"</small></button>"; }).join(""); }
+function renderShelf(){ $("shelf").innerHTML=PAPERS.map((p)=>{ const rec=state.records[p.id]; return "<button class='paper-card"+(p.id===state.selected?" on":"")+"' data-paper='"+p.id+"'><b>"+p.name+"</b><span>"+p.scene+" · "+p.focus+"</span><small class='muted'>"+(rec?"上次 "+rec.score:"未开封")+"</small></button>"; }).join(""); renderShelfBrief(); }
+/* 批次2：折叠态 summary 给出「当前卷」全量信息，主流程无需展开即可开考。
+   只重写 #shelf（details 的内容器），因此展开状态不会被重渲染重置。 */
+function renderShelfBrief(){ const el=$("shelfBrief"); if(!el) return; const sp=selectedPaper(); const rec=state.records[sp.id]; el.innerHTML="<b>"+esc(sp.name)+"</b> · "+esc(sp.scene)+" · "+esc(sp.focus)+" · "+(rec?"上次 "+rec.score:"未开封"); }
 function bankFor(meta){ const wrongPool=state.pool==='wrong'?Object.keys(state.wrong).map(w=>byWord.get(w)).filter(Boolean):[]; if(wrongPool.length) return wrongPool; const base=meta.seeds.map((w)=>byWord.get(w)).filter(Boolean); const seed=hash(meta.id); const pool=WORDS.filter((w)=>!base.some((x)=>x.w===w.w)); const rand=rng(seed); while(base.length<240&&pool.length){ const i=Math.floor(rand()*pool.length); base.push(pool.splice(i,1)[0]); } return base; }
 function makeQuestion(kind, meta, index){
   const rand = rng(hash(meta.id+"|"+kind+"|"+index));
@@ -2609,11 +2651,21 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
         + tag + '</button>';
     }).join('');
 
+    paintBrief(current);
     Array.prototype.forEach.call(grid.querySelectorAll('[data-lx]'), function (btn) {
       btn.addEventListener('click', function () { pick(btn.getAttribute('data-lx')); });
     });
   }
 
+  /* 批次2：折叠态 summary 直接显示「当前词库 + 词数」，切换后即时更新。 */
+  function paintBrief(currentId) {
+    var el = document.getElementById("lxBrief");
+    if (!el) return;
+    var list = (manifest && manifest.lexicons) || [];
+    var l = list.filter(function (x) { return x.id === currentId; })[0];
+    if (!l) { el.textContent = "当前词库"; return; }
+    el.textContent = "当前词库 " + l.shortName + "（" + l.name + "）· " + countLabel(l);
+  }
   function say(msg, warn) {
     if (!status) return;
     status.textContent = msg || '';
@@ -3315,6 +3367,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
       });
       window.__QINGCI_LAST_PLAN__ = plan;
       window.__QINGCI_LAST_VSRS__ = stats;
+      if(window.__qcMissionsBrief) window.__qcMissionsBrief();
 
       byId('vsrsSummary').textContent = rows.length
         ? (rows.length + ' 词入列 · 今日到期 ' + stats.due)
@@ -3687,6 +3740,7 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
     var plan = currentPlan(recent);
     var days = S.settings.daysToExam(settings.examDate);
     byId('planSummary').textContent = '距考试 ' + days + ' 天 · ' + S.plan.describe(plan).replace(/^距考试 \d+ 天 · /, '');
+    if (window.__qcMissionsBrief) window.__qcMissionsBrief();
     byId('planAdvice').textContent = plan.notes.length ? plan.notes.join('；') : '按当前节奏可以覆盖剩余词汇，保持每天完成即可。';
 
     var mastered = masteryCount();

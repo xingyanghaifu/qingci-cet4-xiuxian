@@ -49,7 +49,8 @@
     "check:usage:strict": "node scripts/check-service-usage.mjs --strict",
     "verify:learning": "node scripts/verify-learning.mjs",
     "audit:ui": "node scripts/audit-ui.mjs",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "verify:objective": "node scripts/verify-objective.mjs"
   },
   "keywords": [
     "CET-4",

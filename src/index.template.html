@@ -100,10 +100,14 @@ else if(p===null){document.documentElement.dataset.theme='dark';}})();
   background:var(--orn,color-mix(in srgb,var(--gold) 34%,transparent));
   -webkit-mask:
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") top left/12px 7px repeat-x,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x;
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6L3 1L6 6L9 1L12 6' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='14' viewBox='0 0 7 14'><path d='M6 0V3H2V7h3M2 7v4h4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center left/7px 14px repeat-y,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='14' viewBox='0 0 7 14'><path d='M6 0V3H2V7h3M2 7v4h4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center right/7px 14px repeat-y;
   mask:
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") top left/12px 7px repeat-x,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x;
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6L3 1L6 6L9 1L12 6' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='14' viewBox='0 0 7 14'><path d='M6 0V3H2V7h3M2 7v4h4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center left/7px 14px repeat-y,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='14' viewBox='0 0 7 14'><path d='M6 0V3H2V7h3M2 7v4h4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center right/7px 14px repeat-y;
   -webkit-mask-composite:source-over;mask-composite:add;
   opacity:.85}
 
@@ -1164,18 +1168,18 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
    传统「如意」是三卷云头 —— 原实现只是两条直线拼的直角，形制不对。
    现用 SVG 如意云头 mask，四角各一枚（镜像摆放）。 */
 .panel::after,.seal::after{
-  content:'';position:absolute;inset:4px;pointer-events:none;border-radius:calc(var(--radius-lg) - 4px);
+  content:'';position:absolute;inset:8px;pointer-events:none;border-radius:calc(var(--radius-lg) - 4px);
   background:var(--gold);
   -webkit-mask:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left top/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right top/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left bottom/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right bottom/26px 26px no-repeat;
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") left top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") right top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") left bottom/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") right bottom/26px 26px no-repeat;
   mask:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left top/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right top/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left bottom/26px 26px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right bottom/26px 26px no-repeat;
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") left top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") right top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") left bottom/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23000' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a4 4 0 0 1 4-4'/><path d='M7 8a5 5 0 0 1 5-5'/><path d='M12 3a5 5 0 0 1 5 5'/><path d='M17 8a4 4 0 0 1 4 4'/><path d='M3 12c-1.5 3 0 6 3 7'/><path d='M6 19c3 1.5 7 .5 9-2'/><path d='M15 17c1.5-2 .5-4.5-1.5-5.5'/></g></svg>") right bottom/26px 26px no-repeat;
   -webkit-mask-composite:source-over;mask-composite:add;
   opacity:.55;transition:opacity .3s cubic-bezier(.4,0,.2,1);
 }
@@ -1617,14 +1621,14 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
       这里用 (0,1,1) 压过它，并把原有的 3 径向 + 2 织纹一并列出，不丢既有观感。 */
 body.cloud-weave{
   background-image:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><g fill='none' stroke='%23000' stroke-opacity='.55' stroke-width='.8'><path d='M16 5v22M5 16h22'/><path d='M16 5h7M16 27h-7M5 16v7M27 16v-7'/></g></svg>"),
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M4 4h16v16H8V8h8v8h-4' fill='none' stroke='%23000' stroke-opacity='.5' stroke-width='.9'/></svg>"),
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><path d='M15 0L30 15L15 30L0 15Z' fill='none' stroke='%23000' stroke-opacity='.45' stroke-width='.8'/></svg>"),
     radial-gradient(120% 80% at 8% -8%,color-mix(in srgb,var(--jade) 16%,transparent),transparent 58%),
     radial-gradient(100% 70% at 96% 4%,color-mix(in srgb,var(--gold) 14%,transparent),transparent 55%),
     radial-gradient(80% 60% at 50% 108%,color-mix(in srgb,var(--gold) 9%,transparent),transparent 60%),
     repeating-linear-gradient(118deg,color-mix(in srgb,var(--text-primary) 3%,transparent) 0 2px,transparent 2px 26px),
     repeating-linear-gradient(-24deg,color-mix(in srgb,var(--text-primary) 2%,transparent) 0 1px,transparent 1px 34px);
-  background-size:32px 32px,30px 30px,auto,auto,auto,auto,auto;
+  background-size:24px 24px,30px 30px,auto,auto,auto,auto,auto;
   background-repeat:repeat,repeat,no-repeat,no-repeat,no-repeat,repeat,repeat;
   background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0;
   background-blend-mode:soft-light,soft-light,normal,normal,normal,normal,normal;

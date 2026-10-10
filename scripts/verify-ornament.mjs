@@ -163,6 +163,40 @@ try {
   console.log('  如意角 mask:', inv.ruyi.masks, '枚 | 色:', inv.ruyi.bg, '| opacity:', inv.ruyi.opacity);
   ok(inv.ruyi.masks === 4, `如意角四角各一枚 SVG mask（${inv.ruyi.masks}）`);
 
+  /* ── v1.16 文献判据（见 docs/传统纹样验收标准.md）── */
+  console.log('');
+  console.log('  文献判据：');
+  const lit = await ev(`(${String(function () {
+    var body = getComputedStyle(document.body).backgroundImage || '';
+    var p = document.querySelector('.panel');
+    var cs = getComputedStyle(p, '::before');
+    var mask = (cs.maskImage || cs.webkitMaskImage || '') + ' ' + (cs.maskSize || '') + ' ' + (cs.maskRepeat || '');
+    var after = getComputedStyle(p, '::after');
+    var am = after.maskImage || after.webkitMaskImage || '';
+    return {
+      /* ① 云雷纹（方形螺旋）作地纹 —— 取代万字纹。
+            文献：卍字「是印度佛教和印度教的标志」，非中国传统。 */
+      hasYunlei: body.indexOf('M4 4h16v16H8V8h8v8h-4') >= 0,
+      hasWanzi: body.indexOf('M16 5v22M5 16h22') >= 0,
+      /* ② 回纹三变体（商末周初：曲折 / 三角 / 钩连）
+            钩连式在竖向边饰上用的是**竖版**（viewBox 7×14），
+            路径为横版旋转 90°：M6 0V3H2V7h3M2 7v4h4（注意末段是小写 h4）。 */
+      hasFretBase: mask.indexOf('M0 6H2V1H6V4H4') >= 0,
+      hasFretTri: mask.indexOf('M0 6L3 1L6 6L9 1L12 6') >= 0,
+      hasFretHook: mask.indexOf('M6 0V3H2V7h3M2 7v4h4') >= 0,
+      /* ③ 如意云纹「云头三停」—— 三停之间的四段弧必须存在
+            文献：「云头形的上、中、下三个停顿与卷草状的一波三折的曲线」 */
+      ruyiArcs: (am.match(/a[0-9.]/g) || []).length,
+      ruyiHasSanTing: am.indexOf('M3 12a4 4 0 0 1 4-4') >= 0 && am.indexOf('M17 8a4 4 0 0 1 4 4') >= 0,
+    };
+  })})()`);
+  ok(lit.hasYunlei === true && lit.hasWanzi === false,
+    '云雷纹作地纹（万字纹已移除 —— 卍字源自印度佛教，非中国传统纹样）');
+  ok(lit.hasFretBase && lit.hasFretTri && lit.hasFretHook,
+    `回纹三变体齐备（基础 ${lit.hasFretBase} / 三角 ${lit.hasFretTri} / 钩连 ${lit.hasFretHook}）`);
+  ok(lit.ruyiHasSanTing === true,
+    `如意云纹含「云头三停」结构（${lit.ruyiArcs} 段弧）`);
+
   /* 三主题 */
   console.log('');
   for (const [theme, contrast, expectTex] of [['dark', 'normal', true], ['light', 'normal', true], ['dark', 'high', false]]) {

@@ -56,7 +56,7 @@ export function lineChart(points: Array<{ label: string; value: number }>, optio
   const max = options.max ?? 1;
   const padX = 10;
   const padY = 12;
-  if (!points.length) return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="趋势图（暂无数据）"></svg>`;
+  if (!points.length) return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="趋势图：还没有可绘制的数据"></svg>`;
 
   const stepX = points.length > 1 ? (width - padX * 2) / (points.length - 1) : 0;
   const coords = points.map((p, i) => {

@@ -91,8 +91,18 @@ try {
     function info(sel, pseudo){
       var e = document.querySelector(sel);
       if (!e) return null;
-      var bi = getComputedStyle(e, pseudo).backgroundImage || '';
-      return { repeating: /repeating-linear-gradient/.test(bi), layers: (bi.match(/gradient/g)||[]).length };
+      var cs = getComputedStyle(e, pseudo);
+      var bi = cs.backgroundImage || '';
+      var mask = cs.maskImage || cs.webkitMaskImage || '';
+      return {
+        // v1.14 起回纹改用 **SVG mask**（方形回旋路径），不再是 repeating-linear-gradient
+        // —— 渐变在 1px 高度下只能画成断续虚线，画不出回纹的直角回旋。
+        fretByMask: /url\\(/.test(mask) && /repeat-x/.test(cs.maskRepeat || ''),
+        maskLayers: (mask.match(/url\\(/g) || []).length,
+        // 兼容旧实现（若回退到渐变）
+        repeating: /repeating-linear-gradient/.test(bi),
+        layers: (bi.match(/gradient/g) || []).length,
+      };
     }
     var labels = document.querySelectorAll('.section-label').length;
     var rules = document.querySelectorAll('.cloud-rule').length;
@@ -104,8 +114,11 @@ try {
       cloudMask: (cloudMask.maskImage || cloudMask.webkitMaskImage || '').slice(0, 24),
     };
   })()`);
-  const fretOK = orn.panelFret && orn.panelFret.repeating && orn.sealFret && orn.sealFret.repeating && orn.shopFret && orn.shopFret.repeating;
-  check(fretOK, '② 回纹：.panel / .seal / .shop-card 三者都真渲染', JSON.stringify({ p: orn.panelFret.repeating, s: orn.sealFret.repeating, c: orn.shopFret.repeating }));
+  const hasFret = (x) => !!x && (x.fretByMask || x.repeating);
+  const fretOK = hasFret(orn.panelFret) && hasFret(orn.sealFret) && hasFret(orn.shopFret);
+  check(fretOK, '② 回纹：.panel / .seal / .shop-card 三者都真渲染',
+    JSON.stringify({ p: hasFret(orn.panelFret), s: hasFret(orn.sealFret), c: hasFret(orn.shopFret),
+                     mode: orn.panelFret && orn.panelFret.fretByMask ? 'SVG mask' : '渐变' }));
   const ruyiOK = orn.panelRuyi && orn.panelRuyi.layers >= 8 && orn.sealRuyi && orn.sealRuyi.layers >= 8;
   check(ruyiOK, '② 如意角：8 段渐变在 .panel / .seal 上都生效', `panel=${orn.panelRuyi.layers} 层, seal=${orn.sealRuyi.layers} 层`);
   check(/url/.test(orn.cloudMask), '② 云纹：section-label 云头 mask 生效', orn.cloudMask);

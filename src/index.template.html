@@ -88,22 +88,24 @@ else if(p===null){document.documentElement.dataset.theme='dark';}})();
      · 如意角：四角内嵌短折线 —— 用于面板四角
    `--orn` 为纹饰色，随主题变化。 */
 
-/* 回纹边（上/下两段连续折线）：用 repeating-linear-gradient 画方波 */
+/* v1.14 回纹（雷纹 / meander）：**直角方形回旋的连续线**，用 SVG mask 平铺。
+   ⚠️ 此前用 repeating-linear-gradient 画「方波」，但在 100% 1px 的高度下
+   只能渲染成**断续虚线**（看着像故障条纹，不是回纹）——
+   回纹的本质是「线反复直角回旋」，必须用**路径**表达，渐变做不到。
+   现改为 12×7 的边饰带（传统回纹常见比例），上下各一条。
+   批次3 的 .cloud-weave 前缀保留（提特异性，压过 STAGE3 的灵光规则）。 */
 .panel,.shop-card,.seal{position:relative}
-/* 批次3：加 .cloud-weave 前缀把特异性抬到 (0,2,1)，压过下面 STAGE3 的 (0,1,1) 灵光规则 ——
-   此前两者同特异性且 STAGE3 更靠后，回纹在 .panel/.seal 上被整体顶掉、从未渲染（死代码）。 */
 .cloud-weave .panel::before,.shop-card::before,.cloud-weave .seal::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  padding:1px;
-  background:
-    /* 上边回纹 */
-    repeating-linear-gradient(90deg,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 0 6px,transparent 6px 9px,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 9px 11px,transparent 11px 20px) top left/100% 1px no-repeat,
-    /* 下边回纹（错位半格，避免与上边完全对齐显得呆板） */
-    repeating-linear-gradient(90deg,transparent 0 5px,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 5px 11px,transparent 11px 14px,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 14px 20px) bottom left/100% 1px no-repeat;
-  opacity:.9;
-  -webkit-mask:linear-gradient(rgb(0 0 0) 0 0) content-box,linear-gradient(rgb(0 0 0) 0 0);
-  mask:linear-gradient(rgb(0 0 0) 0 0) content-box,linear-gradient(rgb(0 0 0) 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude}
+  background:var(--orn,color-mix(in srgb,var(--gold) 34%,transparent));
+  -webkit-mask:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") top left/12px 7px repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x;
+  mask:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") top left/12px 7px repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") bottom left/12px 7px repeat-x;
+  -webkit-mask-composite:source-over;mask-composite:add;
+  opacity:.85}
 
 /* 如意角：面板四角的内嵌折线（用两段 1px 渐变拼 L 形） */
 /* 批次3：原选择器含 .panel::after —— 那部分从未生效（被下面 STAGE3 的 .panel::after,
@@ -779,7 +781,7 @@ body.cloud-weave{background-color:var(--bg)}
 .menu-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:40px;padding:0;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);transition:background .18s cubic-bezier(.4,0,.2,1),border-color .18s cubic-bezier(.4,0,.2,1),color .18s cubic-bezier(.4,0,.2,1)}
 .menu-btn:hover{border-color:var(--border-default);background:color-mix(in srgb,var(--text-primary) 6%,transparent);color:var(--text-primary)}
 /* 桌面浮动面板：锚定汉堡下方左侧；关闭态 visibility:hidden（不可聚焦、不进无障碍树） */
-.nav-menu{position:absolute;top:70px;left:142px;width:360px;padding:var(--space-5);background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:70;visibility:hidden;opacity:0;transform:scale(.95);transform-origin:top left;transition:opacity .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1),visibility 0s linear .2s}
+.nav-menu{position:absolute;top:70px;left:142px;width:520px;max-width:calc(100vw - 170px);padding:var(--space-5);background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:70;visibility:hidden;opacity:0;transform:scale(.95);transform-origin:top left;max-height:calc(100dvh - 90px);overflow-y:auto;overscroll-behavior:contain;transition:opacity .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1),visibility 0s linear .2s}
 .nav-menu.open{visibility:visible;opacity:1;transform:none;transition-delay:0s}
 /* 面板内 4×2 导航网格（显式覆盖旧 .tabs 底栏/图标轨/胶囊样式） */
 .nav-menu .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0;padding:0;border:0;background:none;backdrop-filter:none;overflow:visible;position:static;inset:auto;z-index:auto;flex-wrap:nowrap}
@@ -803,8 +805,20 @@ body.cloud-weave{background-color:var(--bg)}
 .nav-menu .tabs button .lbl{font-size:12.5px;white-space:nowrap;overflow:visible}
 /* 次级分组：题型速捷（细线分隔，确认项 4） */
 .nav-sub{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-subtle)}
+/* v1.14：修行录 9 张卡改**两列网格**（用户要求「尽量横向展示」）。
+   实测原竖排：每张 254px 高 × 310px 宽，9 张堆到 2728px，而菜单可视高度仅 758px
+   —— 用户根本看不到下面的内容。两列后高度约降一半。 */
+#navArchive{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+#navArchive>.section-label,#navArchive>.cloud-rule,#navArchive>.nav-archive-lead{grid-column:1/-1}
+#navArchive>.shop-card{margin:0;padding:11px 12px;min-width:0;font-size:13px}
+#navArchive>.shop-card b{font-size:13.5px}
+#navArchive>.shop-card .muted{font-size:12px;line-height:1.5}
+#navArchive>.shop-card .tools{gap:6px;flex-wrap:wrap}
+#navArchive>.shop-card .tools .btn{flex:1 1 auto;min-width:0;padding:7px 10px;font-size:12.5px}
+#navArchive .ledger-list,#navArchive .mk-bars{max-height:140px;overflow-y:auto}
+@media (max-width:767px){#navArchive{grid-template-columns:1fr}}
 .nav-sub .section-label{margin-bottom:8px}
-.nav-menu .road{grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
+.nav-menu .road{grid-template-columns:repeat(4,1fr);gap:8px;margin:0}
 .nav-menu .gate{min-height:0;padding:7px 6px;text-align:center}
 .nav-menu .gate b{font-size:14px}
 .nav-menu .gate small,.nav-menu .gate em{font-size:12px}
@@ -1528,6 +1542,16 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
   box-shadow:inset 0 0 0 1px var(--border-default);
   color:var(--text-primary);font-size:14px;letter-spacing:.04em;
   transition:background .22s cubic-bezier(.4,0,.2,1),box-shadow .22s cubic-bezier(.4,0,.2,1)}
+/* v1.14：折叠条纹饰改为**左侧回纹色条**。
+   此前把回纹渐变铺在 summary 上，在 1px 高度下成了断续虚线，
+   且**压在文字上**（3x 放大截图确认）—— 看着就是「叠字乱码」。 */
+.fold>summary{position:relative;overflow:hidden}
+.fold>summary::after{
+  content:'';position:absolute;left:0;top:9px;bottom:9px;width:4px;
+  border-radius:0 2px 2px 0;
+  background:var(--orn,color-mix(in srgb,var(--gold) 34%,transparent));
+  -webkit-mask:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center top/7px 12px repeat-y;
+  mask:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'><path d='M0 6H2V1H6V4H4' fill='none' stroke='%23000' stroke-width='1'/></svg>") center top/7px 12px repeat-y}
 .fold>summary::-webkit-details-marker{display:none}
 .fold>summary:hover{background:color-mix(in srgb,var(--gold) 8%,var(--bg2))}
 .fold>summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -1539,17 +1563,6 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
    用 repeating-linear-gradient 在 summary 下沿织一段回纹（纯 background 层，
    零 border、零新元素、零动效）。:hover 必须一并重写 background-image，
    否则既有的 :hover 只改 background（简写）会把纹饰重置掉、悬停时闪断。 */
-.fold>summary{
-  background-image:
-    repeating-linear-gradient(90deg,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 0 6px,transparent 6px 9px,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 9px 11px,transparent 11px 20px),
-    linear-gradient(color-mix(in srgb,var(--bg2) 62%,transparent),color-mix(in srgb,var(--bg2) 62%,transparent));
-  background-repeat:no-repeat;background-position:bottom left,center;background-size:100% 1px,100% 100%;
-}
-.fold>summary:hover{
-  background-image:
-    repeating-linear-gradient(90deg,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 0 6px,transparent 6px 9px,var(--orn,color-mix(in srgb,var(--gold) 34%,transparent)) 9px 11px,transparent 11px 20px),
-    linear-gradient(color-mix(in srgb,var(--gold) 8%,var(--bg2)),color-mix(in srgb,var(--gold) 8%,var(--bg2)));
-}
 .fold-hint{margin-left:auto;color:var(--text-secondary);font-size:12px;letter-spacing:.08em;white-space:nowrap}
 .plot{border:0;box-shadow:inset 0 0 0 1px var(--border-subtle)}
 .plot.sealed{border:0;box-shadow:none}

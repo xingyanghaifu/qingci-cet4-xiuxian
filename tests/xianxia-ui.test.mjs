@@ -65,14 +65,21 @@ test('云纹底：规则存在并挂到 body', () => {
   assert.ok(html.includes('body.cloud-weave{background-color:var(--bg)}'), '云纹底未垫底色');
 });
 
-test('面板灵光 + 符角（talisman corner）', () => {
+test('面板灵光 + 如意角（ruyi corner）', () => {
   assert.ok(html.includes('.panel::before,.seal::before{'), '缺面板顶部灵光');
-  assert.ok(html.includes('.panel::after,.seal::after{'), '缺符角伪元素');
+  assert.ok(html.includes('.panel::after,.seal::after{'), '缺如意角伪元素');
   const after = html.slice(html.indexOf('.panel::after,.seal::after{'));
   const seg = after.slice(0, after.indexOf('}'));
-  const corners = (seg.match(/linear-gradient\(var\(--gold\),var\(--gold\)\)/g) || []).length;
-  assert.strictEqual(corners, 8, `符角应为八段折角（实得 ${corners}）`);
-  assert.ok(html.includes('.panel:hover::after,.seal:hover::after{opacity:.92}'), '缺符角悬停增益');
+  /* v1.15：如意角从「8 段直线拼的 L 形折线」改为**真正的如意云头 SVG mask**。
+     原实现只是两条直线拼直角，形制上不是如意纹（传统如意是三卷云头）。
+     断言改为：四角各一枚 SVG mask，且用 --gold 上色。 */
+  /* ⚠️ 是 8 不是 4 —— 因为同时写了 `-webkit-mask` 与 `mask`（各 4 个角，
+     为兼容新旧浏览器）。断言按「每套 4 角」检查。 */
+  const ruyiMasks = (seg.match(/url\("data:image\/svg\+xml/g) || []).length;
+  assert.strictEqual(ruyiMasks, 8, `如意角应为四角 × (webkit+标准) = 8 枚 SVG mask（实得 ${ruyiMasks}）`);
+  assert.ok(/background:var\(--gold\)/.test(seg), '如意角须用 --gold 上色');
+  assert.ok(/left top/.test(seg) && /right bottom/.test(seg), '如意角须四角定位（left top … right bottom）');
+  assert.ok(html.includes('.panel:hover::after,.seal:hover::after{opacity:.92}'), '缺如意角悬停增益');
 });
 
 test('印章标记：section-label 左侧朱印 + 金砂字距', () => {

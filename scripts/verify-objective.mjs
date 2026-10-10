@@ -99,6 +99,8 @@ try {
         // —— 渐变在 1px 高度下只能画成断续虚线，画不出回纹的直角回旋。
         fretByMask: /url\\(/.test(mask) && /repeat-x/.test(cs.maskRepeat || ''),
         maskLayers: (mask.match(/url\\(/g) || []).length,
+        // v1.15 如意角：四角各一枚 SVG mask（原来的 8 段渐变已弃用）
+        ruyiMasks: (mask.match(/url\\(/g) || []).length,
         // 兼容旧实现（若回退到渐变）
         repeating: /repeating-linear-gradient/.test(bi),
         layers: (bi.match(/gradient/g) || []).length,
@@ -119,8 +121,11 @@ try {
   check(fretOK, '② 回纹：.panel / .seal / .shop-card 三者都真渲染',
     JSON.stringify({ p: hasFret(orn.panelFret), s: hasFret(orn.sealFret), c: hasFret(orn.shopFret),
                      mode: orn.panelFret && orn.panelFret.fretByMask ? 'SVG mask' : '渐变' }));
-  const ruyiOK = orn.panelRuyi && orn.panelRuyi.layers >= 8 && orn.sealRuyi && orn.sealRuyi.layers >= 8;
-  check(ruyiOK, '② 如意角：8 段渐变在 .panel / .seal 上都生效', `panel=${orn.panelRuyi.layers} 层, seal=${orn.sealRuyi.layers} 层`);
+  /* v1.15：如意角从「8 段直线 L 形折线」改为**四角如意云头 SVG mask**。
+     判据同步更新：四角各一枚 SVG mask + 用 --gold 上色。 */
+  const ruyiOK = orn.panelRuyi && orn.panelRuyi.ruyiMasks === 4 && orn.sealRuyi && orn.sealRuyi.ruyiMasks === 4;
+  check(ruyiOK, '② 如意角：四角如意云头 SVG mask（.panel / .seal）',
+    `panel=${orn.panelRuyi.ruyiMasks} 枚, seal=${orn.sealRuyi.ruyiMasks} 枚`);
   check(/url/.test(orn.cloudMask), '② 云纹：section-label 云头 mask 生效', orn.cloudMask);
   check(orn.cloudRule === orn.sectionLabels && orn.cloudRule >= 15, '② 云纹分隔与标题成对（硬断言）', `${orn.sectionLabels} 标题 = ${orn.cloudRule} 分隔`);
 

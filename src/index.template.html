@@ -267,7 +267,11 @@ else if(p===null){document.documentElement.dataset.theme='dark';}})();
   --shadow-jade:rgba(14,107,83,.22);
   --shadow:0 18px 40px rgba(62,36,12,.09); color-scheme:light;
 } }
-*{box-sizing:border-box} body{margin:0;color:var(--ink);background:radial-gradient(900px 380px at 0 -10%,rgba(14,107,83,.15),transparent 60%),radial-gradient(760px 360px at 100% 0,rgba(165,109,34,.16),transparent 55%),var(--bg);font-family:var(--font-ui)} button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer}
+*{box-sizing:border-box} /* v1.15 · 织锦地纹：万字纹 + 菱格纹（极淡，满铺）。
+   用户反馈「背景太单一」—— 实测 body 原本只有纯色 + 两个几乎看不见的径向渐变。
+   传统做法是「地纹 + 边饰」两层：地纹满铺作底，边饰描边作界。
+   此处补上缺失的**地纹**层，透明度压到 0.035/0.025，只提供织物感、不抢内容。 */
+body{margin:0;color:var(--ink);background:radial-gradient(900px 380px at 0 -10%,rgba(14,107,83,.15),transparent 60%),radial-gradient(760px 360px at 100% 0,rgba(165,109,34,.16),transparent 62%)} button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer}
 .skip-link{position:absolute;left:-9999px;top:0;z-index:9999;background:var(--jade-ink);color:var(--paper);padding:10px 16px;border-radius:0 0 10px 0}
 .skip-link:focus{left:0}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
@@ -276,7 +280,8 @@ button:focus-visible,.choice:focus-visible,.duel-choice:focus-visible{outline:2p
 .err-banner{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:9999;max-width:92vw;margin-top:10px;padding:12px 16px;border-radius:12px;background:var(--card);border:1px solid var(--bad);box-shadow:var(--shadow);color:var(--ink);font-size:13px;line-height:1.6;display:none}
 .err-banner.show{display:block}
 .err-banner b{color:var(--bad)}
-.err-banner code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--soft);word-break:break-all} .app{width:min(1180px,calc(100% - 28px));margin:auto;padding:22px 0 48px} .hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;align-items:stretch} .kicker{letter-spacing:.24em;color:var(--jade);font-size:12px;margin:0 0 8px} h1{font-size:clamp(36px,5vw,58px);line-height:.95;margin:0} .lede{color:var(--soft);max-width:48em} .seal,.panel{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)} .seal{padding:16px 18px} .seal b{font-size:28px} .bar{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0} .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--bar-jade),var(--gold-warm))} .muted{color:var(--muted);font-size:13px} .row,.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap} .btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px} .btn.solid{background:var(--jade-ink);color:var(--solid-fg);border-color:transparent} .layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px} .panel{padding:18px} .hidden{display:none!important} .shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .paper-card,.gate{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:12px} .paper-card b,.gate b{display:block;font-size:18px} .paper-card.on{outline:2px solid var(--gold)} .road{display:grid;grid-template-columns:repeat(9,1fr);gap:8px;margin-bottom:14px} .gate{min-height:86px;padding:8px} .gate small,.gate em{display:block;color:var(--muted);font-style:normal;font-size:12px} .gate.now{outline:2px solid var(--gold)} .prompt{font-size:clamp(calc(32px * var(--q-scale)),calc(5vw * var(--q-scale)),calc(54px * var(--q-scale)));line-height:1.05;margin:8px 0;overflow-wrap:anywhere} .passage{background:var(--bg);border-radius:14px;padding:12px 14px;line-height:1.7} .choices{display:grid;gap:8px} .choice{border:1px solid var(--line);background:var(--bg);text-align:left;padding:12px 14px;font-size:calc(16px * var(--q-scale))} .choice:disabled{cursor:default} .choice.good{background:var(--jade-mist);border-color:var(--ok);color:var(--jade-mist-ink)} .choice.bad{background:var(--fire-mist);border-color:var(--bad);color:var(--fire-mist-ink)} textarea,input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px} textarea{min-height:160px;resize:vertical} .audio-dock{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.audio-dock button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px}.audio-dock button.primary{background:var(--jade-ink);color:var(--solid-fg);border-color:transparent}.audio-dock input[type=range]{width:min(180px,38vw);padding:0;accent-color:var(--jade)}.audio-status{font-size:12px;color:var(--muted);min-width:72px}.feedback{min-height:58px;border-top:1px dashed var(--line);margin-top:12px;padding-top:10px} .dict{max-height:64vh;overflow:auto} .entry{display:grid;grid-template-columns:150px 1fr auto;gap:8px;border-bottom:1px solid var(--line);padding:10px 0} table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top} .scroll{overflow-x:auto} .note{color:var(--muted);font-size:12px;margin-top:14px} .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--jade-ink);color:var(--solid-fg);border-radius:999px;padding:10px 16px;opacity:0} .toast.show{opacity:1} .section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:12px;letter-spacing:.12em;color:var(--jade)} .section-label:after{content:"";height:1px;flex:1;background:var(--line)} .mission-list{display:grid;gap:8px}.study-summary{margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--line);color:var(--soft);font-size:13px}.study-summary b{color:var(--jade)}.shop-card{margin:14px 0;padding:12px;border:1px solid var(--line);background:var(--bg)}.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.shop-item{border:1px solid var(--line);background:var(--card);border-radius:12px;text-align:left;padding:10px}.shop-item:hover{border-color:var(--gold);transform:translateY(-1px)}.shop-item b,.shop-item small{display:block}.shop-item small{color:var(--muted);margin-top:4px}.assessment-card{margin-top:12px;padding:12px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--jade) 9%,var(--bg)),var(--bg))}.assessment-card p{margin:5px 0 10px;color:var(--soft);font-size:13px}.assessment-card label{display:flex;align-items:center;gap:6px}.assessment-card input{display:inline-block;padding:7px 8px}.badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--jade)}.rating-label{font-size:12px;color:var(--muted);margin-left:4px}.rating-btn{min-width:64px}.mission{padding:10px 12px;border:1px solid var(--line);background:var(--bg)}.mission.done{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--bg))}.mission b{display:block;font-size:14px}.mission small{display:block;color:var(--muted);margin-top:3px}.mini-bar{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:7px}.mini-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.achievement{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:12px}.achievement.unlocked{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(165,109,34,.18)}.achievement b{display:block;font-size:16px;margin-bottom:3px}.duel-board{display:grid;grid-template-columns:1fr 76px 1fr;gap:14px;align-items:stretch;margin:14px 0 12px}
+.err-banner code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--soft);word-break:break-all} .app{width:min(1180px,calc(100% - 28px));margin:auto;padding:22px 0 48px} .hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;align-items:stretch} .kicker{letter-spacing:.24em;color:var(--jade);font-size:12px;margin:0 0 8px} h1{font-size:clamp(36px,5vw,58px);line-height:.95;margin:0} .lede{color:var(--soft);max-width:48em} .seal,.panel{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+ .seal{padding:16px 18px} .seal b{font-size:28px} .bar{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0} .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--bar-jade),var(--gold-warm))} .muted{color:var(--muted);font-size:13px} .row,.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap} .btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px} .btn.solid{background:var(--jade-ink);color:var(--solid-fg);border-color:transparent} .layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px} .panel{padding:18px} .hidden{display:none!important} .shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .paper-card,.gate{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:12px} .paper-card b,.gate b{display:block;font-size:18px} .paper-card.on{outline:2px solid var(--gold)} .road{display:grid;grid-template-columns:repeat(9,1fr);gap:8px;margin-bottom:14px} .gate{min-height:86px;padding:8px} .gate small,.gate em{display:block;color:var(--muted);font-style:normal;font-size:12px} .gate.now{outline:2px solid var(--gold)} .prompt{font-size:clamp(calc(32px * var(--q-scale)),calc(5vw * var(--q-scale)),calc(54px * var(--q-scale)));line-height:1.05;margin:8px 0;overflow-wrap:anywhere} .passage{background:var(--bg);border-radius:14px;padding:12px 14px;line-height:1.7} .choices{display:grid;gap:8px} .choice{border:1px solid var(--line);background:var(--bg);text-align:left;padding:12px 14px;font-size:calc(16px * var(--q-scale))} .choice:disabled{cursor:default} .choice.good{background:var(--jade-mist);border-color:var(--ok);color:var(--jade-mist-ink)} .choice.bad{background:var(--fire-mist);border-color:var(--bad);color:var(--fire-mist-ink)} textarea,input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px} textarea{min-height:160px;resize:vertical} .audio-dock{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.audio-dock button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px}.audio-dock button.primary{background:var(--jade-ink);color:var(--solid-fg);border-color:transparent}.audio-dock input[type=range]{width:min(180px,38vw);padding:0;accent-color:var(--jade)}.audio-status{font-size:12px;color:var(--muted);min-width:72px}.feedback{min-height:58px;border-top:1px dashed var(--line);margin-top:12px;padding-top:10px} .dict{max-height:64vh;overflow:auto} .entry{display:grid;grid-template-columns:150px 1fr auto;gap:8px;border-bottom:1px solid var(--line);padding:10px 0} table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top} .scroll{overflow-x:auto} .note{color:var(--muted);font-size:12px;margin-top:14px} .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--jade-ink);color:var(--solid-fg);border-radius:999px;padding:10px 16px;opacity:0} .toast.show{opacity:1} .section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:12px;letter-spacing:.12em;color:var(--jade)} .section-label:after{content:"";height:1px;flex:1;background:var(--line)} .mission-list{display:grid;gap:8px}.study-summary{margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--line);color:var(--soft);font-size:13px}.study-summary b{color:var(--jade)}.shop-card{margin:14px 0;padding:12px;border:1px solid var(--line);background:var(--bg)}.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.shop-item{border:1px solid var(--line);background:var(--card);border-radius:12px;text-align:left;padding:10px}.shop-item:hover{border-color:var(--gold);transform:translateY(-1px)}.shop-item b,.shop-item small{display:block}.shop-item small{color:var(--muted);margin-top:4px}.assessment-card{margin-top:12px;padding:12px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--jade) 9%,var(--bg)),var(--bg))}.assessment-card p{margin:5px 0 10px;color:var(--soft);font-size:13px}.assessment-card label{display:flex;align-items:center;gap:6px}.assessment-card input{display:inline-block;padding:7px 8px}.badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--jade)}.rating-label{font-size:12px;color:var(--muted);margin-left:4px}.rating-btn{min-width:64px}.mission{padding:10px 12px;border:1px solid var(--line);background:var(--bg)}.mission.done{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--bg))}.mission b{display:block;font-size:14px}.mission small{display:block;color:var(--muted);margin-top:3px}.mini-bar{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:7px}.mini-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--gold))}.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.achievement{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:12px}.achievement.unlocked{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(165,109,34,.18)}.achievement b{display:block;font-size:16px;margin-bottom:3px}.duel-board{display:grid;grid-template-columns:1fr 76px 1fr;gap:14px;align-items:stretch;margin:14px 0 12px}
 .duel-log{position:relative;min-height:46px;padding:12px 15px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 7%,var(--bg)),var(--bg));color:var(--soft);font-size:14px;line-height:1.65;margin-bottom:12px}
 .duel-log .blade{color:var(--gold);font-weight:700;margin-right:6px}
 @keyframes logIn{from{opacity:.35;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
@@ -593,6 +598,9 @@ aside.side{display:flex;flex-direction:column;gap:12px;min-width:0}
   /* 任务 B：导航已迁入 #navMenu，旧 `.tabs{grid-area:nav}` 栅格行规则整行移除（nav 不再是栅格项） */
   /* 任务 C：桌面侧栏导航样式已删除（导航在 #navMenu 内，由 .nav-menu .tabs 接管） */
   aside.side{grid-area:side;overflow-y:auto;min-height:0;padding-right:4px;scrollbar-width:thin}
+/* v1.15 · 侧栏龟背纹地纹：与主区的地纹区分，形成「左右不同织物」的层次 */
+aside.side{background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='14' viewBox='0 0 24 14'><path d='M6 1h12l6 6-6 6H6L0 7z' fill='none' stroke='%23000' stroke-width='1'/></svg>");background-size:24px 14px;
+  background-blend-mode:soft-light;background-color:color-mix(in srgb,var(--bg) 92%,var(--gold) 8%)}
   /* 侧栏是 flex 列容器且自身可滚动：子项默认 flex-shrink:1，
      空间不足时会把每张面板等比压扁，导致标题文字被裁切。
      面板一律不参与收缩 —— 该滚动的是侧栏自己，不是里面的内容。 */
@@ -1152,18 +1160,24 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
      否则它会再次覆盖回纹的 background —— 那正是本批次修的 bug。 */
   background:none;
 }
+/* v1.15 · 如意纹角隅（替换原来的 8 段直线 L 形折线）。
+   传统「如意」是三卷云头 —— 原实现只是两条直线拼的直角，形制不对。
+   现用 SVG 如意云头 mask，四角各一枚（镜像摆放）。 */
 .panel::after,.seal::after{
-  content:'';position:absolute;inset:5px;pointer-events:none;border-radius:calc(var(--radius-lg) - 4px);
-  background:
-    linear-gradient(var(--gold),var(--gold)) left top/13px 1.5px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) left top/1.5px 13px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) right top/13px 1.5px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) right top/1.5px 13px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) left bottom/13px 1.5px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) left bottom/1.5px 13px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) right bottom/13px 1.5px no-repeat,
-    linear-gradient(var(--gold),var(--gold)) right bottom/1.5px 13px no-repeat;
-  opacity:.5;transition:opacity .3s cubic-bezier(.4,0,.2,1);
+  content:'';position:absolute;inset:4px;pointer-events:none;border-radius:calc(var(--radius-lg) - 4px);
+  background:var(--gold);
+  -webkit-mask:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left bottom/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right bottom/26px 26px no-repeat;
+  mask:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right top/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") left bottom/26px 26px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M2 2h10M2 2v10M2 2c6 0 10 3 12 7' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round'/><path d='M2 2c0 5 2.5 8.5 7 11' fill='none' stroke='%23000' stroke-width='1.2' stroke-linecap='round' opacity='.75'/></svg>") right bottom/26px 26px no-repeat;
+  -webkit-mask-composite:source-over;mask-composite:add;
+  opacity:.55;transition:opacity .3s cubic-bezier(.4,0,.2,1);
 }
 .panel:hover::after,.seal:hover::after{opacity:.92}
 /* 三 3 · 印章：section-label 左侧朱印底 + 金砂字距 */
@@ -1572,6 +1586,70 @@ button.shop-item .shop-need{display:block;margin-top:5px;color:var(--bad);font-w
 :root[data-contrast="high"] .plot.empty{border-width:2px}
 /* ===== 批次2 END ===== */
 
+
+/* ═══════════════════════════════════════════════════════════════
+   v1.15 · 织锦地纹（**必须放在样式表末尾**）
+   ─────────────────────────────────────────────────────────────
+   用户反馈「背景也单一」。传统织物的层次是「地纹 + 边饰」两层：
+   地纹满铺作底、边饰描边作界。此前只有边饰（回纹），缺地纹。
+
+   ⚠️ 为什么放末尾：本文件前面已有
+        .panel,.seal{background:radial-gradient(…),var(--card)}   ← 简写清空 background-image
+        .panel,.seal{background-image:radial-gradient(…)}         ← 再次覆盖
+      同特异性下**后写者胜**，所以地纹必须排在它们之后才生效。
+      （我第一版放在文件前部，实测 computed 里 SVG 完全消失 —— 白做。）
+
+   ⚠️ 为什么用 background-image 长写而非 background 简写：
+      简写会把 background-color 一起重置，导致卡片底色丢失。
+
+   层次（由上层到下）：
+     1. 万字纹（24px，织锦地纹，soft-light）
+     2. 菱格纹（20px，斜方格，soft-light）
+     3. 原有的径向提亮（保留，不破坏既有观感）
+   ═══════════════════════════════════════════════════════════════ */
+
+/* body：万字 + 菱格 + 原有径向与织纹
+   ⚠️ 选择器必须是 `body.cloud-weave` 而非 `body` —— 因为第 1134 行的
+      `.cloud-weave{background-image:...}` 特异性是 (0,1,0)，
+      **高于** `body` 的 (0,0,1)，同特异性下后写者胜。
+      我第一版只写 `body`，于是被 `.cloud-weave` 整体顶掉
+      （实测 computed 里 SVG 完全消失 —— 白做）。
+      这里用 (0,1,1) 压过它，并把原有的 3 径向 + 2 织纹一并列出，不丢既有观感。 */
+body.cloud-weave{
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><g fill='none' stroke='%23000' stroke-opacity='.55' stroke-width='.8'><path d='M16 5v22M5 16h22'/><path d='M16 5h7M16 27h-7M5 16v7M27 16v-7'/></g></svg>"),
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><path d='M15 0L30 15L15 30L0 15Z' fill='none' stroke='%23000' stroke-opacity='.45' stroke-width='.8'/></svg>"),
+    radial-gradient(120% 80% at 8% -8%,color-mix(in srgb,var(--jade) 16%,transparent),transparent 58%),
+    radial-gradient(100% 70% at 96% 4%,color-mix(in srgb,var(--gold) 14%,transparent),transparent 55%),
+    radial-gradient(80% 60% at 50% 108%,color-mix(in srgb,var(--gold) 9%,transparent),transparent 60%),
+    repeating-linear-gradient(118deg,color-mix(in srgb,var(--text-primary) 3%,transparent) 0 2px,transparent 2px 26px),
+    repeating-linear-gradient(-24deg,color-mix(in srgb,var(--text-primary) 2%,transparent) 0 1px,transparent 1px 34px);
+  background-size:32px 32px,30px 30px,auto,auto,auto,auto,auto;
+  background-repeat:repeat,repeat,no-repeat,no-repeat,no-repeat,repeat,repeat;
+  background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0;
+  background-blend-mode:soft-light,soft-light,normal,normal,normal,normal,normal;
+  background-attachment:fixed,fixed,fixed,fixed,fixed,fixed,fixed}
+
+/* .panel / .seal：菱格 + 保留原有灵光（两条径向）
+   面板是**内容载体**，地纹应比 body 更弱 —— 故用 34px 格距 + stroke-opacity .26
+   （body 是 30px/.45）。目视调过两轮：.45 时像铁丝网，.26 才是「隐约织物」。 */
+.panel,.seal{
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><path d='M17 0L34 17L17 34L0 17Z' fill='none' stroke='%23000' stroke-opacity='.26' stroke-width='.7'/></svg>"),
+    radial-gradient(140% 62% at 50% -6%,color-mix(in srgb,var(--gold) 9%,transparent),transparent 62%),
+    radial-gradient(130% 70% at 50% 0,color-mix(in srgb,var(--gold) 5%,transparent),transparent 62%);
+  background-size:34px 34px,auto,auto;
+  background-repeat:repeat,no-repeat,no-repeat;
+  background-blend-mode:soft-light,normal,normal}
+
+/* .shop-card：不加地纹（次级卡已有边框区分，再加纹会过密） */
+.shop-card{background-image:none}
+
+/* 高对比主题：地纹必须关掉 —— 那是装饰，会干扰对比度 */
+:root[data-contrast="high"] body,
+:root[data-contrast="high"] .panel,
+:root[data-contrast="high"] .seal,
+:root[data-contrast="high"] .shop-card{background-image:none}
 </style>
 </head>
 <body class="cloud-weave">

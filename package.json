@@ -50,7 +50,8 @@
     "verify:learning": "node scripts/verify-learning.mjs",
     "audit:ui": "node scripts/audit-ui.mjs",
     "shots": "node scripts/shots.mjs",
-    "verify:objective": "node scripts/verify-objective.mjs"
+    "verify:objective": "node scripts/verify-objective.mjs",
+    "verify:ornament": "node scripts/verify-ornament.mjs"
   },
   "keywords": [
     "CET-4",

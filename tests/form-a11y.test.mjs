@@ -199,11 +199,15 @@ test('产物与源同步（本轮改动都进包了）', () => {
   ]) assert.ok(dist.includes(needle), `产物缺 ${needle}`);
 });
 
-test('role="dialog" 增至 12（新增 #askOverlay），其余语义未动', () => {
+test('role="dialog" 增至 13（#askOverlay + #settingsOverlay），其余语义未动', () => {
   const ids = [...html.matchAll(/<div[^>]*role="dialog"[^>]*>/g)]
     .map((m) => (m[0].match(/id="([^"]+)"/) || [])[1]);
-  assert.equal(ids.length, 12);
-  assert.ok(ids.includes('askOverlay'), '新增的确认弹层不在 dialog 列表里');
+  /* v1.17：+1 = #settingsOverlay。
+     用户反馈「设置和菜单怎么打开的是同一个东西」—— 此前设置按钮去开菜单，
+     语义上说不通。现将偏好类内容拆成**独立设置弹层**，故 dialog 数 12 → 13。 */
+  assert.equal(ids.length, 13);
+  assert.ok(ids.includes('askOverlay'), '确认弹层 #askOverlay 不在 dialog 列表里');
+  assert.ok(ids.includes('settingsOverlay'), '设置弹层 #settingsOverlay 不在 dialog 列表里');
   // 原有的 11 个必须都在（不能被这轮改掉）
   for (const id of ['navMenu', 'tribOverlay', 'tribRulesOverlay', 'tribConfirmOverlay',
     'breakthroughOverlay', 'feedbackOverlay', 'intensiveOverlay', 'vdOverlay',

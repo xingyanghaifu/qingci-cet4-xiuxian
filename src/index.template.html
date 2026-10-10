@@ -1682,12 +1682,27 @@ body.cloud-weave{
 <div class="shop-card" id="realmCard"><div class="row" style="justify-content:space-between"><b>学业境界</b><span class="muted" id="realmSummary">加载中…</span></div><p class="muted" id="realmAdvice">境界按「词汇量 + 模考分数」双条件晋级：两项同时达标才突破，只升不降。</p><div class="mk-bars" id="realmBars"></div><div id="realmNext"></div><div class="muted" style="font-size:12px" id="realmHistory"></div></div>
 <div class="shop-card" id="titleCard"><div class="row" style="justify-content:space-between"><b>成就称号</b><span class="muted" id="titleSummary">加载中…</span></div><div class="mk-tags" id="titleUnlocked"></div><div id="titleLocked"></div></div>
 <div class="shop-card" id="groupCard"><div class="row" style="justify-content:space-between"><b>道友小组</b><span class="muted" id="groupState">未加入</span></div><p class="muted">只共享昵称、境界、粗粒度进度与学习天数；<b>不上传任何答题数据与分数</b>，也不会显示真实姓名。</p><div class="tools"><input id="groupNick" maxlength="12" placeholder="昵称（勿填真名/手机号）" style="width:190px" aria-label="道场昵称"><input id="groupCode" maxlength="6" placeholder="邀请码" style="width:110px" aria-label="道场邀请码"><button class="btn" id="groupCreate">开道场</button><button class="btn solid" id="groupJoin">入道场</button><button class="btn" id="groupLeave">退出</button></div><div class="tools"><label class="muted">榜单 <select id="groupPeriod"><option value="week">本周</option><option value="month">本月</option></select></label><button class="btn" id="groupRefresh">刷新榜单</button><span class="muted" id="groupHint"></span></div><div id="groupBoard"></div></div>
-<p class="section-label">偏好 · PREFERENCES</p>
-<span class="cloud-rule" aria-hidden="true"></span>
-<div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div>
-<div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div>
-<div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div>
-</div></div></div><div class="nav-scrim" id="navScrim"></div>
+</div></div>
+
+</div>
+<!-- v1.17 · 设置弹层（独立于菜单）：只放**偏好**类内容。
+     语义分工：菜单管「去哪里修炼 + 看记录」，设置管「怎么用着舒服」。 -->
+<div class="overlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="overlay-card settings-card">
+    <div class="row" style="justify-content:space-between">
+      <b id="settingsTitle">设置</b>
+      <span class="muted">SETTINGS</span>
+      <button class="btn" type="button" id="settingsClose">关闭</button>
+    </div>
+    <p class="muted" style="margin-top:4px">以下偏好只影响本机显示与隐私，不改动修行数值。</p>
+    <p class="section-label">偏好 · PREFERENCES</p>
+    <span class="cloud-rule" aria-hidden="true"></span>
+    <div class="shop-card" id="a11yCard"><div class="row" style="justify-content:space-between"><b>无障碍与阅读偏好</b><span class="muted" id="a11yState">加载中…</span></div><div class="tools"><span class="muted">字号</span><span id="a11yFont"></span><span class="muted">对比度</span><button class="btn" id="a11yContrast" aria-pressed="false">高对比度</button><span class="muted">动效</span><button class="btn" id="a11yMotion" aria-pressed="false">减少动态效果</button></div><p class="muted">字号只放大题干、选项、解析与原文，不影响导航布局；偏好保存在本机浏览器。</p><details id="a11yHelp"><summary>键盘快捷键与朗读说明</summary><div id="a11yShortcuts"></div><p class="muted">屏幕阅读器：题干变化会自动朗读（aria-live），正确/错误的选项带有 ✓ / ✗ 文字标记，不只依赖颜色；弹窗均为 role="dialog" 且可用 Esc 关闭。</p></details></div>
+    <div class="shop-card" id="themeCard"><div class="row" style="justify-content:space-between"><b>外观</b><span class="muted" id="themeState">跟随系统</span></div><p class="muted">默认跟随系统深浅色；也可以固定一种配色。偏好保存在本机浏览器，不随账号同步。</p><label class="muted" style="display:flex;gap:8px;align-items:center">主题 <select id="themeSel"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label></div>
+    <div class="shop-card" id="aiPrivacyCard"><div class="row" style="justify-content:space-between"><b>AI 批改与数据使用</b><span class="muted" id="aiConsentState">未允许（默认）</span></div><p class="muted">开启后，你提交的作文 / 翻译正文会发送到批改服务用于评分与批注；关闭时不会发送任何内容，AI 批改保持不可用。学习进度与作答内容默认只保存在本机浏览器。</p><label class="muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="aiConsent">允许 AI 批改我的作文 / 翻译</label><p class="muted">【占位】隐私政策 · AI 批改数据使用：正式接入批改服务前，此处补齐数据保留期限、第三方处理方、撤回授权与删除方式等条款。</p></div>
+    </div>
+  </div>
+<div class="nav-scrim" id="navScrim"></div>
   <div class="layout"><main id="main">
     <header class="main-head"><div class="mh-titles"><p class="kicker">CET-4 · 六卷天路</p><h1 id="mainTitle" tabindex="-1"><span class="mt" data-m="paper" aria-hidden="false">试炼殿</span><span class="mt" data-m="words" aria-hidden="true">背单词</span><span class="mt" data-m="single" aria-hidden="true">单题</span><span class="mt" data-m="speak" aria-hidden="true">口语小径</span><span class="mt" data-m="book" aria-hidden="true">心魔本</span><span class="mt" data-m="codex" aria-hidden="true">词谱</span><span class="mt" data-m="map" aria-hidden="true">卷面与洞府</span><span class="mt" data-m="duel" aria-hidden="true">问道斗法</span><span class="mt" data-m="field" aria-hidden="true">灵田</span></h1></div><div class="mh-actions"><button class="btn solid" id="startPaper">开考这一卷</button></div></header>
     <section class="panel" id="panel-missions">
@@ -2547,7 +2562,7 @@ function renderWeek(){
     tr.textContent=parts.join(' · ');
   }
 }
-window.__renderWeek=renderWeek; document.addEventListener("keydown",(e)=>{ if(e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!e.target.matches('button')){e.preventDefault(); playAudio();} });
+window.__renderWeek=renderWeek; document.addEventListener("keydown",(e)=>{ if(e.target instanceof Element&&e.target.matches("input,textarea")) return; if(e.key>="1"&&e.key<="4"&&duel&&duel.active&&!locked){ e.preventDefault(); answerDuel(Number(e.key)-1); return; } if(e.key>="1"&&e.key<="9") choose(Number(e.key)-1); if(e.key==="Enter"){ if(duel&&duel.active&&locked) showDuelQuestion(); else if(locked&&!duel) ask(); } if(e.key===" "&&current&&!(e.target instanceof Element&&e.target.matches('button'))){e.preventDefault(); playAudio();} });
 $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrstuvwxyz".split("").map(c=>"<option>"+c+"</option>").join("");renderRoad(); renderTop(); renderShelf(); renderMap();
 /* 第一期：启动时的两项修行结算
    ① 断签衰减（先算）：宽限 3 天、单次最多扣 50%、**不碰境界**
@@ -4778,33 +4793,15 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   });
   /* 设置入口：切到卷面/洞府面板并把焦点送到无障碍设置卡（目的与原有设置流程一致） */
   var setBtn = document.getElementById('sideSettings');
-  if (setBtn) setBtn.addEventListener('click', function (ev) {
-    /* ⚠️ 必须阻止冒泡：document 上有「点菜单外部即关闭」的处理器，
-       否则这一次点击会在打开后立刻把菜单关掉（表现为「点了没反应」）。 */
-    if (ev && ev.stopPropagation) ev.stopPropagation();
-    /* v1.12：无障碍/外观等偏好卡已移入菜单「修行录」，
-       设置入口改为**打开菜单并滚到该卡** ——
-       此前切到洞府后看不到它，表现为「点击设置没反应 / 加载失败」。 */
-    setDrawer(false);
-    var _setCard = document.getElementById('a11yCard');
-    var _setMenu = document.getElementById('navMenu');
-    var _setMenuBtn = document.getElementById('menuBtn');
-    var _cardInMenu = !!(_setCard && _setMenu && _setMenu.contains(_setCard));
-    if (_cardInMenu) {
-      /* 用菜单自己的 open(target)：它在打开后把焦点送到目标并滚动到视野内。
-         不能自己 click() + focus() —— open 的内部聚焦会覆盖。 */
-      /* 传卡内首个可聚焦元素而非卡片本身 —— <div> 不可聚焦，
-         直接 focus(div) 会让焦点落到 BODY。 */
-      var _setFirst = _setCard.querySelector('button, input, select, textarea, [tabindex]');
-      var _setTarget = _setFirst || _setCard;
-      if (typeof window.__openNavMenu === 'function') window.__openNavMenu(_setTarget);
-      else if (_setMenuBtn && !_setMenu.classList.contains('open')) _setMenuBtn.click();
-    } else if (window.switchTab) {
-      switchTab('map');
-    }
-    var card = document.getElementById('a11yCard');
-    var first = card && card.querySelector('button, input, select, textarea, [tabindex]');
-    if (first) { try { first.focus({ preventScroll: true }); } catch (err) { first.focus(); } if (card.scrollIntoView) card.scrollIntoView({ block: 'center' }); }
+  /* v1.17：设置按钮**只开设置弹层**，不再打开菜单。
+     此前为了绕开「偏好卡在菜单里」而让设置去开菜单 —— 两个入口指向同一个东西，
+     语义上说不通（用户反馈：「设置就是设置，菜单就是菜单」）。 */
+  if (setBtn) setBtn.addEventListener('click', function () {
+    var ov = document.getElementById('settingsOverlay');
+    if (!ov) return;
+    ov.classList.remove('hidden');
+    var cb = document.getElementById('settingsClose');
+    if (cb) { try { cb.focus({ preventScroll: true }); } catch (err) { cb.focus(); } }
   });
   /* 主题切换：深色 → 浅色 → 跟随系统（走既有 theme 服务，不自造存储逻辑） */
   var thBtn = document.getElementById('sideTheme');
@@ -5068,6 +5065,27 @@ $("letter").innerHTML="<option value='all'>全部</option>"+"abcdefghijklmnopqrs
   var cb1 = document.getElementById('audioSrcClose');
   if (cb1) cb1.addEventListener('click', close);
   overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+
+/* v1.17 · 设置弹层的开关（复用 audioSrcOverlay 同一套无障碍约定：
+   role=dialog / aria-modal / Esc 关闭 / 点遮罩关闭 / 焦点归位到入口）。 */
+(function(){
+  var ov = document.getElementById('settingsOverlay');
+  if (!ov) return;
+  var opener = null;
+  function closeSettings(){
+    ov.classList.add('hidden');
+    if (opener && opener.focus) { try { opener.focus({ preventScroll: true }); } catch (err) { opener.focus(); } }
+  }
+  var cb = document.getElementById('settingsClose');
+  if (cb) cb.addEventListener('click', closeSettings);
+  ov.addEventListener('click', function (e) { if (e.target === ov) closeSettings(); });
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Escape' || e.key === 'Esc') && !ov.classList.contains('hidden')) { closeSettings(); return; }
+  });
+  /* 记录入口，供焦点归位 */
+  var sb = document.getElementById('sideSettings');
+  if (sb) sb.addEventListener('click', function () { opener = sb; });
+})();
   document.addEventListener('keydown', function (e) {
     if ((e.key === 'Escape' || e.key === 'Esc') && !overlay.classList.contains('hidden')) close();
   });

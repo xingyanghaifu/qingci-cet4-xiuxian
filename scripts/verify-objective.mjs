@@ -108,12 +108,52 @@ try {
     }
     var labels = document.querySelectorAll('.section-label').length;
     var rules = document.querySelectorAll('.cloud-rule').length;
-    var cloudMask = getComputedStyle(document.querySelector('.section-label'), '::before');
+    var slBefore = getComputedStyle(document.querySelector('.section-label'), '::before');
+    var slAfter = getComputedStyle(document.querySelector('.section-label'), '::after');
+    /* v1.18：如意角与内容的几何关系（这是本轮的修复点） */
+    var panel = document.getElementById('panel-paper') || document.querySelector('.panel');
+    var panelCS = getComputedStyle(panel);
+    var panelAfter = getComputedStyle(panel, '::after');
+    var firstLabel = panel.querySelector('.section-label');
+    var panelRect = panel.getBoundingClientRect();
+    var labelRect = firstLabel ? firstLabel.getBoundingClientRect() : null;
+    /* 如意角占位：inset（computed 可靠）+ 纹样尺寸
+       ⚠️ background-size 的 computed 值是 auto（因为用 background 简写设置），
+          必须从 CSSOM 里读**作者写的** background-size。
+       ⚠️⚠️ 本函数体是模板字符串，注释里**不能出现反引号**（会提前闭合模板）、
+           也不能出现反斜杠转义（会被吞掉或触发八进制转义语法错误）。
+           本轮这两条都踩过。一律用字符串方法。 */
+    var ruyiInset = parseFloat(panelAfter.top) || 0;
+    var ruyiSize = 0;
+    for (var ss of document.styleSheets) {
+      var rules2;
+      try { rules2 = ss.cssRules; } catch (e) { continue; }
+      for (var r2 of rules2) {
+        if (!r2.selectorText || r2.selectorText.indexOf('.panel::after') < 0) continue;
+        var bs = String(r2.style.getPropertyValue('background-size') ||
+                        r2.style.getPropertyValue('background') || '');
+        // 取形如 "16px 16px no-repeat" 里的第一个 px 数值
+        var px = bs.split('px')[0].split(/[ ,]/).filter(function(s){ return s; }).pop();
+        var num = parseFloat(px);
+        if (num > 0) ruyiSize = num;
+      }
+    }
     return {
       panelFret: info('.panel','::before'), sealFret: info('.seal','::before'), shopFret: info('.shop-card','::before'),
       panelRuyi: info('.panel','::after'), sealRuyi: info('.seal','::after'),
       cloudRule: rules, sectionLabels: labels,
-      cloudMask: (cloudMask.maskImage || cloudMask.webkitMaskImage || '').slice(0, 24),
+      /* 印章底框（::before）—— 不应再带云纹 mask（v1.18 已移除冲突的那条） */
+      slBeforeMask: (slBefore.maskImage || slBefore.webkitMaskImage || 'none').slice(0, 24),
+      slBeforeBorder: slBefore.borderTopWidth,
+      /* 菱形折角（::after）—— 应仍是边框折角，无 mask */
+      slAfterMask: (slAfter.maskImage || slAfter.webkitMaskImage || 'none').slice(0, 24),
+      slAfterWidth: slAfter.width,
+      /* 几何：如意角右/下边界 vs 内容起点 */
+      ruyiInset: ruyiInset,
+      ruyiSize: ruyiSize,
+      panelPadding: parseFloat(panelCS.paddingTop) || 0,
+      labelDx: labelRect ? Math.round(labelRect.left - panelRect.left) : null,
+      labelDy: labelRect ? Math.round(labelRect.top - panelRect.top) : null,
     };
   })()`);
   const hasFret = (x) => !!x && (x.fretByMask || x.repeating);
@@ -126,7 +166,24 @@ try {
   const ruyiOK = orn.panelRuyi && orn.panelRuyi.ruyiMasks === 4 && orn.sealRuyi && orn.sealRuyi.ruyiMasks === 4;
   check(ruyiOK, '② 如意角：四角如意云头 SVG mask（.panel / .seal）',
     `panel=${orn.panelRuyi.ruyiMasks} 枚, seal=${orn.sealRuyi.ruyiMasks} 枚`);
-  check(/url/.test(orn.cloudMask), '② 云纹：section-label 云头 mask 生效', orn.cloudMask);
+  /* v1.18：原判据是「section-label::before 带云纹 mask」——
+     实测发现那是**错的**：`.section-label::before` 上还有一条「朱砂印章底框」规则
+     （同选择器、后写者胜），CSS 级联**逐属性合并**，于是印章框与云纹 mask **叠在一起**，
+     放大截图表现为「云纹压着菱形」。
+     现已移除该 mask（印章框本身即传统纹样），云纹由 `.cloud-rule` 承载（下一条判据覆盖）。
+     新判据改为「印章底框健在」+「不再叠加云纹 mask」—— 防止这个冲突回归。 */
+  const sealOK = parseFloat(orn.slBeforeBorder) > 0 && !/url/.test(orn.slBeforeMask);
+  check(sealOK, '② 印章底框：section-label::before 有边框且不再叠加云纹 mask（v1.18 去冲突）',
+    `border=${orn.slBeforeBorder} mask=${orn.slBeforeMask}`);
+
+  /* v1.18：**几何断言** —— 如意角不得越过内容区。
+     此前如意角 inset:8px + 26px → 占 8–34px，而 padding 仅 18px，
+     与首个「印章 + 章节标题」（dx=19px）必然重叠。现 padding 26px、如意角 16px。 */
+  const ruyiEdge = orn.ruyiInset + orn.ruyiSize;
+  const geoOK = orn.labelDx !== null && orn.labelDy !== null &&
+                ruyiEdge <= orn.labelDx + 1 && ruyiEdge <= orn.labelDy + 1;
+  check(geoOK, '② 几何：如意角不越过内容起点（防「纹样压内容」回归）',
+    `如意角止于 ${ruyiEdge}px ≤ 内容起点 dx=${orn.labelDx} dy=${orn.labelDy}px（padding=${orn.panelPadding}px）`);
   check(orn.cloudRule === orn.sectionLabels && orn.cloudRule >= 15, '② 云纹分隔与标题成对（硬断言）', `${orn.sectionLabels} 标题 = ${orn.cloudRule} 分隔`);
 
   /* ③ 人性化：降噪 / 分组 / 空态 */
